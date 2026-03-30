@@ -191,6 +191,12 @@ class CompanionApp:
         # Show overlay
         self.overlay.show()
 
+        # Auto-enable debug mode if --debug flag or env var set
+        import os
+        if os.environ.get("POKEMMO_DEBUG") == "1":
+            log.info("Debug mode enabled via --debug flag")
+            self._do_toggle_debug()
+
         if self.engine._game_connected:
             self.overlay.update_status("PokeMMO Companion | Connected | F9: Toggle")
         else:
@@ -251,7 +257,7 @@ class CompanionApp:
             self.overlay.update_status("PokeMMO Companion | Game not found | F9: Toggle")
 
     def _setup_hotkeys(self) -> None:
-        """Setup global hotkeys."""
+        """Setup global hotkeys. Requires admin rights on Windows."""
         try:
             import keyboard
             keyboard.add_hotkey(
@@ -263,8 +269,13 @@ class CompanionApp:
             log.info(f"Hotkeys registered: {self.config.overlay.toggle_hotkey.upper()}=toggle, F10=extended, F11=debug")
         except ImportError:
             log.warning("keyboard library not installed -- hotkeys disabled")
+            log.warning("Install with: pip install keyboard")
+        except OSError as e:
+            log.warning(f"Hotkeys need admin rights: {e}")
+            log.warning("Run the terminal as Administrator, or use --debug flag instead")
         except Exception as e:
             log.warning(f"Failed to register hotkeys: {e}")
+            log.warning("Use --debug flag to enable debug mode without hotkeys")
 
     def _toggle_overlay(self) -> None:
         """Toggle overlay visibility (called from hotkey thread)."""

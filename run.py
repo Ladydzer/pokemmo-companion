@@ -9,6 +9,10 @@ if getattr(sys, 'frozen', False):
     os.chdir(base_path)
     sys.path.insert(0, base_path)
 
+# Pass --debug flag to start with debug overlay active
+if "--debug" in sys.argv:
+    os.environ["POKEMMO_DEBUG"] = "1"
+
 from src.main import main
 
 if __name__ == "__main__":
