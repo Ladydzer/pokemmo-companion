@@ -193,7 +193,7 @@ class CompanionApp:
 
         # Auto-enable debug mode if --debug flag or env var set
         import os
-        if os.environ.get("POKEMMO_DEBUG") == "1":
+        if os.environ.get("POKEMMO_DEBUG") == "1" or "--debug" in sys.argv:
             log.info("Debug mode enabled via --debug flag")
             self._do_toggle_debug()
 
