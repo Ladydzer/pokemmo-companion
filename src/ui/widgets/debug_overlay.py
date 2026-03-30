@@ -83,13 +83,14 @@ class DebugOverlay(QWidget):
 
 
 # Default OCR regions for PokeMMO (ratios relative to game window)
+# Calibrated from real PokeMMO screenshot (2026-03-31)
 DEFAULT_OCR_REGIONS = [
     {
         "name": "Route Name",
-        "x_ratio": 0.0,
-        "y_ratio": 0.0,
-        "w_ratio": 0.25,
-        "h_ratio": 0.05,
+        "x_ratio": 0.01,
+        "y_ratio": 0.01,
+        "w_ratio": 0.18,
+        "h_ratio": 0.04,
         "color": "green",
     },
     {

@@ -22,12 +22,13 @@ class RouteDetector:
         self._min_consecutive = 2  # Require 2 consistent reads before updating
 
         # ROI (Region of Interest) ratios relative to game window
-        # These will need calibration per resolution
+        # Calibrated from real PokeMMO screenshot: route name is in a small
+        # dark banner at the top-left of the game window
         self._route_roi = {
-            "x_ratio": 0.0,
-            "y_ratio": 0.0,
-            "w_ratio": 0.25,
-            "h_ratio": 0.05,
+            "x_ratio": 0.01,
+            "y_ratio": 0.01,
+            "w_ratio": 0.18,
+            "h_ratio": 0.04,
         }
 
     def set_roi(self, x_ratio: float, y_ratio: float,

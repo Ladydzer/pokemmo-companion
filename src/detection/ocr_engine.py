@@ -5,21 +5,42 @@ import cv2
 from ..utils.config import AppConfig
 from ..utils.logger import log
 
-_config = AppConfig.load()
+_config = None
+
+def _get_config():
+    global _config
+    if _config is None:
+        _config = AppConfig.load()
+    return _config
 
 
 def init_tesseract() -> bool:
     """Initialize Tesseract OCR. Returns True if available."""
-    try:
-        import pytesseract
-        pytesseract.pytesseract.tesseract_cmd = _config.ocr.tesseract_path
-        # Quick test
-        pytesseract.get_tesseract_version()
-        log.info("Tesseract OCR initialized")
-        return True
-    except Exception as e:
-        log.warning(f"Tesseract not available: {e}")
-        return False
+    import shutil
+    config = _get_config()
+
+    # Try configured path first, then PATH, then common locations
+    tesseract_paths = [
+        config.ocr.tesseract_path,
+        shutil.which("tesseract"),
+        r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+        r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+    ]
+
+    for path in tesseract_paths:
+        if path:
+            try:
+                import pytesseract
+                pytesseract.pytesseract.tesseract_cmd = path
+                pytesseract.get_tesseract_version()
+                log.info(f"Tesseract OCR initialized at {path}")
+                return True
+            except Exception:
+                continue
+
+    log.warning("Tesseract OCR not found! Install from: https://github.com/UB-Mannheim/tesseract/wiki")
+    log.warning("OCR features will be disabled until Tesseract is installed.")
+    return False
 
 
 def preprocess_for_ocr(image: np.ndarray, upscale: int = 3) -> np.ndarray:
@@ -99,7 +120,7 @@ def read_text(image: np.ndarray, psm: int = 7, preprocess: bool = True,
         return ""
 
     if preprocess:
-        processed = preprocess_for_ocr(image, upscale=_config.ocr.upscale_factor)
+        processed = preprocess_for_ocr(image, upscale=_get_config().ocr.upscale_factor)
     else:
         processed = image
 
@@ -108,7 +129,7 @@ def read_text(image: np.ndarray, psm: int = 7, preprocess: bool = True,
         config += f" -c tessedit_char_whitelist={whitelist}"
 
     try:
-        text = pytesseract.image_to_string(processed, lang=_config.ocr.language, config=config)
+        text = pytesseract.image_to_string(processed, lang=_get_config().ocr.language, config=config)
         return text.strip()
     except Exception as e:
         log.debug(f"OCR failed: {e}")
