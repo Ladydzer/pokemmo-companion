@@ -1,0 +1,161 @@
+"""Battle detection — identifies opponent Pokemon and provides type info."""
+import numpy as np
+import cv2
+
+from .ocr_engine import read_pokemon_name, read_level, preprocess_light_text
+from ..data.type_chart import get_battle_summary, format_battle_summary
+from ..utils.logger import log
+
+
+class BattleDetector:
+    """Detects battle state and reads opponent Pokemon info.
+
+    In PokeMMO battle screen:
+    - Opponent Pokemon name: top area (roughly 10-20% from top, 55-85% from left)
+    - Opponent HP bar: just below the name
+    - Opponent level: near the name ("Lv.XX")
+    - Player Pokemon: bottom area
+    """
+
+    def __init__(self, db=None):
+        self.db = db  # Database instance for Pokemon lookups
+        self.current_opponent: str = ""
+        self.current_opponent_level: int | None = None
+        self.current_opponent_types: list[str] = []
+        self._last_battle_info: dict | None = None
+
+        # ROI ratios for opponent info (relative to game window)
+        self._opponent_name_roi = {
+            "x_ratio": 0.52, "y_ratio": 0.05,
+            "w_ratio": 0.35, "h_ratio": 0.04,
+        }
+        self._opponent_level_roi = {
+            "x_ratio": 0.80, "y_ratio": 0.05,
+            "w_ratio": 0.12, "h_ratio": 0.04,
+        }
+
+    def set_name_roi(self, x_ratio: float, y_ratio: float,
+                     w_ratio: float, h_ratio: float) -> None:
+        """Set the region of interest for opponent name."""
+        self._opponent_name_roi = {
+            "x_ratio": x_ratio, "y_ratio": y_ratio,
+            "w_ratio": w_ratio, "h_ratio": h_ratio,
+        }
+
+    def detect_opponent(self, frame: np.ndarray) -> dict | None:
+        """Detect opponent Pokemon from battle screen.
+
+        Returns battle info dict or None if detection failed.
+        """
+        if frame is None or frame.size == 0:
+            return None
+
+        h, w = frame.shape[:2]
+
+        # Extract opponent name region
+        roi = self._opponent_name_roi
+        x = int(roi["x_ratio"] * w)
+        y = int(roi["y_ratio"] * h)
+        rw = int(roi["w_ratio"] * w)
+        rh = int(roi["h_ratio"] * h)
+
+        name_region = frame[y:y + rh, x:x + rw]
+        if name_region.size == 0:
+            return self._last_battle_info
+
+        # Read opponent name
+        name = read_pokemon_name(name_region)
+        if not name or len(name) < 2:
+            # Try inverted
+            processed = preprocess_light_text(name_region)
+            name = read_pokemon_name(processed)
+
+        if not name or len(name) < 2:
+            return self._last_battle_info
+
+        # Read opponent level
+        lroi = self._opponent_level_roi
+        lx = int(lroi["x_ratio"] * w)
+        ly = int(lroi["y_ratio"] * h)
+        lw = int(lroi["w_ratio"] * w)
+        lh = int(lroi["h_ratio"] * h)
+        level_region = frame[ly:ly + lh, lx:lx + lw]
+        level = read_level(level_region) if level_region.size > 0 else None
+
+        # Look up Pokemon in database
+        pokemon_data = None
+        types = []
+        if self.db:
+            pokemon_data = self.db.get_pokemon_by_name(name)
+            if pokemon_data:
+                types = [pokemon_data["type1"]]
+                if pokemon_data.get("type2"):
+                    types.append(pokemon_data["type2"])
+                name = pokemon_data["name"]  # Use canonical name from DB
+
+        # Get battle summary
+        battle_summary = get_battle_summary(types) if types else None
+
+        info = {
+            "name": name,
+            "level": level,
+            "types": types,
+            "battle_summary": battle_summary,
+            "pokemon_data": pokemon_data,
+        }
+
+        # Update state
+        if name != self.current_opponent:
+            self.current_opponent = name
+            self.current_opponent_level = level
+            self.current_opponent_types = types
+            log.info(f"Opponent detected: {name} (Lv.{level}) — Types: {'/'.join(types) if types else '?'}")
+
+        self._last_battle_info = info
+        return info
+
+    def get_counter_text(self) -> str:
+        """Get formatted counter info for the current opponent."""
+        if not self._last_battle_info or not self._last_battle_info.get("battle_summary"):
+            return ""
+
+        info = self._last_battle_info
+        summary = info["battle_summary"]
+
+        lines = [f"VS: {info['name']}"]
+        if info["level"]:
+            lines[0] += f" Lv.{info['level']}"
+
+        lines.append(format_battle_summary(summary))
+        return "\n".join(lines)
+
+    def fuzzy_match_pokemon(self, ocr_text: str) -> str | None:
+        """Try to match an OCR-read name to a known Pokemon name.
+
+        Uses simple edit distance for fuzzy matching.
+        """
+        if not self.db:
+            return None
+
+        # First try exact match
+        pokemon = self.db.get_pokemon_by_name(ocr_text)
+        if pokemon:
+            return pokemon["name"]
+
+        # Try search
+        results = self.db.search_pokemon(ocr_text, limit=5)
+        if results:
+            # Return closest match (first result from LIKE query)
+            return results[0]["name"]
+
+        return None
+
+
+if __name__ == "__main__":
+    detector = BattleDetector()
+
+    # Test without DB
+    from ..data.type_chart import get_battle_summary, format_battle_summary
+    summary = get_battle_summary(["Rock", "Ground"])
+    print("Test — Geodude (Rock/Ground):")
+    print(format_battle_summary(summary))

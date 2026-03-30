@@ -1,0 +1,31 @@
+========================================
+PokeMMO Companion v0.1.0 — Installation
+========================================
+
+PREREQUIS :
+1. Installer Tesseract OCR : https://github.com/UB-Mannheim/tesseract/wiki
+   (Installer dans C:\Program Files\Tesseract-OCR\)
+2. PokeMMO en mode fenetre ou borderless (PAS fullscreen exclusif)
+
+INSTALLATION :
+1. Copier le dossier "PokemmoCompanion" entier sur votre bureau
+2. Lancer PokemmoCompanion.exe
+3. Lancer PokeMMO
+
+RACCOURCIS :
+- F9  = Afficher/masquer l'overlay
+- F10 = Basculer mode compact / etendu
+
+FONCTIONNALITES :
+- Detection automatique de la route (OCR)
+- Spawns de la zone en temps reel (5 regions)
+- Assistant de combat (types, faiblesses, counters)
+- Compteur d'encounters + tracker shiny (1/30,000)
+- Mode Coach GPS (guide de progression)
+- Pokedex (649 Pokemon, recherche, stats, localisations)
+- Analyse d'equipe (couverture types, faiblesses)
+- Calculateur IV, Guide EV, Assistant breeding
+
+NOTE : Sur le PC de jeu, installer aussi BetterCam pour de
+meilleures performances de capture : pip install bettercam
+(MSS est utilise comme fallback si BetterCam absent)
