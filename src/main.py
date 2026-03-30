@@ -156,6 +156,10 @@ class CompanionApp:
         # Setup overlay
         self.overlay = OverlayWindow(self.config)
 
+        # Setup debug window (toggle with F11)
+        from .ui.debug_window import DebugWindow
+        self.debug_window = DebugWindow()
+
         # Setup game engine
         self.engine = GameEngine(self.config)
         self.engine.initialize()
@@ -272,7 +276,12 @@ class CompanionApp:
 
     def _toggle_debug(self) -> None:
         """Toggle debug mode (called from hotkey thread)."""
-        QTimer.singleShot(0, self.overlay.toggle_debug)
+        QTimer.singleShot(0, self._do_toggle_debug)
+
+    def _do_toggle_debug(self) -> None:
+        """Toggle both debug overlays."""
+        self.overlay.toggle_debug()
+        self.debug_window.toggle()
 
 
 def main():
