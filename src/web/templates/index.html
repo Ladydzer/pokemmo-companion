@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-theme="night">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PokeMMO Companion</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script>
@@ -67,9 +68,17 @@
 
 <!-- Sidebar -->
 <aside class="sidebar w-52 min-h-screen fixed left-0 top-0 flex flex-col z-50 px-3 py-5">
-    <div class="px-3 mb-8">
+    <div class="px-3 mb-4">
         <h1 class="text-base font-black tracking-wider" style="color:#00e5ff">POKEMMO COMPANION</h1>
         <p class="text-[10px] text-gray-600 tracking-widest mt-1">OUTILS POKEMMO</p>
+    </div>
+    <!-- Global search -->
+    <div class="px-3 mb-4">
+        <div class="relative">
+            <svg class="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="global-search" placeholder="Recherche..." class="w-full bg-dark-700 border border-dark-500 rounded-lg pl-8 pr-3 py-2 text-white text-xs focus:border-neon-cyan/40 focus:outline-none transition" oninput="globalSearch(this.value)">
+        </div>
+        <div id="search-results" class="hidden mt-2 glass-card p-2 max-h-48 overflow-y-auto text-xs"></div>
     </div>
     <nav class="flex-1 space-y-1" id="nav">
         <a class="nav-btn active" data-page="dashboard" onclick="go('dashboard')">
@@ -274,7 +283,10 @@
 <div id="page-collection" class="page hidden fade-in max-w-6xl">
     <div class="flex items-center justify-between mb-4">
         <h1 class="text-3xl font-black text-white">Collection</h1>
-        <span id="col-header-count" class="text-lg font-bold" style="color:#69f0ae">0 / 649</span>
+        <div class="flex items-center gap-3">
+            <button onclick="exportCol()" class="px-3 py-1.5 rounded-lg text-xs font-bold" style="background:rgba(0,229,255,0.1);color:#00e5ff;border:1px solid rgba(0,229,255,0.3)">Exporter JSON</button>
+            <span id="col-header-count" class="text-lg font-bold" style="color:#69f0ae">0 / 649</span>
+        </div>
     </div>
     <div class="stat-track h-3 rounded-lg mb-6"><div id="col-progress-bar" class="stat-fill rounded-lg bg-neon-green" style="width:0%"></div></div>
     <div id="col-grid" class="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-14 gap-1"></div>
@@ -447,7 +459,10 @@ async function showP(id){
                 </div>
                 <div class="flex-1">
                     <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">STATS DE BASE <span class="text-gray-600">(BST: ${bst})</span></p>
-                    ${sb('HP',p.hp,'hp')}${sb('ATK',p.attack,'attack')}${sb('DEF',p.defense,'defense')}${sb('SPA',p.sp_attack,'sp_attack')}${sb('SPD',p.sp_defense,'sp_defense')}${sb('SPE',p.speed,'speed')}
+                    <div class="flex gap-6 items-start">
+                        <div>${radarSVG([p.hp,p.attack,p.defense,p.sp_attack,p.sp_defense,p.speed])}</div>
+                        <div class="flex-1">${sb('HP',p.hp,'hp')}${sb('ATK',p.attack,'attack')}${sb('DEF',p.defense,'defense')}${sb('SPA',p.sp_attack,'sp_attack')}${sb('SPD',p.sp_defense,'sp_defense')}${sb('SPE',p.speed,'speed')}</div>
+                    </div>
                     <p class="text-xs text-gray-500 mt-3"><span class="font-bold">${p.attack>p.sp_attack?'Physical: Adamant/Jolly':'Special: Modest/Timid'}</span></p>
                 </div>
             </div>
@@ -663,6 +678,52 @@ async function checkGame(){
     }}catch(e){}
 }
 setInterval(checkGame,5000);
+
+// Global search
+async function globalSearch(q){
+    const el=document.getElementById('search-results');
+    if(q.length<2){el.classList.add('hidden');return;}
+    try{
+        const res=await fetch(`/api/pokemon/search/${q}`).then(r=>r.json());
+        if(!Array.isArray(res)||!res.length){el.classList.add('hidden');return;}
+        el.classList.remove('hidden');
+        el.innerHTML=res.slice(0,8).map(p=>`<div class="flex items-center gap-2 p-1.5 rounded cursor-pointer hover:bg-dark-600" onclick="go('pokedex');setTimeout(()=>showP(${p.id}),300);document.getElementById('search-results').classList.add('hidden');document.getElementById('global-search').value='';"><img src="${spr(p.name)}" class="w-6 h-6"><span class="text-white font-medium">${p.name}</span><span class="text-gray-600 text-[10px]">#${p.id}</span></div>`).join('');
+    }catch(e){el.classList.add('hidden');}
+}
+
+// Radar chart SVG for Pokemon detail
+function radarSVG(stats){
+    const labels=['HP','Atk','Def','SpA','SpD','Spe'];
+    const colors=['#78C850','#F08030','#F8D030','#6890F0','#78C850','#F85888'];
+    const cx=100,cy=100,r=80,n=6;
+    const angle=(i)=>Math.PI*2*i/n-Math.PI/2;
+    // Grid
+    let svg=`<svg viewBox="0 0 200 200" class="w-48 h-48">`;
+    [0.33,0.66,1].forEach(level=>{
+        let pts='';for(let i=0;i<n;i++){const a=angle(i);pts+=`${cx+r*level*Math.cos(a)},${cy+r*level*Math.sin(a)} `;}
+        svg+=`<polygon points="${pts}" fill="none" stroke="rgba(0,229,255,0.1)" stroke-width="1"/>`;
+    });
+    // Axes
+    for(let i=0;i<n;i++){const a=angle(i);svg+=`<line x1="${cx}" y1="${cy}" x2="${cx+r*Math.cos(a)}" y2="${cy+r*Math.sin(a)}" stroke="rgba(0,229,255,0.08)" stroke-width="1"/>`;}
+    // Stat polygon
+    let pts='';for(let i=0;i<n;i++){const a=angle(i);const v=Math.min(stats[i]/255,1);pts+=`${cx+r*v*Math.cos(a)},${cy+r*v*Math.sin(a)} `;}
+    svg+=`<polygon points="${pts}" fill="rgba(0,229,255,0.15)" stroke="#00e5ff" stroke-width="2"/>`;
+    // Labels
+    for(let i=0;i<n;i++){const a=angle(i);const lx=cx+(r+18)*Math.cos(a);const ly=cy+(r+18)*Math.sin(a);
+        svg+=`<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" fill="${colors[i]}" font-size="10" font-weight="700">${labels[i]}</text>`;
+        svg+=`<text x="${lx}" y="${ly+11}" text-anchor="middle" fill="#888" font-size="9">${stats[i]}</text>`;
+    }
+    svg+=`</svg>`;return svg;
+}
+
+// Export collection
+function exportCol(){
+    const caught=JSON.parse(localStorage.getItem('caught')||'[]');
+    const data=JSON.stringify({caught,exported:new Date().toISOString()},null,2);
+    const blob=new Blob([data],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='pokemmo-collection.json';a.click();
+    showToast('Collection exportee !');
+}
 
 // Dynamic Options stats
 async function loadOptStats(){
