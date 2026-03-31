@@ -254,9 +254,14 @@
         </div>
         <div id="team-slots" class="grid grid-cols-6 gap-3"></div>
     </div>
-    <div class="glass-card p-6">
+    <div class="glass-card p-6 mb-5">
         <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">ANALYSE DE COUVERTURE</p>
         <div id="team-cov" class="text-gray-500">Ajoute des Pokemon...</div>
+    </div>
+    <!-- Type defense matrix -->
+    <div class="glass-card p-6" id="team-matrix-card" style="display:none">
+        <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">MATRICE DEFENSIVE</p>
+        <div id="team-matrix" class="overflow-x-auto text-xs"></div>
     </div>
 </div>
 
@@ -599,8 +604,20 @@ document.getElementById('team-input')?.addEventListener('keydown',async e=>{
 function rTm(){
     const s=document.getElementById('team-slots');s.innerHTML='';
     for(let i=0;i<6;i++){
-        if(i<tm.length){const p=tm[i];s.innerHTML+=`<div class="dex-card p-3" onclick="rmTm(${i})" style="border-top:3px solid ${TC[p.type1]||'#888'}"><img src="${spr(p.name)}" data-id="${p.id}" class="w-14 h-14 mx-auto sprite-hover"><p class="text-xs font-bold text-white mt-1">${p.name}</p><div class="flex gap-1 justify-center mt-1">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div></div>`;}
-        else{s.innerHTML+=`<div class="glass-card border-2 border-dashed border-gray-800 p-3 text-center h-28 flex items-center justify-center"><span class="text-gray-700 text-sm">Slot ${i+1}</span></div>`;}
+        if(i<tm.length){
+            const p=tm[i];
+            const bst=p.hp+p.attack+p.defense+p.sp_attack+p.sp_defense+p.speed;
+            const topStat=p.attack>=p.sp_attack?`Atk:${p.attack}`:`SpA:${p.sp_attack}`;
+            s.innerHTML+=`<div class="dex-card p-3 relative" onclick="rmTm(${i})" style="border-top:3px solid ${TC[p.type1]||'#888'}" title="Clic pour retirer">
+                <button class="absolute top-1 right-1 text-gray-700 hover:text-red-400 text-xs">✕</button>
+                <img src="${spr(p.name)}" data-id="${p.id}" class="w-16 h-16 mx-auto sprite-hover">
+                <p class="text-xs font-bold text-white mt-1">${p.name}</p>
+                <div class="flex gap-1 justify-center mt-1">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div>
+                <p class="text-[9px] text-gray-500 mt-1 mono">${topStat} | Spe:${p.speed} | BST:${bst}</p>
+            </div>`;
+        }else{
+            s.innerHTML+=`<div class="glass-card border-2 border-dashed border-gray-800 p-3 text-center h-36 flex items-center justify-center"><span class="text-gray-700 text-sm">Slot ${i+1}</span></div>`;
+        }
     }
     aTm();
 }
@@ -624,7 +641,29 @@ async function aTm(){
     if(unc.length)h+=`<p class="text-sm text-gray-500 mt-1">Non couverts : ${unc.map(t=>pill(t)).join(' ')}</p>`;
     if(dng.length)h+=`<p class="mt-2 font-bold" style="color:#ff5252">DANGER : ${dng.map(([t,c])=>`${pill(t)} (${c}/${tm.length})`).join(' ')}</p>`;
     else h+=`<p class="mt-2 font-bold" style="color:#69f0ae">Bon equilibre !</p>`;
-    el.innerHTML=h;}catch(e){console.error(e);}
+    el.innerHTML=h;
+    // Defensive matrix
+    const matEl=document.getElementById('team-matrix');
+    const matCard=document.getElementById('team-matrix-card');
+    if(matEl&&tm.length>=2){
+        matCard.style.display='block';
+        let mh='<table><tr><td class="p-1"></td>';
+        types.forEach(t=>mh+=`<td class="p-1 text-center"><span class="type-pill" style="background:${TC[t]};font-size:7px;padding:1px 3px">${t.slice(0,3)}</span></td>`);
+        mh+='</tr>';
+        tm.forEach(p=>{
+            mh+=`<tr><td class="p-1 font-bold text-white text-[10px] whitespace-nowrap">${p.name.slice(0,10)}</td>`;
+            types.forEach(atk=>{
+                let m=chart[atk+'_'+p.type1]||1;if(p.type2)m*=(chart[atk+'_'+p.type2]||1);
+                const bg=m>=2?'rgba(255,82,82,0.4)':m===0?'rgba(64,196,255,0.3)':m<1?'rgba(105,240,174,0.2)':'';
+                const tx=m>=4?'4x':m>=2?'2x':m===0?'0':m<=0.25?'1/4':m<=0.5?'1/2':'';
+                const cl=m>=2?'color:#ff8a80':m===0?'color:#82b1ff':m<1?'color:#a5d6a7':'color:transparent';
+                mh+=`<td class="p-1 text-center text-[10px] font-bold" style="background:${bg};border-radius:3px;${cl}">${tx}</td>`;
+            });
+            mh+='</tr>';
+        });
+        matEl.innerHTML=mh;
+    }else if(matCard){matCard.style.display='none';}
+    }catch(e){console.error(e);}
 }
 
 // Collection
