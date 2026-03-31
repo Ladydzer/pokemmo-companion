@@ -421,9 +421,11 @@
         </select>
         <div id="routes-list" class="max-h-96 overflow-y-auto space-y-1"></div>
     </div>
-    <div class="glass-card p-6">
+    <div class="glass-card p-6 mb-5">
         <p id="note-title" class="text-xs font-bold tracking-widest text-gray-500 mb-3">Selectionne une route</p>
-        <textarea id="note-text" rows="6" placeholder="Ecris tes notes ici..." class="textarea textarea-bordered w-full mb-3" disabled></textarea>
+        <!-- Route POI/items -->
+        <div id="route-poi" class="mb-4 hidden"></div>
+        <textarea id="note-text" rows="4" placeholder="Ecris tes notes ici..." class="textarea textarea-bordered w-full mb-3" disabled></textarea>
         <button onclick="saveNote()" class="btn btn-sm btn-info" disabled id="save-note-btn">Sauvegarder</button>
     </div>
 </div>
@@ -769,13 +771,31 @@ async function loadRoutes(){
     el.innerHTML=routes.slice(0,50).map(r=>`<div class="px-3 py-2 rounded-lg cursor-pointer text-sm hover:bg-dark-600 transition" onclick="selectRoute(${r.id},'${r.name.replace("'","\\'")} (${r.region})')">${r.name} <span class="text-xs text-gray-600">${r.region}</span></div>`).join('');
     }catch(e){console.error(e);}
 }
-function selectRoute(id,name){
+async function selectRoute(id,name){
     selRoute=id;
     document.getElementById('note-title').textContent=name;
     document.getElementById('note-text').disabled=false;
     document.getElementById('save-note-btn').disabled=false;
-    // Restore saved note
     document.getElementById('note-text').value=localStorage.getItem('note_'+id)||'';
+    // Load POI/items for this route
+    const poi=document.getElementById('route-poi');
+    try{
+        const items=await fetch(`/api/routes/${id}/items`).then(r=>r.json());
+        if(Array.isArray(items)&&items.length){
+            poi.classList.remove('hidden');
+            const icons={key_item:'🔑',hm:'💿',tm:'💾',gift_pokemon:'🎁',service:'🔧',event:'📅'};
+            poi.innerHTML=`<p class="text-xs font-bold tracking-widest mb-2" style="color:#ffd740">POINTS D'INTERET</p>`+
+                items.map(it=>`<div class="flex items-center gap-3 p-2 glass-card mb-1">
+                    <span class="text-lg">${icons[it.item_type]||'📦'}</span>
+                    <div class="flex-1">
+                        <p class="text-sm font-bold text-white">${it.item_name}</p>
+                        <p class="text-xs text-gray-400">${it.description||''}</p>
+                    </div>
+                    ${it.npc_name?`<span class="text-xs text-gray-500">${it.npc_name}</span>`:''}
+                    ${it.condition?`<span class="text-[10px] px-2 py-0.5 rounded" style="background:rgba(0,229,255,0.1);color:#00e5ff">${it.condition}</span>`:''}
+                </div>`).join('');
+        }else{poi.classList.add('hidden');}
+    }catch(e){poi.classList.add('hidden');}
 }
 function saveNote(){
     if(!selRoute)return;
