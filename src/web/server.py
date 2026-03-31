@@ -55,7 +55,7 @@ async def get_stats():
 async def get_all_pokemon():
     conn = _db()
     rows = conn.execute(
-        "SELECT id, name, type1, type2 FROM pokemon ORDER BY id"
+        "SELECT id, name, type1, type2, hp, attack, defense, sp_attack, sp_defense, speed FROM pokemon ORDER BY id"
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]

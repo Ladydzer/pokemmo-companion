@@ -207,7 +207,30 @@
         <svg class="absolute left-4 top-3.5 w-4 h-4 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" id="dex-search" placeholder="Rechercher un Pokemon..." class="input input-bordered input-primary w-full">
     </div>
-    <div id="type-filters" class="flex flex-wrap gap-1 mb-5"></div>
+    <div id="type-filters" class="flex flex-wrap gap-1 mb-3"></div>
+    <!-- Region + Sort filters -->
+    <div class="flex gap-3 mb-5 items-center">
+        <select id="dex-region" onchange="applyDexFilters()" class="select select-bordered select-xs">
+            <option value="">Toutes les regions</option>
+            <option value="1-151">Kanto (1-151)</option>
+            <option value="152-251">Johto (152-251)</option>
+            <option value="252-386">Hoenn (252-386)</option>
+            <option value="387-493">Sinnoh (387-493)</option>
+            <option value="494-649">Unova (494-649)</option>
+        </select>
+        <select id="dex-sort" onchange="applyDexFilters()" class="select select-bordered select-xs">
+            <option value="id">Tri: Numero</option>
+            <option value="name">Tri: Nom</option>
+            <option value="hp">Tri: HP</option>
+            <option value="attack">Tri: Attaque</option>
+            <option value="defense">Tri: Defense</option>
+            <option value="sp_attack">Tri: Att. Spe</option>
+            <option value="sp_defense">Tri: Def. Spe</option>
+            <option value="speed">Tri: Vitesse</option>
+            <option value="bst">Tri: BST</option>
+        </select>
+        <span id="dex-count" class="text-xs text-gray-500 ml-auto"></span>
+    </div>
     <div id="dex-grid" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 gap-2"></div>
     <div id="dex-detail" class="hidden fade-in"></div>
 </div>
@@ -497,7 +520,25 @@ async function loadDex(){
         });
     }catch(e){console.error(e);}
 }
-function fDex(t){if(!t){rDex(window._pk);return;}rDex(window._pk.filter(p=>p.type1===t||p.type2===t));}
+function fDex(t){window._typeFilter=t||'';applyDexFilters();}
+function applyDexFilters(){
+    let list=window._pk||[];
+    // Type filter
+    const tf=window._typeFilter||'';
+    if(tf)list=list.filter(p=>p.type1===tf||p.type2===tf);
+    // Region filter
+    const region=document.getElementById('dex-region')?.value;
+    if(region){const[s,e]=region.split('-').map(Number);list=list.filter(p=>p.id>=s&&p.id<=e);}
+    // Sort
+    const sort=document.getElementById('dex-sort')?.value||'id';
+    if(sort==='name')list=[...list].sort((a,b)=>a.name.localeCompare(b.name));
+    else if(sort==='bst')list=[...list].sort((a,b)=>(b.hp+b.attack+b.defense+b.sp_attack+b.sp_defense+b.speed)-(a.hp+a.attack+a.defense+a.sp_attack+a.sp_defense+a.speed));
+    else if(['hp','attack','defense','sp_attack','sp_defense','speed'].includes(sort))list=[...list].sort((a,b)=>(b[sort]||0)-(a[sort]||0));
+    // Count
+    const cnt=document.getElementById('dex-count');
+    if(cnt)cnt.textContent=`${list.length} Pokemon`;
+    rDex(list);
+}
 
 function rDex(list){
     const g=document.getElementById('dex-grid');g.innerHTML='';
