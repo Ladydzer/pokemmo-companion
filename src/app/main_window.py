@@ -164,6 +164,21 @@ class MainWindow(QMainWindow):
 
         main_layout.addLayout(right_side, 1)
 
+        # Keyboard shortcuts
+        from PyQt6.QtGui import QShortcut, QKeySequence
+        page_names = ["Dashboard", "Pokedex", "Battle", "Team",
+                      "Shiny Lab", "Collection", "Notes", "Settings"]
+        for i, name in enumerate(page_names):
+            QShortcut(QKeySequence(f"Ctrl+{i+1}"), self).activated.connect(
+                lambda n=name: self._navigate(n)
+            )
+        # Ctrl+F to focus Pokedex search
+        QShortcut(QKeySequence("Ctrl+F"), self).activated.connect(self._focus_search)
+        # Escape to go to Dashboard
+        QShortcut(QKeySequence("Escape"), self).activated.connect(
+            lambda: self._navigate("Dashboard")
+        )
+
         # Default to dashboard
         self._navigate("Dashboard")
 
@@ -185,6 +200,11 @@ class MainWindow(QMainWindow):
         # Update button states
         for i, btn in enumerate(self._nav_buttons):
             btn.setChecked(i == idx)
+
+    def _focus_search(self) -> None:
+        """Focus the Pokedex search bar."""
+        self._navigate("Pokedex")
+        self.pokedex.search.setFocus()
 
     # === Public API for overlay sync ===
 

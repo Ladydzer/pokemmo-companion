@@ -50,6 +50,22 @@ def main():
 
     splash.set_progress(90, "Almost ready...")
 
+    # Check if first launch — show onboarding
+    from src.utils.config import AppConfig
+    config = AppConfig.load()
+    if config.first_run:
+        splash.close()
+        from src.app.onboarding import OnboardingDialog
+        dialog = OnboardingDialog()
+        if dialog.exec():
+            data = dialog.result_data
+            log.info(f"Onboarding: {data['region']}, {data['badges']} badges, starter {data['starter']}")
+            # Update guide panel with onboarding data
+            if hasattr(window, 'dashboard') and hasattr(window.dashboard, 'guide_region'):
+                pass  # Guide panel will use this data
+            config.first_run = False
+            config.save()
+
     # Show main window, close splash
     window.show()
     splash.set_progress(100, "Welcome!")
