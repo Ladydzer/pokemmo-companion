@@ -448,18 +448,18 @@ async function showDetail(id) {
         </div>
     `;
     // Load move recommendations async
-    fetch(\`/api/recommend-moves/\${id}\`).then(r=>r.json()).then(moves => {
+    fetch(`/api/recommend-moves/${id}`).then(r=>r.json()).then(moves => {
         const ml = document.getElementById('moves-list');
         if (ml && moves.length) {
-            ml.innerHTML = moves.map((m,i) => \`
+            ml.innerHTML = moves.map((m,i) => `
                 <div class="spawn-row">
-                    <span class="w-5 text-gray-500 font-bold">\${i+1}.</span>
-                    <span class="type-pill text-[9px]" style="background:\${TC[m.type]||'#888'}">\${m.type}</span>
-                    <span class="font-semibold text-white">\${m.move}</span>
-                    <span class="text-gray-500 text-xs">\${m.power ? m.power+' pwr' : 'status'}</span>
-                    <span class="text-gray-600 text-xs flex-1 text-right">\${m.reason}</span>
+                    <span class="w-5 text-gray-500 font-bold">${i+1}.</span>
+                    <span class="type-pill text-[9px]" style="background:${TC[m.type]||'#888'}">${m.type}</span>
+                    <span class="font-semibold text-white">${m.move}</span>
+                    <span class="text-gray-500 text-xs">${m.power ? m.power+' pwr' : 'status'}</span>
+                    <span class="text-gray-600 text-xs flex-1 text-right">${m.reason}</span>
                 </div>
-            \`).join('');
+            `).join('');
         }
     });
 }
