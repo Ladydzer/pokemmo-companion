@@ -97,9 +97,8 @@ async def get_pokemon_locations(pokemon_id: int):
                JOIN pokemon p ON s.pokemon_id = p.id
                WHERE LOWER(p.name) = LOWER(?) ORDER BY s.rate DESC LIMIT 15""",
             (dict(pokemon)["name"],)
-    ).fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
+        ).fetchall()
+        return [dict(r) for r in rows]
 
 
 @app.get("/api/pokemon/{pokemon_id}/evolutions")

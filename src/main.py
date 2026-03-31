@@ -56,19 +56,19 @@ class GameEngine(QObject):
             pokemon_count = self.db.get_pokemon_count()
             log.info(f"Database loaded: {pokemon_count} Pokemon")
         else:
-            log.warning(f"Database not found at {DB_PATH}. Run scripts/build_database.py first.")
+            log.warning(f"Base de donnees introuvable : {DB_PATH}. Run scripts/build_database.py first.")
             self.battle_detector = BattleDetector()
 
         # Screen capture
         if self.capture.initialize():
             self._game_connected = True
-            log.info("Game window found — capture engine ready")
+            log.info("Fenetre jeu trouvee — capture engine ready")
             size = self.capture.get_game_size()
             if size:
                 self.state_detector.calibrate(*size)
         else:
             self._game_connected = False
-            log.info("Game window not found — will retry")
+            log.info("Fenetre jeu non trouvee — will retry")
 
         return True
 
@@ -79,7 +79,7 @@ class GameEngine(QObject):
             if self.capture.initialize():
                 self._game_connected = True
                 self.game_found.emit(True)
-                log.info("Game window connected!")
+                log.info("Fenetre jeu connectee!")
                 size = self.capture.get_game_size()
                 if size:
                     self.state_detector.calibrate(*size)
@@ -89,7 +89,7 @@ class GameEngine(QObject):
         if not self.capture.is_game_running():
             self._game_connected = False
             self.game_found.emit(False)
-            log.info("Game window lost — will retry")
+            log.info("Fenetre jeu perdue — will retry")
             return
 
         # Capture frame
@@ -260,7 +260,7 @@ class CompanionApp:
         """Handle game connection/disconnection."""
         if connected:
             self.overlay.update_status("PokeMMO Companion | Connecte")
-            self._toast = ToastNotification("PokeMMO detected! Companion active.", 3000, "#4CAF50")
+            self._toast = ToastNotification("PokeMMO detecte ! Companion actif.", 3000, "#4CAF50")
         else:
             self.overlay.update_status("PokeMMO Companion | Jeu non trouve")
 

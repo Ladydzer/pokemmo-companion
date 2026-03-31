@@ -575,7 +575,7 @@ async function loadDash(){
             document.getElementById('hero-num').textContent=String(spot.id).padStart(3,'0');
             document.getElementById('hero-types').innerHTML=pill(spot.type1)+(spot.type2?' '+pill(spot.type2):'');
             if(spot.location) document.getElementById('hero-sprite').title=spot.location.route_name;
-            const stats=[['HP',spot.hp,'hp'],['ATTACK',spot.attack,'attack'],['SPEED',spot.speed,'speed']];
+            const stats=[['PV',spot.hp,'hp'],['ATTAQUE',spot.attack,'attack'],['VITESSE',spot.speed,'speed']];
             document.getElementById('hero-stat-bars').innerHTML=stats.map(([l,v,k])=>`
                 <div><p class="text-xs text-gray-500 mb-1">${l}</p>
                 <p class="text-xl font-black text-white">${v}</p>

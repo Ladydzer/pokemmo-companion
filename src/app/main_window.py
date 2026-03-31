@@ -130,7 +130,7 @@ class MainWindow(QMainWindow):
         sidebar_layout.addWidget(self.overlay_btn)
 
         # Version info
-        version = QLabel("v0.3.0")
+        version = QLabel("v0.5.0")
         version.setFont(QFont("Segoe UI", 8))
         version.setStyleSheet(f"color: {COLORS['text_muted']}; padding: 12px;")
         sidebar_layout.addWidget(version)
