@@ -15,13 +15,14 @@ from ...utils.constants import SHINY_RATE_BASE
 class DashboardCard(QFrame):
     """A styled card container."""
 
-    def __init__(self, title: str, parent=None):
+    def __init__(self, title: str, accent_color: str = "", parent=None):
         super().__init__(parent)
+        border_color = accent_color or COLORS['accent_blue']
         self.setStyleSheet(f"""
             DashboardCard {{
                 background-color: {COLORS['bg_card']};
-                border: 1px solid {COLORS['border']};
-                border-radius: 8px;
+                border: 2px solid {border_color};
+                border-radius: 12px;
             }}
         """)
 
@@ -30,8 +31,8 @@ class DashboardCard(QFrame):
         self._layout.setSpacing(8)
 
         header = QLabel(title)
-        header.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
-        header.setStyleSheet(f"color: {COLORS['accent_blue']};")
+        header.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
+        header.setStyleSheet(f"color: {border_color};")
         self._layout.addWidget(header)
 
     def add_widget(self, widget):
@@ -65,10 +66,10 @@ class DashboardPage(QWidget):
         top_row.setSpacing(16)
 
         # Current location card
-        self.location_card = DashboardCard("Position Actuelle")
+        self.location_card = DashboardCard("Position Actuelle", COLORS['accent_blue'])
         self.route_label = QLabel("Non connecte au jeu")
-        self.route_label.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
-        self.route_label.setStyleSheet(f"color: {COLORS['text_primary']};")
+        self.route_label.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        self.route_label.setStyleSheet("color: white;")
         self.location_card.add_widget(self.route_label)
         self.region_label = QLabel("")
         self.region_label.setStyleSheet(f"color: {COLORS['text_secondary']};")
@@ -76,9 +77,9 @@ class DashboardPage(QWidget):
         top_row.addWidget(self.location_card)
 
         # Encounter stats card
-        self.encounter_card = DashboardCard("Rencontres")
-        self.encounter_label = QLabel("0 encounters")
-        self.encounter_label.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        self.encounter_card = DashboardCard("Rencontres", COLORS['accent_orange'])
+        self.encounter_label = QLabel("0 rencontres")
+        self.encounter_label.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
         self.encounter_label.setStyleSheet(f"color: {COLORS['accent_orange']};")
         self.encounter_card.add_widget(self.encounter_label)
         self.shiny_prob_label = QLabel("Shiny: 0.00%")
@@ -87,7 +88,7 @@ class DashboardPage(QWidget):
         top_row.addWidget(self.encounter_card)
 
         # DB stats card
-        self.db_card = DashboardCard("Base de Donnees")
+        self.db_card = DashboardCard("Base de Donnees", COLORS['accent_green'])
         if self.db:
             db_text = (f"Pokemon: {self.db.get_pokemon_count()}\n"
                        f"Routes: {self.db.get_route_count()}\n"
@@ -108,7 +109,7 @@ class DashboardPage(QWidget):
         mid_row.setSpacing(16)
 
         # Spawns card
-        self.spawns_card = DashboardCard("Pokemon de la Zone")
+        self.spawns_card = DashboardCard("Pokemon de la Zone", COLORS['accent_green'])
         self.spawns_label = QLabel("En attente de detection de route...")
         self.spawns_label.setFont(QFont("Consolas", 10))
         self.spawns_label.setStyleSheet(f"color: {COLORS['text_secondary']};")
@@ -117,14 +118,14 @@ class DashboardPage(QWidget):
         mid_row.addWidget(self.spawns_card, 2)
 
         # Pokemon spotlight card
-        self.spotlight_card = DashboardCard("Pokemon du Jour")
+        self.spotlight_card = DashboardCard("Pokemon du Jour", COLORS['accent_yellow'])
         self._setup_spotlight()
         mid_row.addWidget(self.spotlight_card, 1)
 
         layout.addLayout(mid_row)
 
         # Objective of the Day
-        objective_card = DashboardCard("Objectif du Jour")
+        objective_card = DashboardCard("Objectif du Jour", COLORS['accent_purple'])
         self.objective_label = QLabel(self._generate_objective())
         self.objective_label.setFont(QFont("Segoe UI", 11))
         self.objective_label.setStyleSheet(f"color: {COLORS['accent_green']};")
@@ -236,5 +237,5 @@ class DashboardPage(QWidget):
         self.spawns_label.setText("\n".join(lines))
 
     def update_encounters(self, count: int, shiny_prob: float) -> None:
-        self.encounter_label.setText(f"{count:,} encounters")
+        self.encounter_label.setText(f"{count:,} rencontres")
         self.shiny_prob_label.setText(f"Shiny chance: {shiny_prob * 100:.2f}%")

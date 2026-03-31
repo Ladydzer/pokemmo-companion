@@ -16,7 +16,7 @@ class OnboardingDialog(QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Welcome to PokeMMO Companion!")
+        self.setWindowTitle("Bienvenue sur PokeMMO Companion !")
         self.setFixedSize(500, 520)
         self.setStyleSheet(f"background-color: {COLORS['bg_primary']}; color: {COLORS['text_primary']};")
 
@@ -29,13 +29,13 @@ class OnboardingDialog(QDialog):
         layout.setSpacing(16)
 
         # Title
-        title = QLabel("Welcome!")
+        title = QLabel("Bienvenue !")
         title.setFont(QFont("Segoe UI", 22, QFont.Weight.Bold))
         title.setStyleSheet(f"color: {COLORS['accent_blue']};")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
 
-        subtitle = QLabel("Let's set up your PokeMMO Companion")
+        subtitle = QLabel("Configurons ton PokeMMO Companion")
         subtitle.setFont(QFont("Segoe UI", 11))
         subtitle.setStyleSheet(f"color: {COLORS['text_secondary']};")
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -64,7 +64,7 @@ class OnboardingDialog(QDialog):
         rf_layout = QVBoxLayout(region_frame)
         rf_layout.setContentsMargins(16, 12, 16, 12)
 
-        rl = QLabel("Which region are you playing?")
+        rl = QLabel("Dans quelle region joues-tu ?")
         rl.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
         rf_layout.addWidget(rl)
 
@@ -96,7 +96,7 @@ class OnboardingDialog(QDialog):
         bf_layout = QVBoxLayout(badge_frame)
         bf_layout.setContentsMargins(16, 12, 16, 12)
 
-        bl = QLabel("How many badges do you have in this region?")
+        bl = QLabel("Combien de badges as-tu dans cette region ?")
         bl.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
         bf_layout.addWidget(bl)
 
@@ -139,7 +139,7 @@ class OnboardingDialog(QDialog):
         sf_layout = QVBoxLayout(starter_frame)
         sf_layout.setContentsMargins(16, 12, 16, 12)
 
-        sl = QLabel("What's your favorite starter?")
+        sl = QLabel("Quel est ton starter prefere ?")
         sl.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
         sf_layout.addWidget(sl)
 
@@ -162,7 +162,7 @@ class OnboardingDialog(QDialog):
 
         # Start button
         layout.addSpacing(10)
-        start_btn = QPushButton("Let's Go!")
+        start_btn = QPushButton("C'est parti !")
         start_btn.setFont(QFont("Segoe UI", 13, QFont.Weight.Bold))
         start_btn.setFixedHeight(44)
         start_btn.setCursor(Qt.CursorShape.PointingHandCursor)
