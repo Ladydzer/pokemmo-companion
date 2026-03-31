@@ -428,6 +428,23 @@ async def horde_summary():
     return [dict(r) for r in rows]
 
 
+@app.get("/api/pokemon/{pokemon_id}/moves")
+async def get_pokemon_moves(pokemon_id: int, method: str = ""):
+    """Get moves a Pokemon can learn, optionally filtered by method."""
+    with _db() as conn:
+        query = """SELECT m.id, m.name, m.type, m.power, m.accuracy, m.pp, m.category,
+                   pm.method, pm.level
+                   FROM pokemon_moves pm JOIN moves m ON pm.move_id = m.id
+                   WHERE pm.pokemon_id = ?"""
+        params: list = [pokemon_id]
+        if method:
+            query += " AND pm.method = ?"
+            params.append(method)
+        query += " ORDER BY pm.method, pm.level, m.name"
+        rows = conn.execute(query, params).fetchall()
+    return [dict(r) for r in rows]
+
+
 @app.get("/api/ev-spots/{stat}")
 async def get_ev_spots(stat: str, region: str = "", method: str = ""):
     """Get best EV training spots for a given stat. Prioritizes horde spots."""

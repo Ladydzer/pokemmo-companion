@@ -896,12 +896,42 @@ async function showP(id){
             ${locH?`<div class="mt-6 pt-6 border-t border-gray-800"><p class="text-xs font-bold tracking-widest text-gray-500 mb-3" style="color:#69f0ae">LOCALISATIONS POKEMMO</p>${locH}</div>`:''}
             <div id="det-moves" class="mt-6 pt-6 border-t border-gray-800"></div>
         </div>`;
-        fetch(`/api/recommend-moves/${id}`).then(r=>r.json()).then(mv=>{
+        // Load full moveset
+        fetch(`/api/pokemon/${id}/moves`).then(r=>r.json()).then(mv=>{
             const el=document.getElementById('det-moves');
-            if(el&&Array.isArray(mv)&&mv.length){
-                el.innerHTML=`<p class="text-xs font-bold tracking-widest text-gray-500 mb-3" style="color:#ff6e40">MOVESET RECOMMANDE</p>
-                ${mv.map((m,i)=>`<div class="spawn-row"><span class="w-5 text-gray-500 font-bold text-xs">${i+1}</span>${pill(m.type)}<span class="font-bold text-white text-sm">${m.move}</span><span class="text-gray-500 text-xs">${m.power?m.power+' pwr':'status'}</span><span class="text-gray-600 text-xs flex-1 text-right">${m.reason}</span></div>`).join('')}`;
-            }
+            if(!el||!Array.isArray(mv)||!mv.length)return;
+            const catIcon={physical:'⚔️',special:'✨',status:'🛡️'};
+            // Group by method
+            const byMethod={};
+            mv.forEach(m=>{const k=m.method;if(!byMethod[k])byMethod[k]=[];byMethod[k].push(m);});
+            const methodLabels={'level-up':'PAR NIVEAU','machine':'CT/CS','egg':'EGG MOVES','tutor':'TUTEUR'};
+            const methodColors={'level-up':'#40c4ff','machine':'#ffd740','egg':'#69f0ae','tutor':'#d500f9'};
+            // Tab buttons
+            const methods=Object.keys(byMethod);
+            let h=`<div class="flex items-center gap-2 mb-3 flex-wrap">
+                <p class="text-xs font-bold tracking-widest text-gray-500" style="color:#ff6e40">MOVESET</p>
+                <span class="text-[10px] text-gray-600">${mv.length} moves</span>
+                <div class="flex gap-1 ml-auto">`;
+            methods.forEach((m,i)=>{
+                h+=`<button onclick="filterMoves('${m}')" class="text-[10px] px-2 py-1 rounded font-bold" style="background:${methodColors[m]||'#888'}20;color:${methodColors[m]||'#888'}">${methodLabels[m]||m} (${byMethod[m].length})</button>`;
+            });
+            h+=`<button onclick="filterMoves('')" class="text-[10px] px-2 py-1 rounded bg-dark-600 text-gray-400">Tous</button></div></div>`;
+            h+=`<div id="moves-list" class="max-h-64 overflow-y-auto space-y-0.5">`;
+            mv.forEach(m=>{
+                const pwrTxt=m.power?m.power:'—';
+                const accTxt=m.accuracy?m.accuracy+'%':'—';
+                h+=`<div class="flex items-center gap-2 p-1.5 rounded hover:bg-dark-600/30 text-xs move-row" data-method="${m.method}">
+                    ${m.method==='level-up'?`<span class="w-8 text-right mono text-gray-500">Lv.${m.level}</span>`:`<span class="w-8 text-right text-gray-600">${catIcon[m.category]||''}</span>`}
+                    ${pill(m.type)}
+                    <span class="font-bold text-white flex-1">${m.name.replace(/-/g,' ')}</span>
+                    <span class="w-8 text-right mono ${m.category==='physical'?'text-orange-400':m.category==='special'?'text-blue-400':'text-gray-500'}">${pwrTxt}</span>
+                    <span class="w-10 text-right mono text-gray-500">${accTxt}</span>
+                    <span class="w-6 text-right mono text-gray-600">${m.pp}</span>
+                    <span class="text-[9px] w-12 text-center text-gray-600">${m.category.slice(0,3)}</span>
+                </div>`;
+            });
+            h+=`</div>`;
+            el.innerHTML=h;
         }).catch(e=>console.error(e));
     }catch(e){console.error(e);}
 }
@@ -1736,6 +1766,13 @@ async function loadEVSpots(stat){
             </div>`;
         }).join('');
     }catch(e){el.innerHTML='<p class="text-red-400">Erreur: '+e.message+'</p>';}
+}
+
+// Move filter for Pokedex detail
+function filterMoves(method){
+    document.querySelectorAll('.move-row').forEach(r=>{
+        r.style.display=(!method||r.dataset.method===method)?'':'none';
+    });
 }
 
 loadDash();loadChart();rTm();loadRoutes();checkGame();loadOptStats();shinyUpdate();calcBreed();renderNatures(NATURES);loadHordeSummary();loadHordes();calcSS();updateEVTracker();
