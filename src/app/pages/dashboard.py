@@ -123,14 +123,14 @@ class DashboardPage(QWidget):
 
         layout.addLayout(mid_row)
 
-        # Battle card (hidden until combat)
-        self.battle_card = DashboardCard("Battle")
-        self.battle_label = QLabel("No battle in progress")
-        self.battle_label.setFont(QFont("Segoe UI", 12))
-        self.battle_label.setStyleSheet(f"color: {COLORS['text_muted']};")
-        self.battle_card.add_widget(self.battle_label)
-        self.battle_card.hide()
-        layout.addWidget(self.battle_card)
+        # Objective of the Day
+        objective_card = DashboardCard("Objective of the Day")
+        self.objective_label = QLabel(self._generate_objective())
+        self.objective_label.setFont(QFont("Segoe UI", 11))
+        self.objective_label.setStyleSheet(f"color: {COLORS['accent_green']};")
+        self.objective_label.setWordWrap(True)
+        objective_card.add_widget(self.objective_label)
+        layout.addWidget(objective_card)
 
         layout.addStretch()
 
@@ -185,6 +185,38 @@ class DashboardPage(QWidget):
                 loc_label.setStyleSheet(f"color: {COLORS['accent_green']};")
                 loc_label.setFont(QFont("Segoe UI", 9))
                 self.spotlight_card.add_widget(loc_label)
+
+    def _generate_objective(self) -> str:
+        """Generate a daily objective based on available data."""
+        import random
+        objectives = [
+            "Explore a new route you haven't visited yet!",
+            "Try catching 10 Pokemon you don't have in your collection",
+            "Challenge a gym leader in a region you're progressing through",
+            "Do 100 encounters toward your shiny hunt target",
+            "Build a balanced team with good type coverage",
+            "Farm some EVs for your competitive Pokemon",
+            "Try Sweet Scent horde encounters for efficient shiny hunting",
+            "Check the Pokedex for Pokemon you're missing in Kanto",
+            "Visit the Breeding Center and plan your next 5IV breed",
+            "Explore Johto if you haven't started that region yet",
+            "Complete your collection for one route — catch everything!",
+            "Train your team to level 50+ for the Elite Four challenge",
+        ]
+
+        if self.db:
+            # Add context-aware objectives
+            from ..pages.collection import CollectionData
+            collection = CollectionData()
+            caught = collection.count
+            if caught < 50:
+                return f"You've caught {caught}/649 Pokemon. Try to reach 50 today!"
+            elif caught < 150:
+                return f"Collection: {caught}/649. Complete the Kanto Pokedex (151)!"
+            elif caught < 300:
+                return f"Collection: {caught}/649. You're making great progress. Explore Hoenn for new catches!"
+
+        return random.choice(objectives)
 
     def update_route(self, route_name: str, region: str) -> None:
         self.route_label.setText(route_name)

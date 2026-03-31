@@ -95,8 +95,8 @@ def test_sprite_load():
 def test_main_window_creation():
     db = Database()
     window = MainWindow(db)
-    assert window.pages.count() == 7
-    assert len(window._nav_buttons) == 7
+    assert window.pages.count() == 8
+    assert len(window._nav_buttons) == 8
 
 
 def test_navigation():
@@ -105,7 +105,7 @@ def test_navigation():
     for page_name, expected_idx in [("Dashboard", 0), ("Pokedex", 1),
                                       ("Battle", 2), ("Team", 3),
                                       ("Shiny Lab", 4), ("Collection", 5),
-                                      ("Settings", 6)]:
+                                      ("Notes", 6), ("Settings", 7)]:
         window._navigate(page_name)
         assert window.pages.currentIndex() == expected_idx
 

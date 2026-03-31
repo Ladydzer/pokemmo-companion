@@ -14,6 +14,7 @@ from .pages.team_builder import TeamBuilderPage
 from .pages.shiny_lab import ShinyLabPage
 from .pages.settings import SettingsPage
 from .pages.collection import CollectionPage
+from .pages.notes import NotesPage
 
 
 class SidebarButton(QPushButton):
@@ -91,6 +92,7 @@ class MainWindow(QMainWindow):
             ("👥", "Team"),
             ("✨", "Shiny Lab"),
             ("📋", "Collection"),
+            ("📝", "Notes"),
             ("⚙", "Settings"),
         ]
 
@@ -133,6 +135,9 @@ class MainWindow(QMainWindow):
         self.collection = CollectionPage(self.db)
         self.pages.addWidget(self.collection)
 
+        self.notes = NotesPage(self.db)
+        self.pages.addWidget(self.notes)
+
         self.settings = SettingsPage()
         self.pages.addWidget(self.settings)
 
@@ -171,7 +176,8 @@ class MainWindow(QMainWindow):
             "Team": 3,
             "Shiny Lab": 4,
             "Collection": 5,
-            "Settings": 6,
+            "Notes": 6,
+            "Settings": 7,
         }
         idx = page_map.get(page_name, 0)
         self.pages.setCurrentIndex(idx)
