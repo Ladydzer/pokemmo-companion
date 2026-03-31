@@ -544,7 +544,9 @@
 const TC={Normal:'#A8A77A',Fire:'#EE8130',Water:'#6390F0',Electric:'#F7D02C',Grass:'#7AC74C',Ice:'#96D9D6',Fighting:'#C22E28',Poison:'#A33EA1',Ground:'#E2BF65',Flying:'#A98FF3',Psychic:'#F95587',Bug:'#A6B91A',Rock:'#B6A136',Ghost:'#735797',Dragon:'#6F35FC',Dark:'#705746',Steel:'#B7B7CE'};
 const SC={hp:'#78C850',attack:'#F08030',defense:'#F8D030',sp_attack:'#6890F0',sp_defense:'#78C850',speed:'#F85888'};
 const TFR={Normal:'Normal',Fire:'Feu',Water:'Eau',Electric:'Electrik',Grass:'Plante',Ice:'Glace',Fighting:'Combat',Poison:'Poison',Ground:'Sol',Flying:'Vol',Psychic:'Psy',Bug:'Insecte',Rock:'Roche',Ghost:'Spectre',Dragon:'Dragon',Dark:'Tenebres',Steel:'Acier'};
-const pill=t=>`<span class="type-pill" style="background:${TC[t]||'#888'}">${TFR[t]||t}</span>`;
+const TEN=Object.fromEntries(Object.entries(TFR).map(([en,fr])=>[fr,en])); // FR->EN reverse
+const tfr=t=>TFR[t]||t; // Translate type to FR
+const pill=t=>`<span class="type-pill" style="background:${TC[t]||'#888'}">${tfr(t)}</span>`;
 const spr=n=>`https://play.pokemonshowdown.com/sprites/ani/${n.toLowerCase().replace(/[^a-z0-9]/g,'')}.gif`;
 // Fallback: add onerror to img tags that use spr()
 document.addEventListener('error',e=>{if(e.target.tagName==='IMG'&&e.target.src.includes('showdown')){const id=e.target.dataset?.id;if(id)e.target.src=`/sprite/${id}`;}},true);
@@ -620,7 +622,7 @@ async function loadDex(){
         window._pk=pk;
         const f=document.getElementById('type-filters');
         f.innerHTML=`<button onclick="fDex('')" class="type-pill cursor-pointer" style="background:#00e5ff">TOUS</button> <button onclick="filterFavs()" class="type-pill cursor-pointer" style="background:#ffd740;color:#000">★ FAV</button> `;
-        Object.keys(TC).forEach(t=>{f.innerHTML+=`<button onclick="fDex('${t}')" class="type-pill cursor-pointer" style="background:${TC[t]}">${t.slice(0,3)}</button> `;});
+        Object.keys(TC).forEach(t=>{f.innerHTML+=`<button onclick="fDex('${t}')" class="type-pill cursor-pointer" style="background:${TC[t]}">${tfr(t).slice(0,3)}</button> `;});
         rDex(pk);
         document.getElementById('dex-search').addEventListener('input',e=>{
             const q=e.target.value.toLowerCase();
@@ -653,8 +655,8 @@ function rDex(list){
     const g=document.getElementById('dex-grid');g.innerHTML='';
     document.getElementById('dex-detail').classList.add('hidden');g.classList.remove('hidden');
     list.forEach(p=>{
-        const t2 = p.type2 ? ' / '+p.type2 : '';
-        g.innerHTML+=`<div class="dex-card" onclick="showP(${p.id})" style="border-bottom:3px solid ${TC[p.type1]||'#888'}" title="${p.name} (${p.type1}${t2})">
+        const t2 = p.type2 ? ' / '+tfr(p.type2) : '';
+        g.innerHTML+=`<div class="dex-card" onclick="showP(${p.id})" style="border-bottom:3px solid ${TC[p.type1]||'#888'}" title="${p.name} (${tfr(p.type1)}${t2})">
             <img src="${spr(p.name)}" data-id="${p.id}" class="w-14 h-14 mx-auto sprite-hover" loading="lazy" alt="${p.name}">
             <p class="text-[11px] font-semibold text-white mt-1">${p.name}</p>
             <p class="text-[9px] text-gray-600">#${String(p.id).padStart(3,'0')}</p>
@@ -731,10 +733,10 @@ async function calcDmg(){
 async function loadChart(){
     try{const d=await fetch('/api/type-chart').then(r=>r.json());const ts=d.types,ch=d.chart;
     let h='<table style="border-collapse:separate;border-spacing:2px"><tr><td class="p-1" style="min-width:60px"></td>';
-    ts.forEach(t=>h+=`<td class="p-1 text-center" style="min-width:32px"><div class="type-pill" style="background:${TC[t]};font-size:8px;padding:2px 4px;display:block">${t.slice(0,3)}</div></td>`);
+    ts.forEach(t=>h+=`<td class="p-1 text-center" style="min-width:32px"><div class="type-pill" style="background:${TC[t]};font-size:8px;padding:2px 4px;display:block">${tfr(t).slice(0,3)}</div></td>`);
     h+='</tr>';
     ts.forEach(a=>{
-        h+=`<tr><td class="p-1"><div class="type-pill" style="background:${TC[a]};font-size:9px;padding:3px 8px">${a}</div></td>`;
+        h+=`<tr><td class="p-1"><div class="type-pill" style="background:${TC[a]};font-size:9px;padding:3px 8px">${tfr(a)}</div></td>`;
         ts.forEach(d2=>{
             const m=ch[a+'_'+d2]||1;
             let bg,tx,clr;
@@ -748,7 +750,7 @@ async function loadChart(){
     });
     h+='</table>';
     document.getElementById('type-chart').innerHTML=h;
-    const sel=document.getElementById('dmg-type');if(sel){sel.innerHTML='';ts.forEach(t=>sel.innerHTML+=`<option>${t}</option>`);}
+    const sel=document.getElementById('dmg-type');if(sel){sel.innerHTML='';ts.forEach(t=>sel.innerHTML+=`<option value="${t}">${tfr(t)}</option>`);}
     }catch(e){console.error(e);}
 }
 
@@ -807,7 +809,7 @@ async function aTm(){
     if(matEl&&tm.length>=2){
         matCard.style.display='block';
         let mh='<table><tr><td class="p-1"></td>';
-        ts.forEach(t=>mh+=`<td class="p-1 text-center"><span class="type-pill" style="background:${TC[t]};font-size:7px;padding:1px 3px">${t.slice(0,3)}</span></td>`);
+        ts.forEach(t=>mh+=`<td class="p-1 text-center"><span class="type-pill" style="background:${TC[t]};font-size:7px;padding:1px 3px">${tfr(t).slice(0,3)}</span></td>`);
         mh+='</tr>';
         tm.forEach(p=>{
             mh+=`<tr><td class="p-1 font-bold text-white text-[10px] whitespace-nowrap">${p.name.slice(0,10)}</td>`;
