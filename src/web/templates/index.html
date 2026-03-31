@@ -196,8 +196,18 @@
                 <h3 class="text-base font-bold text-white">Spawns Locaux</h3>
                 <p class="text-xs text-gray-500" id="spawn-subtitle">Rencontres actives sur la route</p>
             </div>
-            <span class="text-[10px] font-bold tracking-widest text-neon-cyan cursor-pointer hover:text-white">VOIR TOUT</span>
+            <div class="flex gap-2 items-center">
+                <input type="text" id="dash-route-search" placeholder="Chercher une route..." class="input input-bordered input-xs w-40" oninput="dashRouteSearch(this.value)">
+                <select id="dash-region" onchange="dashLoadRoute()" class="select select-bordered select-xs">
+                    <option value="Kanto">Kanto</option>
+                    <option value="Johto">Johto</option>
+                    <option value="Hoenn">Hoenn</option>
+                    <option value="Sinnoh">Sinnoh</option>
+                    <option value="Unova">Unova</option>
+                </select>
+            </div>
         </div>
+        <div id="dash-route-results" class="hidden mb-3 max-h-32 overflow-y-auto glass-card p-2"></div>
         <div id="spawns-list">
             <p class="text-gray-600 text-sm italic">En attente de detection...</p>
         </div>
@@ -1794,6 +1804,44 @@ async function showAbility(ability){
             </div>
         </div>`;
     }catch(e){console.error(e);}
+}
+
+// Dashboard route search
+async function dashRouteSearch(q){
+    const el=document.getElementById('dash-route-results');
+    if(q.length<2){el.classList.add('hidden');return;}
+    try{
+        const region=document.getElementById('dash-region')?.value||'';
+        const routes=await fetch(`/api/routes?region=${region}`).then(r=>r.json());
+        const filtered=routes.filter(r=>r.name.toLowerCase().includes(q.toLowerCase())).slice(0,8);
+        if(!filtered.length){el.classList.add('hidden');return;}
+        el.classList.remove('hidden');
+        el.innerHTML=filtered.map(r=>`<div class="px-2 py-1.5 rounded cursor-pointer text-xs hover:bg-dark-600 flex justify-between" onclick="dashSelectRoute('${r.name.replace(/'/g,"\\'")}','${r.region}')"><span class="text-white">${r.name}</span><span class="text-gray-600">${r.region}</span></div>`).join('');
+    }catch(e){el.classList.add('hidden');}
+}
+async function dashSelectRoute(name,region){
+    document.getElementById('dash-route-results').classList.add('hidden');
+    document.getElementById('dash-route-search').value='';
+    document.getElementById('loc-route').textContent=name.toUpperCase();
+    document.getElementById('spawn-subtitle').textContent=`${name} (${region})`;
+    try{
+        const sp=await fetch(`/api/spawns/${encodeURIComponent(name)}?region=${region}`).then(r=>r.json());
+        const sl=document.getElementById('spawns-list');
+        if(Array.isArray(sp)&&sp.length){
+            sl.innerHTML=sp.slice(0,8).map(s=>`<div class="spawn-row"><img src="${spr(s.pokemon_name)}" data-id="${s.pokemon_id}" class="w-8 h-8 sprite-hover"><span class="font-semibold text-white text-sm flex-1">${s.pokemon_name}</span>${pill(s.type1)}${s.type2?' '+pill(s.type2):''}<div class="stat-track w-20"><div class="stat-fill bg-neon-green" style="width:${Math.min(s.rate,100)}%"></div></div><span class="mono text-xs text-gray-400">${s.rate.toFixed(0)}%</span><span class="text-xs text-gray-500">Lv.${s.level_min}-${s.level_max}</span></div>`).join('');
+        }else{sl.innerHTML='<p class="text-gray-600 text-sm italic">Aucun spawn trouve.</p>';}
+    }catch(e){console.error(e);}
+}
+async function dashLoadRoute(){
+    // Load a random route from the selected region
+    const region=document.getElementById('dash-region')?.value||'Kanto';
+    try{
+        const routes=await fetch(`/api/routes?region=${region}`).then(r=>r.json());
+        if(routes.length){
+            const r=routes[Math.floor(Math.random()*routes.length)];
+            dashSelectRoute(r.name,r.region);
+        }
+    }catch(e){}
 }
 
 // Move filter for Pokedex detail
