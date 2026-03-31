@@ -215,17 +215,17 @@
     <h1 class="text-3xl font-black text-white mb-5">Combat Assistant</h1>
     <div class="glass-card p-6 mb-5">
         <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">RECHERCHE POKEMON</p>
-        <input type="text" id="battle-input" placeholder="Nom du Pokemon adverse..." class="w-full bg-dark-700 border border-dark-500 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-pink/40 focus:outline-none transition">
+        <input type="text" id="battle-input" placeholder="Nom du Pokemon adverse..." class="input input-bordered input-error w-full">
         <div id="battle-result" class="mt-4 hidden"></div>
     </div>
     <div class="glass-card p-6 mb-5">
         <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">CALCULATEUR DE DEGATS</p>
         <div class="grid grid-cols-3 gap-3 mb-3">
-            <input type="text" id="dmg-atk" placeholder="Ton Pokemon" class="bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 text-white text-sm focus:outline-none">
-            <input type="text" id="dmg-def" placeholder="Adversaire" class="bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 text-white text-sm focus:outline-none">
+            <input type="text" id="dmg-atk" placeholder="Ton Pokemon" class="input input-bordered input-sm">
+            <input type="text" id="dmg-def" placeholder="Adversaire" class="input input-bordered input-sm">
             <div class="flex gap-2">
-                <input type="number" id="dmg-power" value="90" class="w-16 bg-dark-700 border border-dark-500 rounded-lg px-2 py-2 text-white text-sm text-center focus:outline-none">
-                <select id="dmg-type" class="flex-1 bg-dark-700 border border-dark-500 rounded-lg px-2 py-2 text-white text-sm focus:outline-none"></select>
+                <input type="number" id="dmg-power" value="90" class="input input-bordered input-sm w-16 text-center">
+                <select id="dmg-type" class="select select-bordered select-sm flex-1"></select>
             </div>
         </div>
         <button onclick="calcDmg()" class="btn btn-sm btn-warning">Calculer</button>
@@ -242,12 +242,12 @@
     <h1 class="text-3xl font-black text-white mb-5">Equipe Builder</h1>
     <div class="glass-card p-6 mb-5">
         <div class="flex gap-3 mb-4">
-            <input type="text" id="team-input" placeholder="Ajouter un Pokemon (Entree)..." class="flex-1 bg-dark-700 border border-dark-500 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none">
+            <input type="text" id="team-input" placeholder="Ajouter un Pokemon (Entree)..." class="input input-bordered input-primary flex-1">
             <button onclick="toggleSD()" class="btn btn-xs btn-secondary">Import Showdown</button>
             <button onclick="clearTm()" class="btn btn-xs btn-error btn-outline">Effacer</button>
         </div>
         <div id="sd-import" class="hidden mb-4">
-            <textarea id="sd-text" rows="5" placeholder="Colle ta team Showdown..." class="w-full bg-dark-700 border border-dark-500 rounded-xl px-4 py-3 text-white text-sm mono focus:outline-none"></textarea>
+            <textarea id="sd-text" rows="5" placeholder="Colle ta team Showdown..." class="textarea textarea-bordered w-full font-mono"></textarea>
             <button onclick="importSD()" class="mt-2 px-4 py-2 rounded-lg text-sm font-bold" style="background:rgba(213,0,249,0.15);color:#d500f9">Import</button>
         </div>
         <div id="team-slots" class="grid grid-cols-6 gap-3"></div>
@@ -297,11 +297,11 @@
 <div id="page-guide" class="page hidden fade-in max-w-4xl">
     <h1 class="text-3xl font-black text-white mb-5">Guide de Progression</h1>
     <div class="flex gap-2 mb-5">
-        <button onclick="loadGuide('Kanto')" class="px-4 py-2 rounded-lg text-sm font-bold" style="background:rgba(0,229,255,0.1);color:#00e5ff;border:1px solid rgba(0,229,255,0.3)">Kanto</button>
-        <button onclick="loadGuide('Johto')" class="px-4 py-2 rounded-lg text-sm font-bold" style="background:rgba(105,240,174,0.1);color:#69f0ae;border:1px solid rgba(105,240,174,0.3)">Johto</button>
-        <button onclick="loadGuide('Hoenn')" class="px-4 py-2 rounded-lg text-sm font-bold" style="background:rgba(255,64,129,0.1);color:#ff4081;border:1px solid rgba(255,64,129,0.3)">Hoenn</button>
-        <button onclick="loadGuide('Sinnoh')" class="px-4 py-2 rounded-lg text-sm font-bold" style="background:rgba(213,0,249,0.1);color:#d500f9;border:1px solid rgba(213,0,249,0.3)">Sinnoh</button>
-        <button onclick="loadGuide('Unova')" class="px-4 py-2 rounded-lg text-sm font-bold" style="background:rgba(255,215,64,0.1);color:#ffd740;border:1px solid rgba(255,215,64,0.3)">Unova</button>
+        <button onclick="loadGuide('Kanto')" class="btn btn-sm btn-info btn-outline">Kanto</button>
+        <button onclick="loadGuide('Johto')" class="btn btn-sm btn-success btn-outline">Johto</button>
+        <button onclick="loadGuide('Hoenn')" class="btn btn-sm btn-error btn-outline">Hoenn</button>
+        <button onclick="loadGuide('Sinnoh')" class="btn btn-sm btn-secondary btn-outline">Sinnoh</button>
+        <button onclick="loadGuide('Unova')" class="btn btn-sm btn-warning btn-outline">Unova</button>
     </div>
     <div id="guide-content">
         <p class="text-gray-500">Selectionne une region pour voir le guide de progression.</p>
@@ -312,7 +312,7 @@
 <div id="page-notes" class="page hidden fade-in max-w-4xl">
     <h1 class="text-3xl font-black text-white mb-5">Notes de Route</h1>
     <div class="glass-card p-6 mb-5">
-        <select id="notes-region" onchange="loadRoutes()" class="bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 text-white text-sm mb-3">
+        <select id="notes-region" onchange="loadRoutes()" class="select select-bordered select-sm mb-3">
             <option value="">Toutes les regions</option>
             <option>Kanto</option><option>Johto</option><option>Hoenn</option><option>Sinnoh</option><option>Unova</option>
         </select>
@@ -320,8 +320,8 @@
     </div>
     <div class="glass-card p-6">
         <p id="note-title" class="text-xs font-bold tracking-widest text-gray-500 mb-3">Selectionne une route</p>
-        <textarea id="note-text" rows="6" placeholder="Ecris tes notes ici..." class="w-full bg-dark-700 border border-dark-500 rounded-xl px-4 py-3 text-white text-sm focus:outline-none mb-3" disabled></textarea>
-        <button onclick="saveNote()" class="px-4 py-2 rounded-lg text-sm font-bold" style="background:rgba(0,229,255,0.1);color:#00e5ff;border:1px solid rgba(0,229,255,0.3)" disabled id="save-note-btn">Sauvegarder</button>
+        <textarea id="note-text" rows="6" placeholder="Ecris tes notes ici..." class="textarea textarea-bordered w-full mb-3" disabled></textarea>
+        <button onclick="saveNote()" class="btn btn-sm btn-info" disabled id="save-note-btn">Sauvegarder</button>
     </div>
 </div>
 
