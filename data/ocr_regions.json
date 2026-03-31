@@ -1,0 +1,49 @@
+{
+  "regions": [
+    {
+      "id": "route_name",
+      "label": "Nom de Route",
+      "x": 1,
+      "y": 1,
+      "w": 18,
+      "h": 4,
+      "color": "#00e5ff"
+    },
+    {
+      "id": "opponent_name",
+      "label": "Nom Adversaire",
+      "x": 52,
+      "y": 5,
+      "w": 35,
+      "h": 4,
+      "color": "#ff4081"
+    },
+    {
+      "id": "opponent_level",
+      "label": "Niveau Adversaire",
+      "x": 80,
+      "y": 5,
+      "w": 12,
+      "h": 4,
+      "color": "#ffd740"
+    },
+    {
+      "id": "player_hp",
+      "label": "HP Joueur",
+      "x": 55,
+      "y": 75,
+      "w": 20,
+      "h": 3,
+      "color": "#69f0ae"
+    },
+    {
+      "id": "opponent_hp",
+      "label": "HP Adversaire",
+      "x": 55,
+      "y": 12,
+      "w": 20,
+      "h": 3,
+      "color": "#ff6e40"
+    }
+  ]
+}

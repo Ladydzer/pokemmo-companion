@@ -547,6 +547,74 @@ async def get_ev_spots(stat: str, region: str = "", method: str = ""):
     return [dict(r) for r in rows]
 
 
+@app.post("/api/ocr/regions")
+async def save_ocr_regions(body: dict):
+    """Save OCR region config to a JSON file for the overlay to use."""
+    import json as _json
+    config_path = PROJECT_ROOT / "data" / "ocr_regions.json"
+    config_path.write_text(_json.dumps(body, indent=2, ensure_ascii=False), encoding="utf-8")
+    return {"status": "ok", "path": str(config_path)}
+
+
+@app.get("/api/ocr/regions")
+async def load_ocr_regions():
+    """Load saved OCR region config."""
+    import json as _json
+    config_path = PROJECT_ROOT / "data" / "ocr_regions.json"
+    if config_path.exists():
+        return _json.loads(config_path.read_text(encoding="utf-8"))
+    # Default regions for standard PokeMMO 1280x720
+    return {
+        "regions": [
+            {"id": "route_name", "label": "Nom de Route", "x": 1, "y": 1, "w": 18, "h": 4, "color": "#00e5ff"},
+            {"id": "opponent_name", "label": "Nom Adversaire", "x": 52, "y": 5, "w": 35, "h": 4, "color": "#ff4081"},
+            {"id": "opponent_level", "label": "Niveau Adversaire", "x": 80, "y": 5, "w": 12, "h": 4, "color": "#ffd740"},
+            {"id": "player_hp", "label": "HP Joueur", "x": 55, "y": 75, "w": 20, "h": 3, "color": "#69f0ae"},
+            {"id": "opponent_hp", "label": "HP Adversaire", "x": 55, "y": 12, "w": 20, "h": 3, "color": "#ff6e40"},
+        ],
+        "resolution": "1280x720"
+    }
+
+
+@app.post("/api/ocr/test-region")
+async def test_ocr_region(body: dict):
+    """Test OCR on a specific region of an uploaded image."""
+    import base64
+    try:
+        import cv2
+        import numpy as np
+        from ..detection.ocr_engine import init_tesseract
+        if not init_tesseract():
+            return {"text": "(Tesseract non installe)", "available": False}
+
+        img_data = body.get("image", "")
+        if "base64," in img_data:
+            img_data = img_data.split("base64,")[1]
+        img_bytes = base64.b64decode(img_data)
+        nparr = np.frombuffer(img_bytes, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if img is None:
+            return {"text": "(Image invalide)", "available": True}
+
+        h, w = img.shape[:2]
+        x = int(body.get("x", 0) / 100 * w)
+        y = int(body.get("y", 0) / 100 * h)
+        rw = int(body.get("w", 10) / 100 * w)
+        rh = int(body.get("h", 4) / 100 * h)
+        crop = img[y:y+rh, x:x+rw]
+
+        if crop.size == 0:
+            return {"text": "(Region vide)", "available": True}
+
+        from ..detection.ocr_engine import read_route_name
+        text = read_route_name(crop)
+        return {"text": text or "(rien detecte)", "available": True}
+    except ImportError:
+        return {"text": "(OpenCV/Tesseract non installe — testable sur PC avec PokeMMO)", "available": False}
+    except Exception as e:
+        return {"text": f"(Erreur: {str(e)[:80]})", "available": False}
+
+
 @app.get("/sprite/{pokemon_id}")
 async def get_sprite(pokemon_id: int):
     sprite_path = SPRITES_DIR / f"{pokemon_id}.png"
