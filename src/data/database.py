@@ -218,6 +218,27 @@ class Database:
 
             return chain
 
+    def get_location_items(self, route_name: str, region: str | None = None) -> list[dict]:
+        """Get items/NPCs/POI for a location."""
+        with self.connect() as conn:
+            if region:
+                rows = conn.execute(
+                    """SELECT li.* FROM location_items li
+                       JOIN routes r ON li.route_id = r.id
+                       WHERE LOWER(r.name) LIKE LOWER(?) AND LOWER(r.region) = LOWER(?)
+                       ORDER BY li.item_type""",
+                    (f"%{route_name}%", region)
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    """SELECT li.* FROM location_items li
+                       JOIN routes r ON li.route_id = r.id
+                       WHERE LOWER(r.name) LIKE LOWER(?)
+                       ORDER BY li.item_type""",
+                    (f"%{route_name}%",)
+                ).fetchall()
+            return [dict(r) for r in rows]
+
     def get_pokemon_locations(self, pokemon_name: str) -> list[dict]:
         """Get all locations where a Pokemon can be found."""
         with self.connect() as conn:
