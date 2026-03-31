@@ -68,13 +68,13 @@
 <!-- Sidebar -->
 <aside class="sidebar w-52 min-h-screen fixed left-0 top-0 flex flex-col z-50 px-3 py-5">
     <div class="px-3 mb-8">
-        <h1 class="text-base font-black tracking-wider" style="color:#00e5ff">NEON_COMPANION</h1>
-        <p class="text-[10px] text-gray-600 tracking-widest mt-1">POKEMMO TOOLS</p>
+        <h1 class="text-base font-black tracking-wider" style="color:#00e5ff">POKEMMO COMPANION</h1>
+        <p class="text-[10px] text-gray-600 tracking-widest mt-1">OUTILS POKEMMO</p>
     </div>
     <nav class="flex-1 space-y-1" id="nav">
         <a class="nav-btn active" data-page="dashboard" onclick="go('dashboard')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            Home
+            Accueil
         </a>
         <a class="nav-btn" data-page="pokedex" onclick="go('pokedex')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
@@ -82,11 +82,11 @@
         </a>
         <a class="nav-btn" data-page="battle" onclick="go('battle')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            Battle
+            Combat
         </a>
         <a class="nav-btn" data-page="team" onclick="go('team')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            Team
+            Equipe
         </a>
         <a class="nav-btn" data-page="shiny" onclick="go('shiny')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
@@ -96,9 +96,17 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
             Collection
         </a>
+        <a class="nav-btn" data-page="notes" onclick="go('notes')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Notes
+        </a>
+        <a class="nav-btn" data-page="settings" onclick="go('settings')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Options
+        </a>
     </nav>
     <div class="px-3 mt-4 pt-4 border-t border-gray-800">
-        <div class="flex items-center gap-2 text-xs"><div class="w-2 h-2 rounded-full bg-red-500"></div><span class="text-gray-600">Offline</span></div>
+        <div class="flex items-center gap-2 text-xs"><div class="w-2 h-2 rounded-full bg-red-500"></div><span class="text-gray-600">Hors ligne</span></div>
         <p class="text-[9px] text-gray-700 mt-2">v0.3.0</p>
     </div>
 </aside>
@@ -117,7 +125,7 @@
         <div class="flex-1">
             <div class="flex items-center gap-3 mb-2">
                 <span class="text-[10px] font-bold tracking-widest text-gray-500">#<span id="hero-num">000</span></span>
-                <span class="text-[10px] px-2 py-0.5 rounded bg-neon-cyan/10 text-neon-cyan font-bold tracking-wider">POKEMON OF THE DAY</span>
+                <span class="text-[10px] px-2 py-0.5 rounded bg-neon-cyan/10 text-neon-cyan font-bold tracking-wider">POKEMON DU JOUR</span>
             </div>
             <h2 id="hero-name" class="text-4xl font-black text-white tracking-tight mb-3"></h2>
             <div id="hero-types" class="flex gap-2 mb-4"></div>
@@ -132,23 +140,23 @@
                 <div class="w-2 h-2 rounded-full bg-neon-cyan"></div>
                 <span class="text-[10px] font-bold tracking-widest text-gray-500">REGION</span>
             </div>
-            <p class="text-xs text-gray-500 mb-1">Current Location</p>
+            <p class="text-xs text-gray-500 mb-1">Position Actuelle</p>
             <p id="loc-route" class="text-lg font-bold text-white">ROUTE 101</p>
         </div>
         <div class="glass-card p-5">
             <div class="flex items-center gap-2 mb-2">
                 <div class="w-2 h-2 rounded-full bg-neon-orange"></div>
-                <span class="text-[10px] font-bold tracking-widest text-gray-500">LIVE</span>
+                <span class="text-[10px] font-bold tracking-widest text-gray-500">EN DIRECT</span>
             </div>
-            <p class="text-xs text-gray-500 mb-1">Encounters</p>
+            <p class="text-xs text-gray-500 mb-1">Rencontres</p>
             <p id="loc-encounters" class="text-2xl font-black text-white mono">0</p>
         </div>
         <div class="glass-card p-5">
             <div class="flex items-center gap-2 mb-2">
                 <div class="w-2 h-2 rounded-full bg-neon-purple"></div>
-                <span class="text-[10px] font-bold tracking-widest text-gray-500">SHINY RATE</span>
+                <span class="text-[10px] font-bold tracking-widest text-gray-500">TAUX SHINY</span>
             </div>
-            <p class="text-xs text-gray-500 mb-1">Probability</p>
+            <p class="text-xs text-gray-500 mb-1">Probabilite</p>
             <p class="text-lg font-bold text-white mono">1 / 30000</p>
         </div>
         <div class="glass-card p-5">
@@ -166,13 +174,13 @@
     <div class="glass-card p-6 mb-6">
         <div class="flex items-center justify-between mb-4">
             <div>
-                <h3 class="text-base font-bold text-white">Local Spawns</h3>
-                <p class="text-xs text-gray-500" id="spawn-subtitle">Active encounters at current route</p>
+                <h3 class="text-base font-bold text-white">Spawns Locaux</h3>
+                <p class="text-xs text-gray-500" id="spawn-subtitle">Rencontres actives sur la route</p>
             </div>
-            <span class="text-[10px] font-bold tracking-widest text-neon-cyan cursor-pointer hover:text-white">FULL AREA DATA</span>
+            <span class="text-[10px] font-bold tracking-widest text-neon-cyan cursor-pointer hover:text-white">VOIR TOUT</span>
         </div>
         <div id="spawns-list">
-            <p class="text-gray-600 text-sm italic">Waiting for route detection...</p>
+            <p class="text-gray-600 text-sm italic">En attente de detection...</p>
         </div>
     </div>
 </div>
@@ -182,7 +190,7 @@
     <h1 class="text-3xl font-black text-white mb-5">Pokedex</h1>
     <div class="relative mb-4">
         <svg class="absolute left-4 top-3.5 w-4 h-4 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="dex-search" placeholder="Search Pokedex..." class="w-full bg-dark-700 border border-dark-500 rounded-xl pl-11 pr-4 py-3 text-white text-sm focus:border-neon-cyan/40 focus:outline-none transition">
+        <input type="text" id="dex-search" placeholder="Rechercher un Pokemon..." class="w-full bg-dark-700 border border-dark-500 rounded-xl pl-11 pr-4 py-3 text-white text-sm focus:border-neon-cyan/40 focus:outline-none transition">
     </div>
     <div id="type-filters" class="flex flex-wrap gap-1 mb-5"></div>
     <div id="dex-grid" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 gap-2"></div>
@@ -191,69 +199,69 @@
 
 <!-- BATTLE -->
 <div id="page-battle" class="page hidden fade-in max-w-4xl">
-    <h1 class="text-3xl font-black text-white mb-5">Battle Assistant</h1>
+    <h1 class="text-3xl font-black text-white mb-5">Combat Assistant</h1>
     <div class="glass-card p-6 mb-5">
-        <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">POKEMON LOOKUP</p>
-        <input type="text" id="battle-input" placeholder="Enter opponent Pokemon name..." class="w-full bg-dark-700 border border-dark-500 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-pink/40 focus:outline-none transition">
+        <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">RECHERCHE POKEMON</p>
+        <input type="text" id="battle-input" placeholder="Nom du Pokemon adverse..." class="w-full bg-dark-700 border border-dark-500 rounded-xl px-4 py-3 text-white text-sm focus:border-neon-pink/40 focus:outline-none transition">
         <div id="battle-result" class="mt-4 hidden"></div>
     </div>
     <div class="glass-card p-6 mb-5">
-        <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">DAMAGE CALCULATOR</p>
+        <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">CALCULATEUR DE DEGATS</p>
         <div class="grid grid-cols-3 gap-3 mb-3">
-            <input type="text" id="dmg-atk" placeholder="Your Pokemon" class="bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 text-white text-sm focus:outline-none">
-            <input type="text" id="dmg-def" placeholder="Opponent" class="bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 text-white text-sm focus:outline-none">
+            <input type="text" id="dmg-atk" placeholder="Ton Pokemon" class="bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 text-white text-sm focus:outline-none">
+            <input type="text" id="dmg-def" placeholder="Adversaire" class="bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 text-white text-sm focus:outline-none">
             <div class="flex gap-2">
                 <input type="number" id="dmg-power" value="90" class="w-16 bg-dark-700 border border-dark-500 rounded-lg px-2 py-2 text-white text-sm text-center focus:outline-none">
                 <select id="dmg-type" class="flex-1 bg-dark-700 border border-dark-500 rounded-lg px-2 py-2 text-white text-sm focus:outline-none"></select>
             </div>
         </div>
-        <button onclick="calcDmg()" class="px-4 py-2 rounded-lg text-sm font-bold" style="background:rgba(255,110,64,0.15);color:#ff6e40;border:1px solid rgba(255,110,64,0.3)">Calculate</button>
+        <button onclick="calcDmg()" class="px-4 py-2 rounded-lg text-sm font-bold" style="background:rgba(255,110,64,0.15);color:#ff6e40;border:1px solid rgba(255,110,64,0.3)">Calculer</button>
         <div id="dmg-result" class="hidden mt-3 glass-card p-4 text-sm"></div>
     </div>
     <div class="glass-card p-6">
-        <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">TYPE CHART</p>
+        <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">TABLE DES TYPES</p>
         <div id="type-chart" class="overflow-x-auto"></div>
     </div>
 </div>
 
 <!-- TEAM -->
 <div id="page-team" class="page hidden fade-in max-w-5xl">
-    <h1 class="text-3xl font-black text-white mb-5">Team Builder</h1>
+    <h1 class="text-3xl font-black text-white mb-5">Equipe Builder</h1>
     <div class="glass-card p-6 mb-5">
         <div class="flex gap-3 mb-4">
-            <input type="text" id="team-input" placeholder="Add Pokemon (press Enter)..." class="flex-1 bg-dark-700 border border-dark-500 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none">
+            <input type="text" id="team-input" placeholder="Ajouter un Pokemon (Entree)..." class="flex-1 bg-dark-700 border border-dark-500 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none">
             <button onclick="toggleSD()" class="px-3 py-2 rounded-lg text-xs font-bold" style="background:rgba(213,0,249,0.1);color:#d500f9;border:1px solid rgba(213,0,249,0.3)">Import Showdown</button>
-            <button onclick="clearTm()" class="px-3 py-2 rounded-lg text-xs font-bold" style="background:rgba(255,82,82,0.1);color:#ff5252;border:1px solid rgba(255,82,82,0.3)">Clear</button>
+            <button onclick="clearTm()" class="px-3 py-2 rounded-lg text-xs font-bold" style="background:rgba(255,82,82,0.1);color:#ff5252;border:1px solid rgba(255,82,82,0.3)">Effacer</button>
         </div>
         <div id="sd-import" class="hidden mb-4">
-            <textarea id="sd-text" rows="5" placeholder="Paste Showdown export..." class="w-full bg-dark-700 border border-dark-500 rounded-xl px-4 py-3 text-white text-sm mono focus:outline-none"></textarea>
+            <textarea id="sd-text" rows="5" placeholder="Colle ta team Showdown..." class="w-full bg-dark-700 border border-dark-500 rounded-xl px-4 py-3 text-white text-sm mono focus:outline-none"></textarea>
             <button onclick="importSD()" class="mt-2 px-4 py-2 rounded-lg text-sm font-bold" style="background:rgba(213,0,249,0.15);color:#d500f9">Import</button>
         </div>
         <div id="team-slots" class="grid grid-cols-6 gap-3"></div>
     </div>
     <div class="glass-card p-6">
-        <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">COVERAGE ANALYSIS</p>
-        <div id="team-cov" class="text-gray-500">Add Pokemon to analyze...</div>
+        <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">ANALYSE DE COUVERTURE</p>
+        <div id="team-cov" class="text-gray-500">Ajoute des Pokemon...</div>
     </div>
 </div>
 
 <!-- SHINY -->
 <div id="page-shiny" class="page hidden fade-in max-w-4xl">
-    <h1 class="text-3xl font-black mb-5" style="color:#ffd740">Shiny Lab</h1>
+    <h1 class="text-3xl font-black mb-5" style="color:#ffd740">Labo Shiny</h1>
     <div class="grid grid-cols-4 gap-4 mb-6">
         <div class="glass-card p-5 text-center"><p class="text-[10px] font-bold tracking-widest text-gray-500 mb-1">SESSION</p><p class="text-3xl font-black text-white mono">0</p></div>
         <div class="glass-card p-5 text-center"><p class="text-[10px] font-bold tracking-widest text-gray-500 mb-1">TOTAL</p><p class="text-3xl font-black mono" style="color:#40c4ff">0</p></div>
         <div class="glass-card p-5 text-center"><p class="text-[10px] font-bold tracking-widest text-gray-500 mb-1">SHINIES</p><p class="text-3xl font-black mono" style="color:#ffd740">0</p></div>
-        <div class="glass-card p-5 text-center"><p class="text-[10px] font-bold tracking-widest text-gray-500 mb-1">ODDS</p><p class="text-xl font-bold text-white mono">1/30,000</p></div>
+        <div class="glass-card p-5 text-center"><p class="text-[10px] font-bold tracking-widest text-gray-500 mb-1">CHANCE</p><p class="text-xl font-bold text-white mono">1/30,000</p></div>
     </div>
     <div class="glass-card p-6">
-        <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">POKEMMO SHINY RATES</p>
+        <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">TAUX SHINY POKEMMO</p>
         <div class="space-y-2 text-sm">
             <div class="flex justify-between"><span class="text-gray-400">Base</span><span class="mono text-white">1/30,000</span></div>
             <div class="flex justify-between"><span class="text-gray-400">Donator</span><span class="mono text-white">1/27,000</span></div>
             <div class="flex justify-between"><span class="text-gray-400">Shiny Charm</span><span class="mono text-white">1/27,000</span></div>
             <div class="flex justify-between"><span class="text-gray-400">Donator + Charm</span><span class="mono text-white">1/24,000</span></div>
-            <div class="flex justify-between"><span class="text-gray-400">Sweet Scent Horde (5x)</span><span class="mono text-neon-green">~1/6,000 eff.</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Horde Sweet Scent (5x)</span><span class="mono text-neon-green">~1/6,000 eff.</span></div>
         </div>
     </div>
 </div>
@@ -266,6 +274,51 @@
     </div>
     <div class="stat-track h-3 rounded-lg mb-6"><div class="stat-fill rounded-lg bg-neon-green" style="width:0%"></div></div>
     <div id="col-grid" class="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-14 gap-1"></div>
+</div>
+
+<!-- NOTES -->
+<div id="page-notes" class="page hidden fade-in max-w-4xl">
+    <h1 class="text-3xl font-black text-white mb-5">Notes de Route</h1>
+    <div class="glass-card p-6 mb-5">
+        <select id="notes-region" onchange="loadRoutes()" class="bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 text-white text-sm mb-3">
+            <option value="">Toutes les regions</option>
+            <option>Kanto</option><option>Johto</option><option>Hoenn</option><option>Sinnoh</option><option>Unova</option>
+        </select>
+        <div id="routes-list" class="max-h-96 overflow-y-auto space-y-1"></div>
+    </div>
+    <div class="glass-card p-6">
+        <p id="note-title" class="text-xs font-bold tracking-widest text-gray-500 mb-3">Selectionne une route</p>
+        <textarea id="note-text" rows="6" placeholder="Ecris tes notes ici..." class="w-full bg-dark-700 border border-dark-500 rounded-xl px-4 py-3 text-white text-sm focus:outline-none mb-3" disabled></textarea>
+        <button onclick="saveNote()" class="px-4 py-2 rounded-lg text-sm font-bold" style="background:rgba(0,229,255,0.1);color:#00e5ff;border:1px solid rgba(0,229,255,0.3)" disabled id="save-note-btn">Sauvegarder</button>
+    </div>
+</div>
+
+<!-- SETTINGS -->
+<div id="page-settings" class="page hidden fade-in max-w-3xl">
+    <h1 class="text-3xl font-black text-white mb-5">Options</h1>
+    <div class="glass-card p-6 mb-5">
+        <p class="text-xs font-bold tracking-widest text-gray-500 mb-4">A PROPOS</p>
+        <p class="text-sm text-gray-300 mb-2"><span class="font-bold text-white">PokeMMO Companion</span> v0.3.0</p>
+        <p class="text-sm text-gray-500 mb-1">Application compagnon pour PokeMMO avec overlay temps reel, Pokedex, assistant combat, team builder, tracker shiny et guide de progression.</p>
+        <p class="text-sm text-gray-500 mb-3">Donnees : PokeAPI + PokeMMOZone | Sprites : Pokemon Showdown</p>
+        <p class="text-sm" style="color:#00e5ff">github.com/Ladydzer/pokemmo-companion</p>
+    </div>
+    <div class="glass-card p-6 mb-5">
+        <p class="text-xs font-bold tracking-widest text-gray-500 mb-4">BASE DE DONNEES</p>
+        <div class="grid grid-cols-2 gap-4 text-sm">
+            <div class="flex justify-between"><span class="text-gray-400">Pokemon</span><span class="mono text-white" id="opt-poke">649</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Routes</span><span class="mono text-white" id="opt-routes">310</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Spawns</span><span class="mono text-white" id="opt-spawns">7908</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Sprites</span><span class="mono text-white" id="opt-sprites">649</span></div>
+        </div>
+    </div>
+    <div class="glass-card p-6">
+        <p class="text-xs font-bold tracking-widest text-gray-500 mb-4">RACCOURCIS</p>
+        <div class="space-y-2 text-sm">
+            <div class="flex justify-between"><span class="text-gray-400">F9</span><span class="text-gray-300">Toggle overlay</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">F10</span><span class="text-gray-300">Mode etendu</span></div>
+        </div>
+    </div>
 </div>
 
 </main>
@@ -346,7 +399,7 @@ async function showP(id){
         const locH=(Array.isArray(locs)?locs:[]).slice(0,8).map(l=>`<div class="spawn-row"><span class="flex-1 text-sm">${l.route_name}</span><span class="text-xs text-gray-500">${l.region}</span><span class="text-xs mono w-10 text-right" style="color:#69f0ae">${l.rate.toFixed(0)}%</span><span class="text-xs text-gray-500 w-20 text-right">Lv.${l.level_min}-${l.level_max}</span></div>`).join('');
         document.getElementById('dex-grid').classList.add('hidden');
         const d=document.getElementById('dex-detail');d.classList.remove('hidden');
-        d.innerHTML=`<button onclick="closeDex()" class="text-sm mb-4 font-medium" style="color:#00e5ff">← Back to Pokedex</button>
+        d.innerHTML=`<button onclick="closeDex()" class="text-sm mb-4 font-medium" style="color:#00e5ff">← Retour au Pokedex</button>
         <div class="glass-card p-8" style="border-top:4px solid ${TC[p.type1]||'#00e5ff'}">
             <div class="flex flex-col md:flex-row gap-8">
                 <div class="text-center flex-shrink-0">
@@ -356,19 +409,19 @@ async function showP(id){
                     <p class="text-[10px] text-gray-500 mt-2">${p.ability1||''}${p.ability2?' / '+p.ability2:''}${p.hidden_ability?' / '+p.hidden_ability+' (HA)':''}</p>
                 </div>
                 <div class="flex-1">
-                    <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">BASE STATS <span class="text-gray-600">(BST: ${bst})</span></p>
+                    <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">STATS DE BASE <span class="text-gray-600">(BST: ${bst})</span></p>
                     ${sb('HP',p.hp,'hp')}${sb('ATK',p.attack,'attack')}${sb('DEF',p.defense,'defense')}${sb('SPA',p.sp_attack,'sp_attack')}${sb('SPD',p.sp_defense,'sp_defense')}${sb('SPE',p.speed,'speed')}
                     <p class="text-xs text-gray-500 mt-3"><span class="font-bold">${p.attack>p.sp_attack?'Physical: Adamant/Jolly':'Special: Modest/Timid'}</span></p>
                 </div>
             </div>
-            ${evoH?`<div class="mt-6 pt-6 border-t border-gray-800"><p class="text-xs font-bold tracking-widest text-gray-500 mb-3">EVOLUTION CHAIN</p><div class="flex items-center gap-1 flex-wrap">${evoH}</div></div>`:''}
-            ${locH?`<div class="mt-6 pt-6 border-t border-gray-800"><p class="text-xs font-bold tracking-widest text-gray-500 mb-3" style="color:#69f0ae">POKEMMO LOCATIONS</p>${locH}</div>`:''}
+            ${evoH?`<div class="mt-6 pt-6 border-t border-gray-800"><p class="text-xs font-bold tracking-widest text-gray-500 mb-3">CHAINE D'EVOLUTION</p><div class="flex items-center gap-1 flex-wrap">${evoH}</div></div>`:''}
+            ${locH?`<div class="mt-6 pt-6 border-t border-gray-800"><p class="text-xs font-bold tracking-widest text-gray-500 mb-3" style="color:#69f0ae">LOCALISATIONS POKEMMO</p>${locH}</div>`:''}
             <div id="det-moves" class="mt-6 pt-6 border-t border-gray-800"></div>
         </div>`;
         fetch(`/api/recommend-moves/${id}`).then(r=>r.json()).then(mv=>{
             const el=document.getElementById('det-moves');
             if(el&&Array.isArray(mv)&&mv.length){
-                el.innerHTML=`<p class="text-xs font-bold tracking-widest text-gray-500 mb-3" style="color:#ff6e40">RECOMMENDED MOVESET</p>
+                el.innerHTML=`<p class="text-xs font-bold tracking-widest text-gray-500 mb-3" style="color:#ff6e40">MOVESET RECOMMANDE</p>
                 ${mv.map((m,i)=>`<div class="spawn-row"><span class="w-5 text-gray-500 font-bold text-xs">${i+1}</span>${pill(m.type)}<span class="font-bold text-white text-sm">${m.move}</span><span class="text-gray-500 text-xs">${m.power?m.power+' pwr':'status'}</span><span class="text-gray-600 text-xs flex-1 text-right">${m.reason}</span></div>`).join('')}`;
             }
         }).catch(e=>console.error(e));
@@ -376,7 +429,7 @@ async function showP(id){
 }
 function closeDex(){document.getElementById('dex-detail').classList.add('hidden');document.getElementById('dex-grid').classList.remove('hidden');}
 
-// Battle search
+// Combat search
 document.getElementById('battle-input')?.addEventListener('input',async e=>{
     const q=e.target.value.trim();if(q.length<3){document.getElementById('battle-result').classList.add('hidden');return;}
     try{const res=await fetch(`/api/pokemon/search/${q}`).then(r=>r.json());
@@ -398,17 +451,29 @@ async function calcDmg(){
 
 async function loadChart(){
     try{const d=await fetch('/api/type-chart').then(r=>r.json());const ts=d.types,ch=d.chart;
-    let h='<table class="text-[9px]"><tr><th class="p-0.5"></th>';
-    ts.forEach(t=>h+=`<th class="p-0.5" style="color:${TC[t]};writing-mode:vertical-lr;transform:rotate(180deg)">${t.slice(0,3)}</th>`);h+='</tr>';
-    ts.forEach(a=>{h+=`<tr><td class="p-0.5 font-bold" style="color:${TC[a]}">${a.slice(0,3)}</td>`;
-    ts.forEach(d2=>{const m=ch[a+'_'+d2]||1;const bg=m>=2?'#c62828':m===0?'#1a237e':m<=0.5?'#1b5e20':'transparent';const tx=m>=2?'2':m===0?'0':m<=0.5?'½':'';
-    h+=`<td class="text-center text-white font-bold p-0.5" style="background:${bg};border-radius:2px;font-size:9px">${tx}</td>`;});h+='</tr>';});h+='</table>';
+    let h='<table style="border-collapse:separate;border-spacing:2px"><tr><td class="p-1" style="min-width:60px"></td>';
+    ts.forEach(t=>h+=`<td class="p-1 text-center" style="min-width:32px"><div class="type-pill" style="background:${TC[t]};font-size:8px;padding:2px 4px;display:block">${t.slice(0,3)}</div></td>`);
+    h+='</tr>';
+    ts.forEach(a=>{
+        h+=`<tr><td class="p-1"><div class="type-pill" style="background:${TC[a]};font-size:9px;padding:3px 8px">${a}</div></td>`;
+        ts.forEach(d2=>{
+            const m=ch[a+'_'+d2]||1;
+            let bg,tx,clr;
+            if(m>=2){bg='rgba(198,40,40,0.7)';tx=m>=4?'4x':'2x';clr='#ff8a80';}
+            else if(m===0){bg='rgba(26,35,126,0.7)';tx='0';clr='#82b1ff';}
+            else if(m<=0.5){bg='rgba(27,94,32,0.6)';tx=m<=0.25?'1/4':'1/2';clr='#a5d6a7';}
+            else{bg='transparent';tx='';clr='transparent';}
+            h+=`<td class="text-center font-bold" style="background:${bg};border-radius:4px;padding:4px 2px;font-size:11px;color:${clr};min-width:32px">${tx}</td>`;
+        });
+        h+='</tr>';
+    });
+    h+='</table>';
     document.getElementById('type-chart').innerHTML=h;
     const sel=document.getElementById('dmg-type');if(sel){sel.innerHTML='';ts.forEach(t=>sel.innerHTML+=`<option>${t}</option>`);}
     }catch(e){console.error(e);}
 }
 
-// Team
+// Equipe
 let tm=[];
 document.getElementById('team-input')?.addEventListener('keydown',async e=>{
     if(e.key!=='Enter')return;const q=e.target.value.trim();if(!q||tm.length>=6)return;
@@ -434,16 +499,16 @@ async function importSD(){
     }catch(e){console.error(e);}
 }
 async function aTm(){
-    const el=document.getElementById('team-cov');if(!tm.length){el.innerHTML='<span class="text-gray-600">Add Pokemon to analyze...</span>';return;}
+    const el=document.getElementById('team-cov');if(!tm.length){el.innerHTML='<span class="text-gray-600">Ajoute des Pokemon...</span>';return;}
     try{const d=await fetch('/api/type-chart').then(r=>r.json());const ts=d.types,ch=d.chart;
     const cov=new Set();tm.forEach(p=>{[p.type1,p.type2].filter(Boolean).forEach(a=>{ts.forEach(df=>{if((ch[a+'_'+df]||1)>1)cov.add(df);});});});
     const unc=ts.filter(t=>!cov.has(t));
     const wk={};ts.forEach(t=>wk[t]=0);tm.forEach(p=>{ts.forEach(a=>{let m=ch[a+'_'+p.type1]||1;if(p.type2)m*=(ch[a+'_'+p.type2]||1);if(m>1)wk[a]++;});});
     const dng=Object.entries(wk).filter(([,c])=>c>=3).sort((a,b)=>b[1]-a[1]);
-    let h=`<p><span style="color:#00e5ff" class="font-bold">Coverage:</span> ${Math.round(cov.size/ts.length*100)}% (${cov.size}/${ts.length})</p>`;
-    if(unc.length)h+=`<p class="text-sm text-gray-500 mt-1">Uncovered: ${unc.map(t=>pill(t)).join(' ')}</p>`;
-    if(dng.length)h+=`<p class="mt-2 font-bold" style="color:#ff5252">DANGER: ${dng.map(([t,c])=>`${pill(t)} (${c}/${tm.length})`).join(' ')}</p>`;
-    else h+=`<p class="mt-2 font-bold" style="color:#69f0ae">Good balance!</p>`;
+    let h=`<p><span style="color:#00e5ff" class="font-bold">Couverture :</span> ${Math.round(cov.size/ts.length*100)}% (${cov.size}/${ts.length})</p>`;
+    if(unc.length)h+=`<p class="text-sm text-gray-500 mt-1">Non couverts : ${unc.map(t=>pill(t)).join(' ')}</p>`;
+    if(dng.length)h+=`<p class="mt-2 font-bold" style="color:#ff5252">DANGER : ${dng.map(([t,c])=>`${pill(t)} (${c}/${tm.length})`).join(' ')}</p>`;
+    else h+=`<p class="mt-2 font-bold" style="color:#69f0ae">Bon equilibre !</p>`;
     el.innerHTML=h;}catch(e){console.error(e);}
 }
 
@@ -456,7 +521,60 @@ async function loadCol(){
     }catch(e){console.error(e);}
 }
 
-loadDash();loadChart();rTm();
+// Notes
+let selRoute=null;
+async function loadRoutes(){
+    try{const region=document.getElementById('notes-region').value;
+    const url=region?`/api/routes?region=${region}`:'/api/routes';
+    const routes=await fetch(url).then(r=>r.json());
+    const el=document.getElementById('routes-list');
+    el.innerHTML=routes.slice(0,50).map(r=>`<div class="px-3 py-2 rounded-lg cursor-pointer text-sm hover:bg-dark-600 transition" onclick="selectRoute(${r.id},'${r.name.replace("'","\\'")} (${r.region})')">${r.name} <span class="text-xs text-gray-600">${r.region}</span></div>`).join('');
+    }catch(e){console.error(e);}
+}
+function selectRoute(id,name){
+    selRoute=id;
+    document.getElementById('note-title').textContent=name;
+    document.getElementById('note-text').disabled=false;
+    document.getElementById('save-note-btn').disabled=false;
+    document.getElementById('note-text').value='';
+}
+function saveNote(){
+    if(!selRoute)return;
+    // Notes are local-only for now
+    const note=document.getElementById('note-text').value;
+    localStorage.setItem('note_'+selRoute, note);
+    alert('Note sauvegardee !');
+}
+
+// Make collection interactive
+async function loadCol(){
+    window._cl=true;
+    try{const pk=await fetch('/api/pokemon/all').then(r=>r.json());if(!Array.isArray(pk))return;
+    const caught=JSON.parse(localStorage.getItem('caught')||'[]');
+    const g=document.getElementById('col-grid');g.innerHTML='';
+    pk.forEach(p=>{
+        const isCaught=caught.includes(p.id);
+        g.innerHTML+=`<div class="dex-card p-1 ${isCaught?'':'opacity-30'} hover:opacity-100 transition cursor-pointer" style="border-bottom:2px solid ${TC[p.type1]||'#888'}${isCaught?';box-shadow:0 0 8px rgba(105,240,174,0.3)':''}" onclick="toggleCatch(${p.id})" id="col-${p.id}"><img src="${spr(p.name)}" class="w-8 h-8 mx-auto" loading="lazy"><p class="text-[7px] text-gray-600">${p.id}</p></div>`;
+    });
+    updateColCount(caught.length);
+    }catch(e){console.error(e);}
+}
+function toggleCatch(id){
+    let caught=JSON.parse(localStorage.getItem('caught')||'[]');
+    if(caught.includes(id)){caught=caught.filter(x=>x!==id);}else{caught.push(id);}
+    localStorage.setItem('caught',JSON.stringify(caught));
+    const el=document.getElementById('col-'+id);
+    if(el){
+        if(caught.includes(id)){el.classList.remove('opacity-30');el.style.boxShadow='0 0 8px rgba(105,240,174,0.3)';}
+        else{el.classList.add('opacity-30');el.style.boxShadow='';}
+    }
+    updateColCount(caught.length);
+}
+function updateColCount(n){
+    document.querySelectorAll('[data-col-count]').forEach(el=>el.textContent=n+' / 649');
+}
+
+loadDash();loadChart();rTm();loadRoutes();
 </script>
 </body>
 </html>
