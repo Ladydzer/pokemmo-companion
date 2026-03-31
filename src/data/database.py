@@ -166,6 +166,58 @@ class Database:
             ).fetchone()
             return row["min_badges"] if row and row["min_badges"] else 0
 
+    def get_evolution_chain(self, pokemon_id: int) -> list[dict]:
+        """Get the full evolution chain for a Pokemon.
+
+        Returns list of {id, name, type1, type2, condition} in chain order.
+        """
+        with self.connect() as conn:
+            # Find the base form by walking backwards
+            base_id = pokemon_id
+            while True:
+                row = conn.execute(
+                    "SELECT from_pokemon_id FROM evolutions WHERE to_pokemon_id = ?",
+                    (base_id,)
+                ).fetchone()
+                if row:
+                    base_id = row[0]
+                else:
+                    break
+
+            # Walk forward from base to build chain
+            chain = []
+            current_id = base_id
+
+            pokemon = conn.execute(
+                "SELECT id, name, type1, type2 FROM pokemon WHERE id = ?",
+                (current_id,)
+            ).fetchone()
+            if pokemon:
+                chain.append({**dict(pokemon), "condition": ""})
+
+            while True:
+                row = conn.execute(
+                    """SELECT e.to_pokemon_id, e.condition, p.name, p.type1, p.type2
+                       FROM evolutions e
+                       JOIN pokemon p ON e.to_pokemon_id = p.id
+                       WHERE e.from_pokemon_id = ?""",
+                    (current_id,)
+                ).fetchone()
+                if row:
+                    r = dict(row)
+                    chain.append({
+                        "id": r["to_pokemon_id"],
+                        "name": r["name"],
+                        "type1": r["type1"],
+                        "type2": r["type2"],
+                        "condition": r["condition"],
+                    })
+                    current_id = r["to_pokemon_id"]
+                else:
+                    break
+
+            return chain
+
     def get_pokemon_locations(self, pokemon_name: str) -> list[dict]:
         """Get all locations where a Pokemon can be found."""
         with self.connect() as conn:

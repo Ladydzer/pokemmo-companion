@@ -118,6 +118,30 @@ class PokemonDetail(QWidget):
 
         layout.addWidget(loc_frame)
 
+        # Evolution chain
+        evo_frame = QFrame()
+        evo_frame.setStyleSheet(f"""
+            QFrame {{
+                background-color: {COLORS['bg_card']};
+                border: 1px solid {COLORS['border']};
+                border-radius: 8px;
+            }}
+        """)
+        evo_layout = QVBoxLayout(evo_frame)
+        evo_layout.setContentsMargins(12, 8, 12, 8)
+
+        evo_title = QLabel("Evolution Chain")
+        evo_title.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        evo_title.setStyleSheet(f"color: {COLORS['accent_blue']};")
+        evo_layout.addWidget(evo_title)
+
+        self.evo_row = QHBoxLayout()
+        self.evo_row.setSpacing(8)
+        self.evo_row.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        evo_layout.addLayout(self.evo_row)
+
+        layout.addWidget(evo_frame)
+
         # Nature advisor
         nature_frame = QFrame()
         nature_frame.setStyleSheet(f"""
@@ -214,6 +238,51 @@ class PokemonDetail(QWidget):
             self.stat_bars[key].update()
             bst += val
         self.bst_label.setText(f"BST: {bst}")
+
+        # Evolution chain
+        while self.evo_row.count():
+            item = self.evo_row.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        if self.db:
+            chain = self.db.get_evolution_chain(pid)
+            for i, evo in enumerate(chain):
+                if i > 0:
+                    # Arrow + condition
+                    arrow_text = f"  ->  "
+                    cond = evo.get("condition", "")
+                    if cond:
+                        arrow_text = f"  ({cond})  "
+                    arrow = QLabel(arrow_text)
+                    arrow.setFont(QFont("Segoe UI", 8))
+                    arrow.setStyleSheet(f"color: {COLORS['text_muted']};")
+                    self.evo_row.addWidget(arrow)
+
+                # Sprite + name
+                evo_widget = QWidget()
+                evo_layout_inner = QVBoxLayout(evo_widget)
+                evo_layout_inner.setContentsMargins(0, 0, 0, 0)
+                evo_layout_inner.setSpacing(2)
+                evo_layout_inner.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+                sprite = QLabel()
+                sprite.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                pix = get_sprite(evo["id"], 48)
+                if pix:
+                    sprite.setPixmap(pix)
+                evo_layout_inner.addWidget(sprite)
+
+                name_lbl = QLabel(evo["name"])
+                name_lbl.setFont(QFont("Segoe UI", 8, QFont.Weight.Bold))
+                name_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                name_lbl.setStyleSheet(
+                    f"color: {COLORS['accent_blue']};" if evo["id"] == pid
+                    else f"color: {COLORS['text_secondary']};"
+                )
+                evo_layout_inner.addWidget(name_lbl)
+
+                self.evo_row.addWidget(evo_widget)
 
         # Locations
         if self.db:
