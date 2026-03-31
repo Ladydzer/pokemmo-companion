@@ -6,6 +6,8 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont, QIcon
 
+from PyQt6.QtCore import QTimer
+
 from .theme import COLORS, APP_STYLESHEET
 from .pages.dashboard import DashboardPage
 from .pages.pokedex import PokedexPage
@@ -15,6 +17,7 @@ from .pages.shiny_lab import ShinyLabPage
 from .pages.settings import SettingsPage
 from .pages.collection import CollectionPage
 from .pages.notes import NotesPage
+from ..capture.screen_capture import find_window, get_window_title
 
 
 class SidebarButton(QPushButton):
@@ -179,6 +182,12 @@ class MainWindow(QMainWindow):
             lambda: self._navigate("Dashboard")
         )
 
+        # Game detection timer — check every 2 seconds
+        self._game_connected = False
+        self._game_timer = QTimer()
+        self._game_timer.timeout.connect(self._check_game)
+        self._game_timer.start(2000)
+
         # Default to dashboard
         self._navigate("Dashboard")
 
@@ -200,6 +209,38 @@ class MainWindow(QMainWindow):
         # Update button states
         for i, btn in enumerate(self._nav_buttons):
             btn.setChecked(i == idx)
+
+    def _check_game(self) -> None:
+        """Periodically check if PokeMMO is running."""
+        hwnd = find_window("PokeMMO")
+        was_connected = self._game_connected
+        self._game_connected = hwnd is not None and hwnd != 0
+
+        if self._game_connected and not was_connected:
+            title = get_window_title(hwnd) if hwnd else "PokeMMO"
+            self.status_bar.setText(
+                f"  BD: {self.db.get_pokemon_count() if self.db else 0} Pokemon  |  "
+                f"Jeu: Connecte  |  Fenetre: {title}"
+            )
+            self.status_bar.setStyleSheet(f"""
+                color: {COLORS['accent_green']};
+                background-color: {COLORS['bg_secondary']};
+                border-top: 1px solid {COLORS['border']};
+                padding: 0 8px;
+            """)
+            self.dashboard.route_label.setText("Jeu detecte !")
+            self.dashboard.region_label.setText("PokeMMO est ouvert")
+        elif not self._game_connected and was_connected:
+            self.status_bar.setText(
+                f"  BD: {self.db.get_pokemon_count() if self.db else 0} Pokemon  |  "
+                f"Jeu: Deconnecte"
+            )
+            self.status_bar.setStyleSheet(f"""
+                color: {COLORS['text_muted']};
+                background-color: {COLORS['bg_secondary']};
+                border-top: 1px solid {COLORS['border']};
+                padding: 0 8px;
+            """)
 
     def _focus_search(self) -> None:
         """Focus the Pokedex search bar."""
