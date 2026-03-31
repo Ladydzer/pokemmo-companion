@@ -618,6 +618,7 @@ async function showP(id){
                     <h2 class="text-2xl font-black text-white mt-3">#${String(p.id).padStart(3,'0')} ${p.name}</h2>
                     <div class="flex gap-2 justify-center mt-2">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div>
                     <p class="text-[10px] text-gray-500 mt-2">${p.ability1||''}${p.ability2?' / '+p.ability2:''}${p.hidden_ability?' / '+p.hidden_ability+' (HA)':''}</p>
+                    <button onclick="event.stopPropagation();toggleFav(${p.id})" class="btn btn-xs mt-2 ${isFav(p.id)?'btn-warning':'btn-ghost'}">${isFav(p.id)?'★ Favori':'☆ Favoris'}</button>
                 </div>
                 <div class="flex-1">
                     <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">STATS DE BASE <span class="text-gray-600">(BST: ${bst})</span></p>
@@ -1075,6 +1076,16 @@ async function loadOptStats(){
     if(el('opt-spawns'))el('opt-spawns').textContent=s.spawns;
     if(el('opt-sprites'))el('opt-sprites').textContent=s.sprites;
     }catch(e){}
+}
+
+// Favorites
+function getFavs(){return JSON.parse(localStorage.getItem('favorites')||'[]');}
+function isFav(id){return getFavs().includes(id);}
+function toggleFav(id){
+    let favs=getFavs();
+    if(favs.includes(id)){favs=favs.filter(f=>f!==id);showToast('Retire des favoris');}
+    else{favs.push(id);showToast('Ajoute aux favoris !');}
+    localStorage.setItem('favorites',JSON.stringify(favs));
 }
 
 // Breeding calculator
