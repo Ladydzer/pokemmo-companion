@@ -428,6 +428,35 @@ async def horde_summary():
     return [dict(r) for r in rows]
 
 
+@app.get("/api/ev-spots/{stat}")
+async def get_ev_spots(stat: str, region: str = "", method: str = ""):
+    """Get best EV training spots for a given stat. Prioritizes horde spots."""
+    stat_col = {
+        "hp": "ev_hp", "attack": "ev_attack", "defense": "ev_defense",
+        "sp_attack": "ev_sp_attack", "sp_defense": "ev_sp_defense", "speed": "ev_speed"
+    }.get(stat)
+    if not stat_col:
+        return {"error": "Stat invalide. Utilise: hp, attack, defense, sp_attack, sp_defense, speed"}
+    with _db() as conn:
+        query = f"""SELECT p.id as pokemon_id, p.name, p.type1, p.type2,
+                   p.ev_hp, p.ev_attack, p.ev_defense, p.ev_sp_attack, p.ev_sp_defense, p.ev_speed,
+                   r.name as route_name, r.region, s.method, s.rate, s.level_min, s.level_max
+                   FROM spawns s
+                   JOIN pokemon p ON s.pokemon_id = p.id
+                   JOIN routes r ON s.route_id = r.id
+                   WHERE p.{stat_col} >= 1"""
+        params = []
+        if region:
+            query += " AND LOWER(r.region) = LOWER(?)"
+            params.append(region)
+        if method:
+            query += " AND s.method = ?"
+            params.append(method)
+        query += f" ORDER BY p.{stat_col} DESC, s.rate DESC LIMIT 100"
+        rows = conn.execute(query, params).fetchall()
+    return [dict(r) for r in rows]
+
+
 @app.get("/sprite/{pokemon_id}")
 async def get_sprite(pokemon_id: int):
     sprite_path = SPRITES_DIR / f"{pokemon_id}.png"

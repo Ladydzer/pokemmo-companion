@@ -107,6 +107,10 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
             Guide
         </a>
+        <a class="nav-btn" data-page="evtrain" onclick="go('evtrain')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+            EV Train
+        </a>
         <a class="nav-btn" data-page="collection" onclick="go('collection')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
             Collection
@@ -484,6 +488,95 @@
                 </div>
             </div>
             <div id="ss-result" class="mt-3 text-sm"></div>
+        </div>
+    </div>
+</div>
+
+<!-- EV TRAINING -->
+<div id="page-evtrain" class="page hidden fade-in max-w-5xl">
+    <h1 class="text-3xl font-black text-white mb-2">EV Training</h1>
+    <p class="text-sm text-gray-500 mb-5">Trouve les meilleurs spots pour entrainer les EVs de ton equipe. Les hordes sont 5x plus efficaces.</p>
+
+    <!-- EV Tracker -->
+    <div class="glass-card p-6 mb-5">
+        <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">TRACKER EV</p>
+        <div class="grid grid-cols-6 gap-3 mb-3" id="ev-tracker">
+            <div class="text-center"><p class="text-[10px] text-gray-500">HP</p><input type="number" id="ev-t-hp" value="0" min="0" max="252" class="input input-bordered input-xs w-full text-center mono" onchange="updateEVTracker()"><div class="stat-track mt-1"><div id="ev-b-hp" class="stat-fill" style="width:0%;background:#78C850"></div></div></div>
+            <div class="text-center"><p class="text-[10px] text-gray-500">ATK</p><input type="number" id="ev-t-attack" value="0" min="0" max="252" class="input input-bordered input-xs w-full text-center mono" onchange="updateEVTracker()"><div class="stat-track mt-1"><div id="ev-b-attack" class="stat-fill" style="width:0%;background:#F08030"></div></div></div>
+            <div class="text-center"><p class="text-[10px] text-gray-500">DEF</p><input type="number" id="ev-t-defense" value="0" min="0" max="252" class="input input-bordered input-xs w-full text-center mono" onchange="updateEVTracker()"><div class="stat-track mt-1"><div id="ev-b-defense" class="stat-fill" style="width:0%;background:#F8D030"></div></div></div>
+            <div class="text-center"><p class="text-[10px] text-gray-500">SPA</p><input type="number" id="ev-t-sp_attack" value="0" min="0" max="252" class="input input-bordered input-xs w-full text-center mono" onchange="updateEVTracker()"><div class="stat-track mt-1"><div id="ev-b-sp_attack" class="stat-fill" style="width:0%;background:#6890F0"></div></div></div>
+            <div class="text-center"><p class="text-[10px] text-gray-500">SPD</p><input type="number" id="ev-t-sp_defense" value="0" min="0" max="252" class="input input-bordered input-xs w-full text-center mono" onchange="updateEVTracker()"><div class="stat-track mt-1"><div id="ev-b-sp_defense" class="stat-fill" style="width:0%;background:#78C850"></div></div></div>
+            <div class="text-center"><p class="text-[10px] text-gray-500">SPE</p><input type="number" id="ev-t-speed" value="0" min="0" max="252" class="input input-bordered input-xs w-full text-center mono" onchange="updateEVTracker()"><div class="stat-track mt-1"><div id="ev-b-speed" class="stat-fill" style="width:0%;background:#F85888"></div></div></div>
+        </div>
+        <div class="flex items-center justify-between">
+            <div class="flex gap-2">
+                <span class="text-xs text-gray-500">Total :</span>
+                <span id="ev-total" class="mono text-sm font-bold text-white">0</span>
+                <span class="text-xs text-gray-500">/ 510</span>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="presetEV('sweeper_phy')" class="btn btn-xs btn-outline">252 Atk/Spe</button>
+                <button onclick="presetEV('sweeper_spe')" class="btn btn-xs btn-outline">252 SpA/Spe</button>
+                <button onclick="presetEV('tank')" class="btn btn-xs btn-outline">252 HP/Def</button>
+                <button onclick="presetEV('reset')" class="btn btn-xs btn-error btn-outline">Reset</button>
+            </div>
+        </div>
+        <div class="stat-track mt-2 h-2 rounded"><div id="ev-total-bar" class="stat-fill bg-neon-cyan rounded" style="width:0%"></div></div>
+    </div>
+
+    <!-- Stat selector for spots -->
+    <div class="glass-card p-6 mb-5">
+        <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">MEILLEURS SPOTS D'ENTRAINEMENT</p>
+        <div class="flex gap-2 mb-4 flex-wrap">
+            <button onclick="loadEVSpots('hp')" class="btn btn-xs" style="background:#78C850;color:#000">HP</button>
+            <button onclick="loadEVSpots('attack')" class="btn btn-xs" style="background:#F08030;color:#000">Attaque</button>
+            <button onclick="loadEVSpots('defense')" class="btn btn-xs" style="background:#F8D030;color:#000">Defense</button>
+            <button onclick="loadEVSpots('sp_attack')" class="btn btn-xs" style="background:#6890F0;color:#fff">Att. Spe</button>
+            <button onclick="loadEVSpots('sp_defense')" class="btn btn-xs" style="background:#78C850;color:#000">Def. Spe</button>
+            <button onclick="loadEVSpots('speed')" class="btn btn-xs" style="background:#F85888;color:#fff">Vitesse</button>
+        </div>
+        <div class="flex gap-3 mb-4">
+            <select id="ev-region" onchange="loadEVSpots(window._evStat||'attack')" class="select select-bordered select-xs">
+                <option value="">Toutes les regions</option>
+                <option>Kanto</option><option>Johto</option><option>Hoenn</option><option>Sinnoh</option><option>Unova</option>
+            </select>
+            <select id="ev-method" onchange="loadEVSpots(window._evStat||'attack')" class="select select-bordered select-xs">
+                <option value="">Toutes methodes</option>
+                <option value="horde">Horde uniquement</option>
+                <option value="walking">Herbe uniquement</option>
+                <option value="surfing">Surf uniquement</option>
+            </select>
+            <span id="ev-spot-count" class="text-xs text-gray-500 ml-auto self-center"></span>
+        </div>
+        <div id="ev-spots" class="space-y-1 max-h-96 overflow-y-auto">
+            <p class="text-gray-500 text-sm italic">Selectionne une stat pour voir les spots.</p>
+        </div>
+    </div>
+
+    <!-- Power Items reference -->
+    <div class="glass-card p-6">
+        <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">ITEMS EV TRAINING</p>
+        <div class="grid grid-cols-2 gap-3 text-sm">
+            <div class="space-y-2">
+                <p class="text-xs font-bold text-gray-400 mb-1">POWER ITEMS (+8 EVs/combat)</p>
+                <div class="flex justify-between"><span class="text-gray-400">Power Weight</span><span style="color:#78C850">+8 HP</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Power Bracer</span><span style="color:#F08030">+8 Attaque</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Power Belt</span><span style="color:#F8D030">+8 Defense</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Power Lens</span><span style="color:#6890F0">+8 Att. Spe</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Power Band</span><span style="color:#78C850">+8 Def. Spe</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Power Anklet</span><span style="color:#F85888">+8 Vitesse</span></div>
+            </div>
+            <div class="space-y-2">
+                <p class="text-xs font-bold text-gray-400 mb-1">MULTIPLICATEURS</p>
+                <div class="flex justify-between"><span class="text-gray-400">Pokerus</span><span class="text-neon-green font-bold">x2 EVs</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Power Item + Pokerus</span><span class="text-neon-green font-bold">(base+8) x2</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Horde (5 Pokemon)</span><span class="text-neon-cyan font-bold">5x rencontres</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Macho Brace</span><span class="text-neon-yellow font-bold">x2 EVs</span></div>
+                <div class="mt-3 p-2 rounded" style="background:rgba(105,240,174,0.05)">
+                    <p class="text-xs text-gray-400">Optimal : <span class="text-white font-bold">Horde + Power Item + Pokerus</span></p>
+                    <p class="text-xs" style="color:#69f0ae">= (base+8) x2 x5 par horde = jusqu'a 90 EVs/horde</p>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -1405,7 +1498,7 @@ if(savedTheme)document.documentElement.setAttribute('data-theme',savedTheme);
 // Keyboard shortcuts
 document.addEventListener('keydown',e=>{
     if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT')return;
-    const shortcuts={1:'dashboard',2:'pokedex',3:'battle',4:'team',5:'shiny',6:'guide',7:'collection',8:'notes',9:'settings'};
+    const shortcuts={1:'dashboard',2:'pokedex',3:'battle',4:'team',5:'shiny',6:'guide',7:'evtrain',8:'collection',9:'notes',0:'settings'};
     if(shortcuts[e.key])go(shortcuts[e.key]);
     if((e.key==='/'||e.key==='f')&&!e.ctrlKey&&!e.metaKey){e.preventDefault();document.getElementById('global-search')?.focus();}
 });
@@ -1580,7 +1673,72 @@ function calcSS(){
     <p class="text-xs text-gray-500 mt-2">Avec Leppa Berry + Pickup, tu peux chasser indefiniment. 5 Pokemon par horde = taux shiny effectif 5x meilleur.</p>`;
 }
 
-loadDash();loadChart();rTm();loadRoutes();checkGame();loadOptStats();shinyUpdate();calcBreed();renderNatures(NATURES);loadHordeSummary();loadHordes();calcSS();
+// EV Training
+function updateEVTracker(){
+    const stats=['hp','attack','defense','sp_attack','sp_defense','speed'];
+    let total=0;
+    stats.forEach(s=>{
+        const v=parseInt(document.getElementById('ev-t-'+s)?.value||0);
+        total+=v;
+        const bar=document.getElementById('ev-b-'+s);
+        if(bar)bar.style.width=(v/252*100)+'%';
+    });
+    const el=document.getElementById('ev-total');
+    if(el){el.textContent=total;el.style.color=total>510?'#ff5252':total===510?'#69f0ae':'#fff';}
+    const bar=document.getElementById('ev-total-bar');
+    if(bar){bar.style.width=(Math.min(total,510)/510*100)+'%';bar.style.background=total>510?'#ff5252':'#00e5ff';}
+}
+function presetEV(preset){
+    const stats=['hp','attack','defense','sp_attack','sp_defense','speed'];
+    const presets={
+        'sweeper_phy':{attack:252,speed:252,hp:6},
+        'sweeper_spe':{sp_attack:252,speed:252,hp:6},
+        'tank':{hp:252,defense:252,sp_defense:6},
+        'reset':{}
+    };
+    const p=presets[preset]||{};
+    stats.forEach(s=>{const el=document.getElementById('ev-t-'+s);if(el)el.value=p[s]||0;});
+    updateEVTracker();
+}
+
+async function loadEVSpots(stat){
+    window._evStat=stat;
+    const region=document.getElementById('ev-region')?.value||'';
+    const method=document.getElementById('ev-method')?.value||'';
+    const el=document.getElementById('ev-spots');
+    const cnt=document.getElementById('ev-spot-count');
+    const statName={'hp':'HP','attack':'Attaque','defense':'Defense','sp_attack':'Att. Spe','sp_defense':'Def. Spe','speed':'Vitesse'}[stat]||stat;
+    const statClr={'hp':'#78C850','attack':'#F08030','defense':'#F8D030','sp_attack':'#6890F0','sp_defense':'#78C850','speed':'#F85888'}[stat]||'#888';
+    try{
+        let url=`/api/ev-spots/${stat}?`;
+        if(region)url+=`region=${region}&`;
+        if(method)url+=`method=${method}&`;
+        const data=await fetch(url).then(r=>r.json());
+        if(data.error){el.innerHTML=`<p class="text-red-400">${data.error}</p>`;return;}
+        if(cnt)cnt.textContent=`${data.length} spots — ${statName}`;
+        if(!data.length){el.innerHTML='<p class="text-gray-600 italic">Aucun spot trouve.</p>';return;}
+        // Group by route for cleaner display
+        const evKey='ev_'+stat;
+        el.innerHTML=data.map(s=>{
+            const evVal=s[evKey]||0;
+            const methodIcon={horde:'🌊',walking:'🌿',surfing:'🏄',fishing_old:'🎣'}[s.method]||'📍';
+            const isHorde=s.method==='horde';
+            const regionClr={Kanto:'#40c4ff',Johto:'#ffd740',Hoenn:'#69f0ae',Sinnoh:'#d500f9',Unova:'#ff6e40'}[s.region]||'#888';
+            return `<div class="flex items-center gap-3 p-2 rounded hover:bg-dark-600/30 ${isHorde?'border-l-2':'border-l border-transparent'}" style="${isHorde?'border-color:#d500f9':''}">
+                <img src="${spr(s.name)}" data-id="${s.pokemon_id}" class="w-8 h-8 sprite-hover" loading="lazy">
+                <span class="font-bold text-white text-sm w-24">${s.name}</span>
+                ${pill(s.type1)}
+                <span class="mono font-bold text-sm" style="color:${statClr}">+${evVal}</span>
+                <span class="text-[10px] ${isHorde?'font-bold':'text-gray-500'}" style="${isHorde?'color:#d500f9':''}">${methodIcon} ${s.method}</span>
+                <span class="text-xs text-gray-400 flex-1">${s.route_name}</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded" style="background:${regionClr}15;color:${regionClr}">${s.region}</span>
+                <span class="text-[10px] text-gray-600">Lv.${s.level_min}-${s.level_max}</span>
+            </div>`;
+        }).join('');
+    }catch(e){el.innerHTML='<p class="text-red-400">Erreur: '+e.message+'</p>';}
+}
+
+loadDash();loadChart();rTm();loadRoutes();checkGame();loadOptStats();shinyUpdate();calcBreed();renderNatures(NATURES);loadHordeSummary();loadHordes();calcSS();updateEVTracker();
 </script>
 </body>
 </html>
