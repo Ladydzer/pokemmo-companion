@@ -993,13 +993,43 @@ async function showP(id){
 }
 function closeDex(){document.getElementById('dex-detail').classList.add('hidden');document.getElementById('dex-grid').classList.remove('hidden');}
 
-// Combat search
+// Combat search with full weakness/resistance breakdown
 document.getElementById('battle-input')?.addEventListener('input',async e=>{
     const q=e.target.value.trim();if(q.length<3){document.getElementById('battle-result').classList.add('hidden');return;}
     try{const res=await fetch(`/api/pokemon/search/${q}`).then(r=>r.json());
     if(!Array.isArray(res)||!res.length)return;const p=res[0];const bst=p.hp+p.attack+p.defense+p.sp_attack+p.sp_defense+p.speed;
+    // Calculate weaknesses from type chart
+    const chartData=await fetch('/api/type-chart').then(r=>r.json());
+    const ts=chartData.types,ch=chartData.chart;
+    const defTypes=[p.type1];if(p.type2)defTypes.push(p.type2);
+    const weak4x=[],weak2x=[],resist025=[],resist05=[],immune=[];
+    ts.forEach(atk=>{
+        let m=1;defTypes.forEach(dt=>{m*=(ch[atk+'_'+dt]||1);});
+        if(m>=4)weak4x.push(atk);else if(m>=2)weak2x.push(atk);
+        else if(m===0)immune.push(atk);else if(m<=0.25)resist025.push(atk);
+        else if(m<=0.5)resist05.push(atk);
+    });
     document.getElementById('battle-result').classList.remove('hidden');
-    document.getElementById('battle-result').innerHTML=`<div class="flex items-center gap-6 p-4 glass-card"><img src="${spr(p.name)}" data-id="${p.id}" class="w-20 h-20 sprite-hover"><div><h4 class="text-xl font-black text-white">#${String(p.id).padStart(3,'0')} ${p.name}</h4><div class="flex gap-2 mt-1">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div><p class="text-xs text-gray-400 mt-2 mono">BST ${bst}</p></div></div>`;
+    let h=`<div class="glass-card p-5">
+        <div class="flex items-center gap-6 mb-4">
+            <img src="${spr(p.name)}" data-id="${p.id}" class="w-20 h-20 sprite-hover">
+            <div class="flex-1">
+                <h4 class="text-xl font-black text-white">#${String(p.id).padStart(3,'0')} ${p.name}</h4>
+                <div class="flex gap-2 mt-1">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div>
+                <p class="text-xs text-gray-400 mt-1 mono">BST ${bst} | ${p.attack>=p.sp_attack?'Physique (Atk:'+p.attack+')':'Special (SpA:'+p.sp_attack+')'} | Spe:${p.speed}</p>
+            </div>
+        </div>`;
+    if(weak4x.length) h+=`<div class="mb-2"><span class="text-xs font-bold" style="color:#ff5252">TRES FAIBLE x4 :</span> <span class="ml-1">${weak4x.map(t=>pill(t)).join(' ')}</span></div>`;
+    if(weak2x.length) h+=`<div class="mb-2"><span class="text-xs font-bold" style="color:#ff8a80">FAIBLE x2 :</span> <span class="ml-1">${weak2x.map(t=>pill(t)).join(' ')}</span></div>`;
+    if(resist05.length) h+=`<div class="mb-2"><span class="text-xs font-bold" style="color:#69f0ae">RESISTE x0.5 :</span> <span class="ml-1">${resist05.map(t=>pill(t)).join(' ')}</span></div>`;
+    if(resist025.length) h+=`<div class="mb-2"><span class="text-xs font-bold" style="color:#00e5ff">RESISTE x0.25 :</span> <span class="ml-1">${resist025.map(t=>pill(t)).join(' ')}</span></div>`;
+    if(immune.length) h+=`<div class="mb-2"><span class="text-xs font-bold" style="color:#40c4ff">IMMUNITE x0 :</span> <span class="ml-1">${immune.map(t=>pill(t)).join(' ')}</span></div>`;
+    h+=`<div class="mt-3 pt-3 border-t border-gray-800 text-xs text-gray-500">
+        <span class="font-bold text-white">Attaque avec :</span> ${weak4x.concat(weak2x).map(t=>`<span style="color:${TC[t]}">${tfr(t)}</span>`).join(', ')||'aucune faiblesse'}
+        <span class="mx-2">|</span>
+        <span class="font-bold text-white">Evite :</span> ${immune.concat(resist025).concat(resist05).map(t=>`<span style="color:${TC[t]}">${tfr(t)}</span>`).join(', ')||'rien a eviter'}
+    </div></div>`;
+    document.getElementById('battle-result').innerHTML=h;
     }catch(e){console.error(e);}
 });
 
