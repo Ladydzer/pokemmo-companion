@@ -1,292 +1,259 @@
 <!DOCTYPE html>
-<html lang="fr" class="dark">
+<html lang="fr" data-theme="night">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PokeMMO Companion</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: { extend: { colors: {
-                'poke': { 'bg':'#080810','card':'#12122a','card2':'#181838','hover':'#1e1e48','border':'#2a2a5a','glow':'#4FC3F7' }
-            }}}
-        }
-    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         * { font-family: 'Inter', system-ui, sans-serif; }
-        body { background: linear-gradient(135deg, #080810 0%, #0d0d20 50%, #080810 100%); }
-
-        /* Cards */
-        .glass { background: rgba(18,18,42,0.8); backdrop-filter: blur(12px); border: 1px solid rgba(42,42,90,0.6); border-radius: 16px; }
-        .glass:hover { border-color: rgba(79,195,247,0.4); box-shadow: 0 8px 32px rgba(79,195,247,0.08); }
-        .card-accent { border-left: 4px solid; transition: all 0.25s ease; }
-        .card-accent:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
-
-        /* Animations */
+        .type-pill { display:inline-flex; align-items:center; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:700; color:white; letter-spacing:0.5px; text-transform:uppercase; }
+        .sprite-pop { transition: transform 0.15s ease; }
+        .sprite-pop:hover { transform: scale(1.15); }
         .fade-in { animation: fadeIn 0.4s ease-out; }
-        .slide-up { animation: slideUp 0.5s ease-out; }
-        @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
-        @keyframes slideUp { from { opacity:0; transform:translateY(20px) } to { opacity:1; transform:translateY(0) } }
-        .hover-lift { transition: transform 0.2s, box-shadow 0.2s; }
-        .hover-lift:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
-        .sprite-pop { transition: transform 0.15s; }
-        .sprite-pop:hover { transform: scale(1.2); }
-
-        /* Type badges */
-        .type-pill { display:inline-flex; align-items:center; padding:3px 12px; border-radius:20px; font-size:11px; font-weight:700; color:white; letter-spacing:0.5px; text-transform:uppercase; }
-
-        /* Progress bars */
-        .bar-track { height:6px; border-radius:3px; background:rgba(42,42,90,0.5); overflow:hidden; }
-        .bar-fill { height:100%; border-radius:3px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
-
-        /* Stat bars */
-        .stat-bar { height:10px; border-radius:5px; background:rgba(42,42,90,0.5); overflow:hidden; position:relative; }
-        .stat-fill { height:100%; border-radius:5px; transition: width 0.6s ease; }
-
-        /* Sidebar */
-        .sidebar { background: linear-gradient(180deg, #0e0e22 0%, #0a0a18 100%); }
-        .nav-link { display:flex; align-items:center; gap:10px; padding:12px 20px; color:#888; font-size:13px; font-weight:500; transition:all 0.15s; border-left:3px solid transparent; }
-        .nav-link:hover { color:#ccc; background:rgba(79,195,247,0.05); }
-        .nav-link.active { color:#4FC3F7; background:rgba(79,195,247,0.1); border-left-color:#4FC3F7; font-weight:600; }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar { width:5px; }
-        ::-webkit-scrollbar-track { background:transparent; }
-        ::-webkit-scrollbar-thumb { background:rgba(79,195,247,0.2); border-radius:3px; }
-        ::-webkit-scrollbar-thumb:hover { background:rgba(79,195,247,0.4); }
-
-        /* Spawn row */
-        .spawn-row { display:flex; align-items:center; gap:12px; padding:8px 12px; border-radius:10px; transition:background 0.15s; }
-        .spawn-row:hover { background:rgba(79,195,247,0.06); }
-
-        /* Pokemon grid card */
-        .poke-card { background:rgba(18,18,42,0.6); border:1px solid rgba(42,42,90,0.4); border-radius:12px; padding:8px; text-align:center; cursor:pointer; transition:all 0.2s; }
-        .poke-card:hover { border-color:rgba(79,195,247,0.5); background:rgba(24,24,56,0.9); transform:translateY(-4px); box-shadow:0 8px 24px rgba(0,0,0,0.3); }
-
-        /* Glow effects */
-        .glow-blue { box-shadow: 0 0 30px rgba(79,195,247,0.1), inset 0 1px 0 rgba(255,255,255,0.05); }
-        .glow-yellow { box-shadow: 0 0 30px rgba(255,213,79,0.1); }
-        .text-glow { text-shadow: 0 0 20px currentColor; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:translateY(0) } }
+        .stat-bar-fill { transition: width 0.6s ease; }
+        .poke-card { transition: all 0.2s ease; cursor: pointer; }
+        .poke-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: oklch(var(--p)/0.3); border-radius: 3px; }
     </style>
 </head>
-<body class="text-gray-300 min-h-screen flex">
+<body class="min-h-screen">
 
-<!-- Sidebar -->
-<aside class="sidebar w-52 min-h-screen fixed left-0 top-0 border-r border-poke-border flex flex-col z-50">
-    <div class="px-5 py-6">
-        <h1 class="text-xl font-extrabold text-cyan-400 text-glow">PokeMMO</h1>
-        <p class="text-xs text-gray-600 font-medium tracking-wider mt-0.5">COMPANION</p>
-    </div>
-    <nav class="flex-1 mt-2" id="nav">
-        <a class="nav-link active" data-page="dashboard" onclick="navigate('dashboard')">🏠 <span>Accueil</span></a>
-        <a class="nav-link" data-page="pokedex" onclick="navigate('pokedex')">📖 <span>Pokedex</span></a>
-        <a class="nav-link" data-page="battle" onclick="navigate('battle')">⚔️ <span>Combat</span></a>
-        <a class="nav-link" data-page="team" onclick="navigate('team')">👥 <span>Equipe</span></a>
-        <a class="nav-link" data-page="shiny" onclick="navigate('shiny')">✨ <span>Shiny</span></a>
-        <a class="nav-link" data-page="collection" onclick="navigate('collection')">📋 <span>Collection</span></a>
-        <a class="nav-link" data-page="notes" onclick="navigate('notes')">📝 <span>Notes</span></a>
-    </nav>
-    <div class="px-5 py-4 border-t border-poke-border">
-        <div id="game-status" class="flex items-center gap-2 text-xs">
-            <div class="w-2 h-2 rounded-full bg-red-500"></div>
-            <span class="text-gray-600">Jeu non detecte</span>
+<!-- DaisyUI Drawer layout -->
+<div class="drawer lg:drawer-open">
+    <input id="drawer-toggle" type="checkbox" class="drawer-toggle">
+
+    <!-- Main content -->
+    <div class="drawer-content">
+        <!-- Navbar mobile -->
+        <div class="navbar bg-base-200 lg:hidden">
+            <label for="drawer-toggle" class="btn btn-ghost"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg></label>
+            <span class="text-lg font-bold text-primary">PokeMMO Companion</span>
         </div>
-        <p class="text-[10px] text-gray-700 mt-2">v0.3.0</p>
-    </div>
-</aside>
 
-<!-- Main -->
-<main class="flex-1 ml-52 p-8 overflow-y-auto min-h-screen">
+        <div class="p-6 lg:p-8 max-w-6xl">
 
 <!-- ===== DASHBOARD ===== -->
-<div id="page-dashboard" class="page fade-in max-w-5xl">
-    <h2 class="text-3xl font-extrabold text-white mb-8">Tableau de Bord</h2>
+<div id="page-dashboard" class="page fade-in">
+    <h1 class="text-3xl font-extrabold mb-6">Tableau de Bord</h1>
 
-    <!-- Hero Pokemon -->
-    <div id="hero" class="glass glow-yellow p-6 mb-8 flex items-center gap-8 slide-up" style="border-color:rgba(255,213,79,0.3)">
-        <div class="relative">
-            <img id="hero-sprite" src="" class="w-36 h-36 sprite-pop drop-shadow-2xl" alt="">
-            <div class="absolute -bottom-1 -right-1 bg-yellow-500 text-black text-[10px] font-bold px-2 py-0.5 rounded-full">⭐ DU JOUR</div>
-        </div>
-        <div class="flex-1">
-            <h3 id="hero-name" class="text-2xl font-bold text-white"></h3>
-            <div id="hero-types" class="flex gap-2 mt-2"></div>
-            <p id="hero-stats" class="text-sm text-gray-400 mt-3 font-mono"></p>
-            <p id="hero-location" class="text-sm text-emerald-400 mt-1 font-medium"></p>
+    <!-- Hero: Pokemon du Jour -->
+    <div class="card bg-base-200 shadow-xl mb-6 border border-primary/20">
+        <div class="card-body flex-row items-center gap-6">
+            <div class="relative">
+                <img id="hero-sprite" src="" class="w-32 h-32 sprite-pop drop-shadow-xl" alt="">
+                <div class="badge badge-warning badge-sm absolute -top-1 -right-1 gap-1">⭐ DU JOUR</div>
+            </div>
+            <div class="flex-1">
+                <h2 id="hero-name" class="card-title text-2xl"></h2>
+                <div id="hero-types" class="flex gap-2 mt-2"></div>
+                <p id="hero-stats" class="text-sm text-base-content/60 mt-2 font-mono"></p>
+                <p id="hero-location" class="text-sm text-success mt-1 font-medium"></p>
+            </div>
         </div>
     </div>
 
-    <!-- Stats grid -->
-    <div class="grid grid-cols-4 gap-4 mb-8">
-        <div class="glass card-accent hover-lift p-5" style="border-left-color:#4FC3F7">
-            <p class="text-[10px] font-bold text-cyan-400 tracking-widest mb-1">POSITION</p>
-            <p id="current-route" class="text-lg font-bold text-white">Non connecte</p>
-            <p id="current-region" class="text-xs text-gray-500 mt-1"></p>
+    <!-- Stats row -->
+    <div class="stats stats-vertical lg:stats-horizontal shadow w-full mb-6 bg-base-200">
+        <div class="stat">
+            <div class="stat-figure text-info"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div>
+            <div class="stat-title">Position</div>
+            <div id="current-route" class="stat-value text-info text-lg">Non connecte</div>
+            <div id="current-region" class="stat-desc"></div>
         </div>
-        <div class="glass card-accent hover-lift p-5" style="border-left-color:#FFB74D">
-            <p class="text-[10px] font-bold text-orange-400 tracking-widest mb-1">RENCONTRES</p>
-            <p class="text-3xl font-extrabold text-orange-400 text-glow">0</p>
+        <div class="stat">
+            <div class="stat-figure text-warning"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>
+            <div class="stat-title">Rencontres</div>
+            <div class="stat-value text-warning">0</div>
+            <div class="stat-desc text-warning/60">Shiny: 0.00%</div>
         </div>
-        <div class="glass card-accent hover-lift p-5" style="border-left-color:#CE93D8">
-            <p class="text-[10px] font-bold text-purple-400 tracking-widest mb-1">SHINY</p>
-            <p class="text-lg font-bold text-purple-300">0.00%</p>
-            <p class="text-xs text-gray-500">1/30,000</p>
+        <div class="stat">
+            <div class="stat-figure text-success"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+            <div class="stat-title">Collection</div>
+            <div class="stat-value text-success text-lg">0 / 649</div>
+            <div class="stat-desc"><progress class="progress progress-success w-32" value="0" max="649"></progress></div>
         </div>
-        <div class="glass card-accent hover-lift p-5" style="border-left-color:#66BB6A">
-            <p class="text-[10px] font-bold text-green-400 tracking-widest mb-1">COLLECTION</p>
-            <p class="text-lg font-bold text-green-400">0 / 649</p>
-            <div class="bar-track mt-2"><div class="bar-fill bg-green-500" style="width:0%"></div></div>
+        <div class="stat">
+            <div class="stat-figure text-secondary"><span id="s-poke" class="text-2xl font-bold">0</span></div>
+            <div class="stat-title">Base de Donnees</div>
+            <div class="stat-value text-sm"><span id="s-routes">0</span> routes</div>
+            <div class="stat-desc"><span id="s-spawns">0</span> spawns · <span id="s-sprites">0</span> sprites</div>
         </div>
     </div>
 
     <!-- Spawns -->
-    <div class="glass card-accent p-6 mb-6" style="border-left-color:#66BB6A">
-        <p class="text-[10px] font-bold text-green-400 tracking-widest mb-4">POKEMON DE LA ZONE</p>
-        <div id="spawns-list">
-            <p class="text-gray-600 text-sm italic">En attente de detection de route...</p>
+    <div class="card bg-base-200 shadow-xl mb-6">
+        <div class="card-body">
+            <h2 class="card-title text-success gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945"/></svg> Pokemon de la Zone</h2>
+            <div id="spawns-list">
+                <p class="text-base-content/40 italic">En attente de detection de route...</p>
+            </div>
         </div>
     </div>
 
     <!-- Objective -->
-    <div class="glass card-accent p-5" style="border-left-color:#CE93D8">
-        <p class="text-[10px] font-bold text-purple-400 tracking-widest mb-2">OBJECTIF DU JOUR</p>
-        <p id="objective" class="text-base text-emerald-400 font-medium"></p>
-    </div>
-
-    <!-- Mini stats -->
-    <div class="flex gap-3 mt-6">
-        <div class="glass px-4 py-2 text-xs text-gray-500"><span id="s-poke" class="text-cyan-400 font-bold">0</span> Pokemon</div>
-        <div class="glass px-4 py-2 text-xs text-gray-500"><span id="s-routes" class="text-cyan-400 font-bold">0</span> Routes</div>
-        <div class="glass px-4 py-2 text-xs text-gray-500"><span id="s-spawns" class="text-cyan-400 font-bold">0</span> Spawns</div>
-        <div class="glass px-4 py-2 text-xs text-gray-500"><span id="s-sprites" class="text-cyan-400 font-bold">0</span> Sprites</div>
+    <div class="alert shadow-lg mb-6">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <div>
+            <h3 class="font-bold text-secondary">Objectif du Jour</h3>
+            <div id="objective" class="text-sm text-success"></div>
+        </div>
     </div>
 </div>
 
 <!-- ===== POKEDEX ===== -->
-<div id="page-pokedex" class="page hidden fade-in max-w-6xl">
-    <h2 class="text-3xl font-extrabold text-white mb-6">Pokedex</h2>
-    <input type="text" id="dex-search" placeholder="Chercher un Pokemon par nom, numero ou type..."
-           class="w-full bg-poke-card border border-poke-border rounded-2xl px-5 py-3 text-white text-sm focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400/30 transition mb-4">
+<div id="page-pokedex" class="page hidden fade-in">
+    <h1 class="text-3xl font-extrabold mb-6">Pokedex</h1>
+    <div class="form-control mb-4">
+        <input type="text" id="dex-search" placeholder="Chercher un Pokemon par nom, numero ou type..." class="input input-bordered input-primary w-full">
+    </div>
     <div id="type-filters" class="flex flex-wrap gap-1.5 mb-5"></div>
-    <div id="dex-grid" class="grid grid-cols-8 gap-3"></div>
+    <div id="dex-grid" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3"></div>
     <div id="dex-detail" class="hidden fade-in"></div>
 </div>
 
 <!-- ===== COMBAT ===== -->
-<div id="page-battle" class="page hidden fade-in max-w-5xl">
-    <h2 class="text-3xl font-extrabold text-white mb-6">Assistant Combat</h2>
-    <div class="glass p-6 mb-6">
-        <p class="text-[10px] font-bold text-red-400 tracking-widest mb-3">RECHERCHE POKEMON</p>
-        <input type="text" id="battle-input" placeholder="Tape le nom du Pokemon adverse..."
-               class="w-full bg-poke-bg border border-poke-border rounded-xl px-4 py-3 text-white text-sm focus:border-red-400 focus:outline-none transition">
-        <div id="battle-result" class="mt-4 hidden"></div>
-    </div>
-    <!-- Damage Calculator -->
-    <div class="glass p-6 mb-6">
-        <p class="text-[10px] font-bold text-orange-400 tracking-widest mb-3">CALCULATEUR DE DEGATS</p>
-        <div class="grid grid-cols-3 gap-3 mb-4">
-            <input type="text" id="dmg-atk" placeholder="Ton Pokemon" class="bg-poke-bg border border-poke-border rounded-lg px-3 py-2 text-white text-sm focus:border-orange-400 focus:outline-none">
-            <input type="text" id="dmg-def" placeholder="Pokemon adverse" class="bg-poke-bg border border-poke-border rounded-lg px-3 py-2 text-white text-sm focus:border-orange-400 focus:outline-none">
-            <div class="flex gap-2">
-                <input type="number" id="dmg-power" value="90" class="w-16 bg-poke-bg border border-poke-border rounded-lg px-2 py-2 text-white text-sm text-center">
-                <select id="dmg-type" class="flex-1 bg-poke-bg border border-poke-border rounded-lg px-2 py-2 text-white text-sm"></select>
-            </div>
+<div id="page-battle" class="page hidden fade-in">
+    <h1 class="text-3xl font-extrabold mb-6">Assistant Combat</h1>
+    <!-- Search -->
+    <div class="card bg-base-200 shadow-xl mb-6">
+        <div class="card-body">
+            <h2 class="card-title text-error gap-2">Recherche Pokemon</h2>
+            <input type="text" id="battle-input" placeholder="Tape le nom du Pokemon adverse..." class="input input-bordered input-error w-full">
+            <div id="battle-result" class="mt-4 hidden"></div>
         </div>
-        <button onclick="calcDamage()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold px-6 py-2 rounded-lg transition text-sm">Calculer</button>
-        <div id="dmg-result" class="mt-4 hidden glass p-4 text-sm"></div>
     </div>
-    <!-- Type Chart -->
-    <div class="glass p-6">
-        <p class="text-[10px] font-bold text-cyan-400 tracking-widest mb-3">TABLE DES TYPES (17x17)</p>
-        <div id="type-chart" class="overflow-x-auto"></div>
+    <!-- Damage calc -->
+    <div class="card bg-base-200 shadow-xl mb-6">
+        <div class="card-body">
+            <h2 class="card-title text-warning gap-2">Calculateur de Degats</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <input type="text" id="dmg-atk" placeholder="Ton Pokemon" class="input input-bordered input-sm">
+                <input type="text" id="dmg-def" placeholder="Pokemon adverse" class="input input-bordered input-sm">
+                <div class="flex gap-2">
+                    <input type="number" id="dmg-power" value="90" class="input input-bordered input-sm w-20">
+                    <select id="dmg-type" class="select select-bordered select-sm flex-1"></select>
+                </div>
+            </div>
+            <div class="card-actions mt-3">
+                <button onclick="calcDamage()" class="btn btn-warning btn-sm">Calculer</button>
+            </div>
+            <div id="dmg-result" class="hidden mt-3 alert"></div>
+        </div>
+    </div>
+    <!-- Type chart -->
+    <div class="card bg-base-200 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title text-info gap-2">Table des Types</h2>
+            <div id="type-chart" class="overflow-x-auto"></div>
+        </div>
     </div>
 </div>
 
 <!-- ===== EQUIPE ===== -->
-<div id="page-team" class="page hidden fade-in max-w-5xl">
-    <h2 class="text-3xl font-extrabold text-white mb-6">Constructeur d'Equipe</h2>
-    <div class="glass p-6 mb-6">
-        <div class="flex gap-3 mb-4">
-            <input type="text" id="team-input" placeholder="Tape un nom de Pokemon et appuie Entree..."
-                   class="flex-1 bg-poke-bg border border-poke-border rounded-xl px-4 py-3 text-white text-sm focus:border-cyan-400 focus:outline-none transition">
-            <button onclick="toggleShowdown()" class="bg-purple-500/20 border border-purple-500 text-purple-400 hover:bg-purple-500/30 px-4 py-2 rounded-xl text-sm font-bold transition">Import Showdown</button>
-            <button onclick="clearTeam()" class="bg-red-500/20 border border-red-500 text-red-400 hover:bg-red-500/30 px-4 py-2 rounded-xl text-sm font-bold transition">Tout effacer</button>
-        </div>
-        <!-- Showdown import -->
-        <div id="showdown-import" class="hidden mb-4">
-            <textarea id="showdown-text" rows="8" placeholder="Colle ta team au format Showdown ici...&#10;&#10;Charizard @ Life Orb&#10;Ability: Blaze&#10;EVs: 252 SpA / 4 SpD / 252 Spe&#10;Timid Nature&#10;- Flamethrower&#10;- Air Slash"
-                      class="w-full bg-poke-bg border border-poke-border rounded-xl px-4 py-3 text-white text-sm font-mono focus:border-purple-400 focus:outline-none transition"></textarea>
-            <button onclick="importShowdown()" class="mt-2 bg-purple-500 hover:bg-purple-600 text-white font-bold px-6 py-2 rounded-lg transition text-sm">Importer</button>
-        </div>
-        <div id="team-slots" class="grid grid-cols-6 gap-4">
-            <div class="glass p-4 text-center border-2 border-dashed border-poke-border rounded-xl h-36 flex items-center justify-center"><p class="text-gray-600 text-sm">Slot 1</p></div>
-            <div class="glass p-4 text-center border-2 border-dashed border-poke-border rounded-xl h-36 flex items-center justify-center"><p class="text-gray-600 text-sm">Slot 2</p></div>
-            <div class="glass p-4 text-center border-2 border-dashed border-poke-border rounded-xl h-36 flex items-center justify-center"><p class="text-gray-600 text-sm">Slot 3</p></div>
-            <div class="glass p-4 text-center border-2 border-dashed border-poke-border rounded-xl h-36 flex items-center justify-center"><p class="text-gray-600 text-sm">Slot 4</p></div>
-            <div class="glass p-4 text-center border-2 border-dashed border-poke-border rounded-xl h-36 flex items-center justify-center"><p class="text-gray-600 text-sm">Slot 5</p></div>
-            <div class="glass p-4 text-center border-2 border-dashed border-poke-border rounded-xl h-36 flex items-center justify-center"><p class="text-gray-600 text-sm">Slot 6</p></div>
+<div id="page-team" class="page hidden fade-in">
+    <h1 class="text-3xl font-extrabold mb-6">Constructeur d'Equipe</h1>
+    <div class="card bg-base-200 shadow-xl mb-6">
+        <div class="card-body">
+            <div class="flex gap-3 flex-wrap">
+                <input type="text" id="team-input" placeholder="Nom du Pokemon + Entree..." class="input input-bordered input-primary flex-1">
+                <button onclick="toggleShowdown()" class="btn btn-secondary btn-sm">Import Showdown</button>
+                <button onclick="clearTeam()" class="btn btn-error btn-outline btn-sm">Tout effacer</button>
+            </div>
+            <div id="showdown-import" class="hidden mt-3">
+                <textarea id="showdown-text" rows="6" placeholder="Colle ta team Showdown ici..." class="textarea textarea-bordered w-full font-mono text-sm"></textarea>
+                <button onclick="importShowdown()" class="btn btn-secondary btn-sm mt-2">Importer</button>
+            </div>
+            <div id="team-slots" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mt-4"></div>
         </div>
     </div>
-    <div id="team-analysis" class="glass p-6">
-        <p class="text-[10px] font-bold text-cyan-400 tracking-widest mb-3">ANALYSE DE COUVERTURE</p>
-        <p id="team-coverage" class="text-sm text-gray-500">Ajoute des Pokemon pour voir l'analyse...</p>
+    <div class="card bg-base-200 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title text-info">Analyse de Couverture</h2>
+            <div id="team-coverage" class="text-base-content/60">Ajoute des Pokemon pour voir l'analyse...</div>
+        </div>
     </div>
 </div>
 
 <!-- ===== SHINY ===== -->
-<div id="page-shiny" class="page hidden fade-in max-w-4xl">
-    <h2 class="text-3xl font-extrabold text-yellow-400 text-glow mb-6">✨ Labo Shiny</h2>
-    <div class="grid grid-cols-4 gap-4 mb-6">
-        <div class="glass p-5 text-center hover-lift">
-            <p class="text-[10px] font-bold text-orange-400 tracking-widest">SESSION</p>
-            <p class="text-3xl font-extrabold text-orange-400 mt-2">0</p>
-        </div>
-        <div class="glass p-5 text-center hover-lift">
-            <p class="text-[10px] font-bold text-cyan-400 tracking-widest">TOTAL</p>
-            <p class="text-3xl font-extrabold text-cyan-400 mt-2">0</p>
-        </div>
-        <div class="glass p-5 text-center hover-lift">
-            <p class="text-[10px] font-bold text-yellow-400 tracking-widest">SHINIES</p>
-            <p class="text-3xl font-extrabold text-yellow-400 mt-2">0</p>
-        </div>
-        <div class="glass p-5 text-center hover-lift">
-            <p class="text-[10px] font-bold text-purple-400 tracking-widest">PROBABILITE</p>
-            <p class="text-xl font-bold text-purple-300 mt-2">0.00%</p>
-        </div>
+<div id="page-shiny" class="page hidden fade-in">
+    <h1 class="text-3xl font-extrabold text-warning mb-6">✨ Labo Shiny</h1>
+    <div class="stats stats-vertical lg:stats-horizontal shadow w-full mb-6 bg-base-200">
+        <div class="stat"><div class="stat-title">Session</div><div class="stat-value text-warning">0</div></div>
+        <div class="stat"><div class="stat-title">Total</div><div class="stat-value text-info">0</div></div>
+        <div class="stat"><div class="stat-title">Shinies</div><div class="stat-value text-accent">0</div></div>
+        <div class="stat"><div class="stat-title">Probabilite</div><div class="stat-value text-secondary text-lg">0.00%</div><div class="stat-desc">Base: 1/30,000</div></div>
     </div>
-    <div class="glass p-6">
-        <p class="text-[10px] font-bold text-yellow-400 tracking-widest mb-3">TAUX POKEMMO</p>
-        <div class="grid grid-cols-2 gap-4 text-sm">
-            <div class="flex justify-between"><span class="text-gray-400">Base</span><span class="text-white font-mono">1/30,000</span></div>
-            <div class="flex justify-between"><span class="text-gray-400">Donator</span><span class="text-white font-mono">1/27,000</span></div>
-            <div class="flex justify-between"><span class="text-gray-400">Shiny Charm</span><span class="text-white font-mono">1/27,000</span></div>
-            <div class="flex justify-between"><span class="text-gray-400">Donator + Charm</span><span class="text-white font-mono">1/24,000</span></div>
+    <div class="card bg-base-200 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title">Taux PokeMMO</h2>
+            <div class="overflow-x-auto">
+                <table class="table table-sm"><tbody>
+                    <tr><td>Base</td><td class="font-mono">1/30,000</td></tr>
+                    <tr><td>Donator Status</td><td class="font-mono">1/27,000</td></tr>
+                    <tr><td>Shiny Charm</td><td class="font-mono">1/27,000</td></tr>
+                    <tr><td>Donator + Charm</td><td class="font-mono">1/24,000</td></tr>
+                    <tr><td>Sweet Scent Horde (5x)</td><td class="font-mono">~1/6,000 effectif</td></tr>
+                </tbody></table>
+            </div>
         </div>
     </div>
 </div>
 
 <!-- ===== COLLECTION ===== -->
-<div id="page-collection" class="page hidden fade-in max-w-6xl">
-    <div class="flex items-center justify-between mb-6">
-        <h2 class="text-3xl font-extrabold text-white">Collection</h2>
-        <p class="text-xl font-bold text-green-400">0 / 649</p>
+<div id="page-collection" class="page hidden fade-in">
+    <div class="flex items-center justify-between mb-4">
+        <h1 class="text-3xl font-extrabold">Collection</h1>
+        <div class="badge badge-success badge-lg gap-2">0 / 649</div>
     </div>
-    <div class="bar-track h-4 mb-6 rounded-lg"><div class="bar-fill bg-gradient-to-r from-green-500 to-emerald-400 rounded-lg" style="width:0%"></div></div>
-    <div id="collection-grid" class="grid grid-cols-12 gap-1.5"></div>
+    <progress class="progress progress-success w-full mb-6" value="0" max="649"></progress>
+    <div id="collection-grid" class="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-1.5"></div>
 </div>
 
 <!-- ===== NOTES ===== -->
-<div id="page-notes" class="page hidden fade-in max-w-4xl">
-    <h2 class="text-3xl font-extrabold text-white mb-6">Notes de Route</h2>
-    <div class="glass p-6">
-        <p class="text-sm text-gray-500">Selectionne une route pour ecrire tes notes...</p>
-        <p class="text-xs text-gray-600 mt-2">Cette page sera enrichie avec la liste des routes et un editeur de notes.</p>
+<div id="page-notes" class="page hidden fade-in">
+    <h1 class="text-3xl font-extrabold mb-6">Notes de Route</h1>
+    <div class="card bg-base-200 shadow-xl">
+        <div class="card-body">
+            <p class="text-base-content/40">Selectionne une route pour ecrire tes notes...</p>
+        </div>
     </div>
 </div>
 
-</main>
+        </div>
+    </div>
+
+    <!-- Sidebar (DaisyUI drawer) -->
+    <div class="drawer-side z-50">
+        <label for="drawer-toggle" aria-label="close sidebar" class="drawer-overlay"></label>
+        <aside class="bg-base-200 min-h-full w-56 border-r border-base-300">
+            <div class="p-5">
+                <h1 class="text-xl font-extrabold text-primary">PokeMMO</h1>
+                <p class="text-xs text-base-content/40 tracking-widest">COMPANION</p>
+            </div>
+            <ul class="menu menu-md w-full">
+                <li><a class="active" data-page="dashboard" onclick="navigate('dashboard')">🏠 Accueil</a></li>
+                <li><a data-page="pokedex" onclick="navigate('pokedex')">📖 Pokedex</a></li>
+                <li><a data-page="battle" onclick="navigate('battle')">⚔️ Combat</a></li>
+                <li><a data-page="team" onclick="navigate('team')">👥 Equipe</a></li>
+                <li><a data-page="shiny" onclick="navigate('shiny')">✨ Shiny</a></li>
+                <li><a data-page="collection" onclick="navigate('collection')">📋 Collection</a></li>
+                <li><a data-page="notes" onclick="navigate('notes')">📝 Notes</a></li>
+            </ul>
+            <div class="p-4 mt-auto border-t border-base-300">
+                <div id="game-status" class="flex items-center gap-2 text-xs">
+                    <span class="badge badge-xs badge-error"></span>
+                    <span class="text-base-content/40">Jeu non detecte</span>
+                </div>
+                <p class="text-[10px] text-base-content/20 mt-2">v0.3.0</p>
+            </div>
+        </aside>
+    </div>
+</div>
 
 <script>
 const TC = {
@@ -295,70 +262,67 @@ const TC = {
     Psychic:'#F95587',Bug:'#A6B91A',Rock:'#B6A136',Ghost:'#735797',Dragon:'#6F35FC',
     Dark:'#705746',Steel:'#B7B7CE'
 };
-const STAT_COLORS = {hp:'#78C850',attack:'#F08030',defense:'#F8D030',sp_attack:'#6890F0',sp_defense:'#78C850',speed:'#F85888'};
+const SC = {hp:'#78C850',attack:'#F08030',defense:'#F8D030',sp_attack:'#6890F0',sp_defense:'#78C850',speed:'#F85888'};
 
 const pill = t => `<span class="type-pill" style="background:${TC[t]||'#888'}">${t}</span>`;
-const statBar = (label,val,key) => {
-    const c = STAT_COLORS[key]||'#4FC3F7';
-    return `<div class="flex items-center gap-2 mb-1.5">
-        <span class="w-7 text-[10px] text-gray-500 font-bold">${label}</span>
-        <span class="w-7 text-xs text-right font-mono text-gray-300">${val}</span>
-        <div class="flex-1 stat-bar"><div class="stat-fill" style="width:${val/255*100}%;background:${c}"></div></div>
-    </div>`;
-};
+const spr = name => `https://play.pokemonshowdown.com/sprites/ani/${name.toLowerCase().replace(/[^a-z0-9]/g,'')}.gif`;
+const statBar = (lbl,val,key) => `<div class="flex items-center gap-2 mb-1"><span class="w-8 text-xs opacity-60">${lbl}</span><span class="w-8 text-xs text-right font-mono">${val}</span><div class="flex-1 h-2 rounded-full bg-base-300 overflow-hidden"><div class="h-full rounded-full stat-bar-fill" style="width:${val/255*100}%;background:${SC[key]||'#4FC3F7'}"></div></div></div>`;
 
-// Navigation
 function navigate(page) {
     document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
     const el = document.getElementById('page-'+page);
     if (el) { el.classList.remove('hidden'); el.classList.add('fade-in'); }
-    document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.menu a').forEach(a => a.classList.remove('active'));
     document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
     if (page === 'pokedex' && !window._dexLoaded) loadPokedex();
     if (page === 'collection' && !window._colLoaded) loadCollection();
 }
 
-// Dashboard
+// === Dashboard ===
 async function loadDashboard() {
-    const stats = await fetch('/api/stats').then(r=>r.json());
-    document.getElementById('s-poke').textContent = stats.pokemon;
-    document.getElementById('s-routes').textContent = stats.routes;
-    document.getElementById('s-spawns').textContent = stats.spawns;
-    document.getElementById('s-sprites').textContent = stats.sprites;
+    try {
+        const stats = await fetch('/api/stats').then(r=>r.json());
+        document.getElementById('s-poke').textContent = stats.pokemon;
+        document.getElementById('s-routes').textContent = stats.routes;
+        document.getElementById('s-spawns').textContent = stats.spawns;
+        document.getElementById('s-sprites').textContent = stats.sprites;
+    } catch(e) { console.error('Stats error:', e); }
 
-    const spot = await fetch('/api/spotlight').then(r=>r.json());
-    if (spot.id) {
-        document.getElementById('hero-sprite').src = `https://play.pokemonshowdown.com/sprites/ani/${spot.name.toLowerCase()}.gif`;
-        document.getElementById('hero-name').textContent = `#${String(spot.id).padStart(3,'0')} ${spot.name}`;
-        const bst = spot.hp+spot.attack+spot.defense+spot.sp_attack+spot.sp_defense+spot.speed;
-        document.getElementById('hero-stats').textContent = `BST ${bst} — HP:${spot.hp} Atk:${spot.attack} Def:${spot.defense} SpA:${spot.sp_attack} SpD:${spot.sp_defense} Spe:${spot.speed}`;
-        document.getElementById('hero-types').innerHTML = pill(spot.type1) + (spot.type2?' '+pill(spot.type2):'');
-        if (spot.location) document.getElementById('hero-location').textContent = `📍 ${spot.location.route_name} (${spot.location.region})`;
-        document.getElementById('hero').style.borderColor = (TC[spot.type1]||'#4FC3F7')+'60';
-    }
+    try {
+        const spot = await fetch('/api/spotlight').then(r=>r.json());
+        if (spot.id) {
+            document.getElementById('hero-sprite').src = spr(spot.name);
+            document.getElementById('hero-name').textContent = `#${String(spot.id).padStart(3,'0')} ${spot.name}`;
+            const bst = spot.hp+spot.attack+spot.defense+spot.sp_attack+spot.sp_defense+spot.speed;
+            document.getElementById('hero-stats').textContent = `BST ${bst} — HP:${spot.hp} Atk:${spot.attack} Def:${spot.defense} SpA:${spot.sp_attack} SpD:${spot.sp_defense} Spe:${spot.speed}`;
+            document.getElementById('hero-types').innerHTML = pill(spot.type1) + (spot.type2?' '+pill(spot.type2):'');
+            if (spot.location) document.getElementById('hero-location').textContent = `📍 ${spot.location.route_name} (${spot.location.region})`;
+        }
+    } catch(e) { console.error('Spotlight error:', e); }
 
-    const objs = ["Explore une nouvelle route !","Attrape 10 Pokemon manquants","Defie un champion d'arene","Fais 100 rencontres shiny","Entraine les EVs de ton meilleur Pokemon"];
+    const objs = ["Explore une nouvelle route !","Attrape 10 Pokemon manquants","Defie un champion d'arene","Fais 100 rencontres shiny","Entraine les EVs de ton meilleur Pokemon","Complete le Pokedex Kanto !"];
     document.getElementById('objective').textContent = objs[Math.floor(Math.random()*objs.length)];
 }
 
-// Pokedex
+// === Pokedex ===
 async function loadPokedex() {
     window._dexLoaded = true;
-    const pokemon = await fetch('/api/pokemon/all').then(r=>r.json());
-    window._allPoke = pokemon;
-
-    const fd = document.getElementById('type-filters');
-    fd.innerHTML = `<button onclick="filterDex('')" class="type-pill bg-cyan-600 cursor-pointer hover:opacity-80 text-[10px]">TOUS</button>`;
-    Object.keys(TC).forEach(t => {
-        fd.innerHTML += ` <button onclick="filterDex('${t}')" class="type-pill cursor-pointer hover:opacity-80 text-[10px]" style="background:${TC[t]}">${t.slice(0,3).toUpperCase()}</button>`;
-    });
-
-    renderDex(pokemon);
-    document.getElementById('dex-search').addEventListener('input', e => {
-        const q = e.target.value.toLowerCase();
-        if (q.length < 2) { renderDex(window._allPoke); return; }
-        renderDex(window._allPoke.filter(p => p.name.toLowerCase().includes(q) || String(p.id).includes(q) || p.type1.toLowerCase().includes(q) || (p.type2||'').toLowerCase().includes(q)));
-    });
+    try {
+        const pokemon = await fetch('/api/pokemon/all').then(r=>r.json());
+        if (!Array.isArray(pokemon)) { console.error('pokemon/all not array:', pokemon); return; }
+        window._allPoke = pokemon;
+        const fd = document.getElementById('type-filters');
+        fd.innerHTML = `<button onclick="filterDex('')" class="btn btn-xs btn-primary">TOUS</button> `;
+        Object.keys(TC).forEach(t => {
+            fd.innerHTML += `<button onclick="filterDex('${t}')" class="btn btn-xs" style="background:${TC[t]};color:white;border:none">${t.slice(0,3)}</button> `;
+        });
+        renderDex(pokemon);
+        document.getElementById('dex-search').addEventListener('input', e => {
+            const q = e.target.value.toLowerCase();
+            if (q.length < 2) { renderDex(window._allPoke); return; }
+            renderDex(window._allPoke.filter(p => p.name.toLowerCase().includes(q) || String(p.id).includes(q) || p.type1.toLowerCase().includes(q) || (p.type2||'').toLowerCase().includes(q)));
+        });
+    } catch(e) { console.error('Pokedex error:', e); }
 }
 
 function filterDex(type) {
@@ -372,139 +336,99 @@ function renderDex(list) {
     document.getElementById('dex-detail').classList.add('hidden');
     g.classList.remove('hidden');
     list.slice(0,200).forEach(p => {
-        g.innerHTML += `<div class="poke-card" onclick="showDetail(${p.id})" style="border-bottom:3px solid ${TC[p.type1]||'#888'}">
-            <img src="https://play.pokemonshowdown.com/sprites/ani/${p.name.toLowerCase()}.gif" class="w-14 h-14 mx-auto sprite-pop" loading="lazy" alt="${p.name}">
-            <p class="text-[11px] font-semibold text-gray-200 mt-1">${p.name}</p>
-            <p class="text-[9px] text-gray-500">#${String(p.id).padStart(3,'0')}</p>
+        g.innerHTML += `<div class="card bg-base-200 poke-card p-3 text-center" onclick="showDetail(${p.id})" style="border-bottom:3px solid ${TC[p.type1]||'#888'}">
+            <img src="${spr(p.name)}" class="w-16 h-16 mx-auto sprite-pop" loading="lazy" alt="${p.name}">
+            <p class="text-sm font-semibold mt-1">${p.name}</p>
+            <p class="text-xs opacity-40">#${String(p.id).padStart(3,'0')}</p>
         </div>`;
     });
 }
 
 async function showDetail(id) {
-    const [p, locs, evos] = await Promise.all([
-        fetch(`/api/pokemon/${id}`).then(r=>r.json()),
-        fetch(`/api/pokemon/${id}/locations`).then(r=>r.json()),
-        fetch(`/api/pokemon/${id}/evolutions`).then(r=>r.json()),
-    ]);
-    const bst = p.hp+p.attack+p.defense+p.sp_attack+p.sp_defense+p.speed;
+    try {
+        const [p, locs, evos] = await Promise.all([
+            fetch(`/api/pokemon/${id}`).then(r=>r.json()),
+            fetch(`/api/pokemon/${id}/locations`).then(r=>r.json()),
+            fetch(`/api/pokemon/${id}/evolutions`).then(r=>r.json()),
+        ]);
+        const bst = p.hp+p.attack+p.defense+p.sp_attack+p.sp_defense+p.speed;
 
-    const evoHtml = evos.length > 1 ? evos.map((e,i) => {
-        const hl = e.id===id ? 'ring-2 ring-cyan-400 ring-offset-2 ring-offset-poke-bg' : '';
-        const arr = i>0 ? `<div class="text-gray-500 text-xs px-1">${e.condition||'→'}</div>` : '';
-        return `${arr}<div class="text-center ${hl} rounded-xl p-2"><img src="https://play.pokemonshowdown.com/sprites/ani/${e.name.toLowerCase()}.gif" class="w-14 h-14 mx-auto sprite-pop"><p class="text-xs mt-1 font-medium">${e.name}</p></div>`;
-    }).join('') : '';
+        const evoHtml = evos.length > 1 ? evos.map((e,i) => {
+            const hl = e.id===id ? 'ring-2 ring-primary' : '';
+            const arr = i>0 ? `<span class="opacity-40 text-xs mx-1">${e.condition||'→'}</span>` : '';
+            return `${arr}<div class="text-center ${hl} rounded-xl p-2"><img src="${spr(e.name)}" class="w-14 h-14 mx-auto sprite-pop"><p class="text-xs mt-1">${e.name}</p></div>`;
+        }).join('') : '';
 
-    const locsHtml = locs.slice(0,8).map(l => `
-        <div class="spawn-row">
-            <span class="flex-1 text-sm">${l.route_name}</span>
-            <span class="text-xs text-gray-500">${l.region}</span>
-            <span class="text-xs text-green-400 font-mono w-10 text-right">${l.rate.toFixed(0)}%</span>
-            <span class="text-xs text-gray-500 w-20 text-right">Lv.${l.level_min}-${l.level_max}</span>
-        </div>
-    `).join('');
+        const locsHtml = (Array.isArray(locs) ? locs : []).slice(0,8).map(l =>
+            `<tr><td>${l.route_name}</td><td>${l.region}</td><td class="text-success font-mono">${l.rate.toFixed(0)}%</td><td>Lv.${l.level_min}-${l.level_max}</td></tr>`
+        ).join('');
 
-    document.getElementById('dex-grid').classList.add('hidden');
-    const d = document.getElementById('dex-detail');
-    d.classList.remove('hidden');
-    d.innerHTML = `
-        <button onclick="closeDex()" class="text-cyan-400 hover:text-white text-sm mb-4 font-medium">← Retour au Pokedex</button>
-        <div class="glass glow-blue p-8" style="border-color:${TC[p.type1]||'#4FC3F7'}40">
-            <div class="flex gap-10">
-                <div class="text-center">
-                    <img src="https://play.pokemonshowdown.com/sprites/ani/${p.name.toLowerCase()}.gif" class="w-40 h-40 mx-auto drop-shadow-2xl sprite-pop">
-                    <h3 class="text-2xl font-extrabold text-white mt-3">#${String(p.id).padStart(3,'0')} ${p.name}</h3>
-                    <div class="flex gap-2 justify-center mt-3">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div>
-                    <p class="text-xs text-gray-500 mt-2">${p.ability1||''}${p.ability2?' / '+p.ability2:''}${p.hidden_ability?' / '+p.hidden_ability+' (HA)':''}</p>
-                </div>
-                <div class="flex-1">
-                    <p class="text-xs font-bold text-cyan-400 tracking-widest mb-3">STATS DE BASE <span class="text-gray-500 font-normal">(BST: ${bst})</span></p>
-                    ${statBar('HP',p.hp,'hp')}
-                    ${statBar('Atk',p.attack,'attack')}
-                    ${statBar('Def',p.defense,'defense')}
-                    ${statBar('SpA',p.sp_attack,'sp_attack')}
-                    ${statBar('SpD',p.sp_defense,'sp_defense')}
-                    ${statBar('Spe',p.speed,'speed')}
+        document.getElementById('dex-grid').classList.add('hidden');
+        const d = document.getElementById('dex-detail');
+        d.classList.remove('hidden');
+        d.innerHTML = `
+            <button onclick="closeDex()" class="btn btn-ghost btn-sm text-primary mb-4">← Retour au Pokedex</button>
+            <div class="card bg-base-200 shadow-xl" style="border-top:4px solid ${TC[p.type1]||'#4FC3F7'}">
+                <div class="card-body">
+                    <div class="flex flex-col md:flex-row gap-8">
+                        <div class="text-center">
+                            <img src="${spr(p.name)}" class="w-40 h-40 mx-auto drop-shadow-xl sprite-pop">
+                            <h2 class="text-2xl font-extrabold mt-3">#${String(p.id).padStart(3,'0')} ${p.name}</h2>
+                            <div class="flex gap-2 justify-center mt-2">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div>
+                            <p class="text-xs opacity-40 mt-2">${p.ability1||''}${p.ability2?' / '+p.ability2:''}${p.hidden_ability?' / '+p.hidden_ability+' (HA)':''}</p>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-bold text-primary mb-3">Stats de Base <span class="font-normal opacity-40">(BST: ${bst})</span></h3>
+                            ${statBar('HP',p.hp,'hp')}${statBar('Atk',p.attack,'attack')}${statBar('Def',p.defense,'defense')}
+                            ${statBar('SpA',p.sp_attack,'sp_attack')}${statBar('SpD',p.sp_defense,'sp_defense')}${statBar('Spe',p.speed,'speed')}
+                            <div class="mt-4"><h3 class="font-bold text-secondary mb-1">Nature</h3>
+                            <p class="text-sm">${p.attack > p.sp_attack
+                                ? '<span class="text-warning">Physique:</span> Adamant / Jolly'
+                                : '<span class="text-info">Special:</span> Modest / Timid'}</p></div>
+                        </div>
+                    </div>
+                    ${evoHtml ? `<div class="divider"></div><h3 class="font-bold text-primary mb-2">Chaine d'Evolution</h3><div class="flex items-center gap-1 flex-wrap">${evoHtml}</div>` : ''}
+                    ${locsHtml ? `<div class="divider"></div><h3 class="font-bold text-success mb-2">Localisations PokeMMO</h3><div class="overflow-x-auto"><table class="table table-sm"><thead><tr><th>Route</th><th>Region</th><th>Taux</th><th>Niveau</th></tr></thead><tbody>${locsHtml}</tbody></table></div>` : ''}
+                    <div id="detail-moves" class="mt-4"></div>
                 </div>
             </div>
-            ${evoHtml ? `<div class="mt-6 pt-6 border-t border-poke-border">
-                <p class="text-xs font-bold text-cyan-400 tracking-widest mb-3">CHAINE D'EVOLUTION</p>
-                <div class="flex items-center gap-1 flex-wrap">${evoHtml}</div>
-            </div>` : ''}
-            ${locsHtml ? `<div class="mt-6 pt-6 border-t border-poke-border">
-                <p class="text-xs font-bold text-green-400 tracking-widest mb-3">LOCALISATIONS POKEMMO</p>
-                ${locsHtml}
-            </div>` : ''}
-            <div id="moves-section" class="mt-6 pt-6 border-t border-poke-border">
-                <p class="text-xs font-bold text-orange-400 tracking-widest mb-3">MOVESET RECOMMANDE (PvE)</p>
-                <div id="moves-list" class="text-sm text-gray-400">Chargement...</div>
-            </div>
-            <div class="mt-6 pt-6 border-t border-poke-border">
-                <p class="text-xs font-bold text-purple-400 tracking-widest mb-3">NATURE RECOMMANDEE</p>
-                <p class="text-sm">${p.attack > p.sp_attack
-                    ? '<span class="text-orange-300">Attaquant Physique:</span> Adamant (+Atk, -SpA) ou Jolly (+Spe, -SpA)'
-                    : '<span class="text-blue-300">Attaquant Special:</span> Modest (+SpA, -Atk) ou Timid (+Spe, -Atk)'
-                }${p.speed > 100 ? '<br><span class="text-pink-300">Rapide:</span> Jolly (+Spe) ou Timid (+Spe)' : ''}</p>
-            </div>
-        </div>
-    `;
-    // Load move recommendations async
-    fetch(`/api/recommend-moves/${id}`).then(r=>r.json()).then(moves => {
-        const ml = document.getElementById('moves-list');
-        if (ml && moves.length) {
-            ml.innerHTML = moves.map((m,i) => `
-                <div class="spawn-row">
-                    <span class="w-5 text-gray-500 font-bold">${i+1}.</span>
-                    <span class="type-pill text-[9px]" style="background:${TC[m.type]||'#888'}">${m.type}</span>
-                    <span class="font-semibold text-white">${m.move}</span>
-                    <span class="text-gray-500 text-xs">${m.power ? m.power+' pwr' : 'status'}</span>
-                    <span class="text-gray-600 text-xs flex-1 text-right">${m.reason}</span>
-                </div>
-            `).join('');
-        }
-    });
+        `;
+        // Load moves async
+        fetch(`/api/recommend-moves/${id}`).then(r=>r.json()).then(moves => {
+            const el = document.getElementById('detail-moves');
+            if (el && Array.isArray(moves) && moves.length) {
+                el.innerHTML = `<div class="divider"></div><h3 class="font-bold text-warning mb-2">Moveset Recommande (PvE)</h3>
+                <div class="overflow-x-auto"><table class="table table-sm"><thead><tr><th>#</th><th>Type</th><th>Move</th><th>Puissance</th><th>Raison</th></tr></thead><tbody>
+                ${moves.map((m,i) => `<tr><td>${i+1}</td><td>${pill(m.type)}</td><td class="font-bold">${m.move}</td><td>${m.power||'-'}</td><td class="text-xs opacity-60">${m.reason}</td></tr>`).join('')}
+                </tbody></table></div>`;
+            }
+        }).catch(e => console.error('Moves error:', e));
+    } catch(e) { console.error('Detail error:', e); }
 }
 
-function closeDex() {
-    document.getElementById('dex-detail').classList.add('hidden');
-    document.getElementById('dex-grid').classList.remove('hidden');
-}
+function closeDex() { document.getElementById('dex-detail').classList.add('hidden'); document.getElementById('dex-grid').classList.remove('hidden'); }
 
-// Battle search
+// === Battle ===
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('battle-input')?.addEventListener('input', async e => {
         const q = e.target.value.trim();
         if (q.length < 3) { document.getElementById('battle-result').classList.add('hidden'); return; }
-        const res = await fetch(`/api/pokemon/search/${q}`).then(r=>r.json());
-        if (!res.length) return;
-        const p = res[0];
-        const bst = p.hp+p.attack+p.defense+p.sp_attack+p.sp_defense+p.speed;
-        document.getElementById('battle-result').classList.remove('hidden');
-        document.getElementById('battle-result').innerHTML = `
-            <div class="flex items-center gap-6 mt-2 p-4 glass" style="border-color:${TC[p.type1]||'#888'}40">
-                <img src="https://play.pokemonshowdown.com/sprites/ani/${p.name.toLowerCase()}.gif" class="w-24 h-24 sprite-pop">
-                <div>
-                    <h4 class="text-xl font-bold text-white">#${String(p.id).padStart(3,'0')} ${p.name}</h4>
+        try {
+            const res = await fetch(`/api/pokemon/search/${q}`).then(r=>r.json());
+            if (!Array.isArray(res) || !res.length) return;
+            const p = res[0];
+            const bst = p.hp+p.attack+p.defense+p.sp_attack+p.sp_defense+p.speed;
+            document.getElementById('battle-result').classList.remove('hidden');
+            document.getElementById('battle-result').innerHTML = `
+                <div class="flex items-center gap-6 p-4 bg-base-300 rounded-xl">
+                    <img src="${spr(p.name)}" class="w-24 h-24 sprite-pop">
+                    <div><h4 class="text-xl font-bold">#${String(p.id).padStart(3,'0')} ${p.name}</h4>
                     <div class="flex gap-2 mt-1">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div>
-                    <p class="text-xs text-gray-400 mt-2 font-mono">BST ${bst} — HP:${p.hp} Atk:${p.attack} Def:${p.defense} SpA:${p.sp_attack} SpD:${p.sp_defense} Spe:${p.speed}</p>
-                </div>
-            </div>
-        `;
+                    <p class="text-xs opacity-60 mt-2 font-mono">BST ${bst} — HP:${p.hp} Atk:${p.attack} Def:${p.defense} SpA:${p.sp_attack} SpD:${p.sp_defense} Spe:${p.speed}</p></div>
+                </div>`;
+        } catch(e) { console.error('Battle search error:', e); }
     });
 });
-
-// Collection
-async function loadCollection() {
-    window._colLoaded = true;
-    const pokemon = await fetch('/api/pokemon/all').then(r=>r.json());
-    const g = document.getElementById('collection-grid');
-    g.innerHTML = '';
-    pokemon.forEach(p => {
-        g.innerHTML += `<div class="poke-card opacity-40 hover:opacity-100 p-1" style="border-bottom:2px solid ${TC[p.type1]||'#888'}">
-            <img src="https://play.pokemonshowdown.com/sprites/ani/${p.name.toLowerCase()}.gif" class="w-8 h-8 mx-auto" loading="lazy">
-            <p class="text-[8px] text-gray-500">${p.id}</p>
-        </div>`;
-    });
-}
 
 // === Damage Calculator ===
 async function calcDamage() {
@@ -513,41 +437,38 @@ async function calcDamage() {
     const power = document.getElementById('dmg-power').value;
     const type = document.getElementById('dmg-type').value;
     if (!atk || !def_) return;
-    const r = await fetch(`/api/damage?attacker=${atk}&defender=${def_}&power=${power}&move_type=${type}`).then(r=>r.json());
-    const rd = document.getElementById('dmg-result');
-    rd.classList.remove('hidden');
-    if (r.error) { rd.innerHTML = `<p class="text-red-400">${r.error}</p>`; return; }
-    const effColor = r.type_mult >= 2 ? 'text-red-400' : r.type_mult <= 0.5 ? 'text-green-400' : r.type_mult === 0 ? 'text-blue-400' : 'text-gray-300';
-    rd.innerHTML = `
-        <p class="font-bold text-white">${r.attacker} vs ${r.defender}</p>
-        <p class="text-lg font-mono ${effColor}">${r.min_damage}-${r.max_damage} HP (${r.min_pct}%-${r.max_pct}%)</p>
-        <p class="text-xs text-gray-400 mt-1">${r.text.replace(/\n/g,'<br>')}</p>
-    `;
+    try {
+        const r = await fetch(`/api/damage?attacker=${atk}&defender=${def_}&power=${power}&move_type=${type}`).then(r=>r.json());
+        const rd = document.getElementById('dmg-result');
+        rd.classList.remove('hidden');
+        if (r.error) { rd.innerHTML = `<span class="text-error">${r.error}</span>`; return; }
+        rd.innerHTML = `<div><strong>${r.attacker} vs ${r.defender}</strong><br><span class="text-lg font-mono">${r.min_damage}-${r.max_damage} HP (${r.min_pct}%-${r.max_pct}%)</span><br><span class="text-xs opacity-60">${r.text.replace(/\n/g,'<br>')}</span></div>`;
+    } catch(e) { console.error('Damage calc error:', e); }
 }
 
-// Load type chart
 async function loadTypeChart() {
-    const data = await fetch('/api/type-chart').then(r=>r.json());
-    const types = data.types;
-    const chart = data.chart;
-    let html = '<table class="text-[9px] border-collapse"><tr><th class="p-1"></th>';
-    types.forEach(t => html += `<th class="p-1" style="color:${TC[t]}">${t.slice(0,3)}</th>`);
-    html += '</tr>';
-    types.forEach(atk => {
-        html += `<tr><td class="p-1 font-bold" style="color:${TC[atk]}">${atk.slice(0,3)}</td>`;
-        types.forEach(def_ => {
-            const m = chart[atk+'_'+def_] || 1.0;
-            const bg = m>=2?'#c62828':m===0?'#1a237e':m<=0.5?'#1b5e20':'transparent';
-            const txt = m>=2?'2':m===0?'0':m<=0.5?'½':'';
-            html += `<td class="p-1 text-center text-white font-bold" style="background:${bg};border-radius:2px">${txt}</td>`;
-        });
+    try {
+        const data = await fetch('/api/type-chart').then(r=>r.json());
+        const types = data.types;
+        const chart = data.chart;
+        let html = '<table class="table table-xs"><tr><th></th>';
+        types.forEach(t => html += `<th style="color:${TC[t]};writing-mode:vertical-lr;transform:rotate(180deg);font-size:9px">${t.slice(0,3)}</th>`);
         html += '</tr>';
-    });
-    html += '</table>';
-    document.getElementById('type-chart').innerHTML = html;
-    // Populate damage type select
-    const sel = document.getElementById('dmg-type');
-    if (sel) { sel.innerHTML = ''; types.forEach(t => sel.innerHTML += `<option>${t}</option>`); }
+        types.forEach(atk => {
+            html += `<tr><td class="font-bold" style="color:${TC[atk]};font-size:10px">${atk.slice(0,3)}</td>`;
+            types.forEach(def_ => {
+                const m = chart[atk+'_'+def_] || 1.0;
+                const bg = m>=2?'#c62828':m===0?'#1a237e':m<=0.5?'#1b5e20':'transparent';
+                const txt = m>=2?'2':m===0?'0':m<=0.5?'½':'';
+                html += `<td class="text-center text-white text-xs font-bold p-0.5" style="background:${bg};border-radius:2px">${txt}</td>`;
+            });
+            html += '</tr>';
+        });
+        html += '</table>';
+        document.getElementById('type-chart').innerHTML = html;
+        const sel = document.getElementById('dmg-type');
+        if (sel) { sel.innerHTML = ''; types.forEach(t => sel.innerHTML += `<option>${t}</option>`); }
+    } catch(e) { console.error('Type chart error:', e); }
 }
 
 // === Team Builder ===
@@ -556,12 +477,10 @@ document.getElementById('team-input')?.addEventListener('keydown', async e => {
     if (e.key !== 'Enter') return;
     const q = e.target.value.trim();
     if (!q || team.length >= 6) return;
-    const res = await fetch(`/api/pokemon/search/${q}`).then(r=>r.json());
-    if (!res.length) return;
-    const p = res[0];
-    team.push(p);
-    e.target.value = '';
-    renderTeam();
+    try {
+        const res = await fetch(`/api/pokemon/search/${q}`).then(r=>r.json());
+        if (Array.isArray(res) && res.length) { team.push(res[0]); e.target.value = ''; renderTeam(); }
+    } catch(e) { console.error('Team add error:', e); }
 });
 
 function renderTeam() {
@@ -570,14 +489,14 @@ function renderTeam() {
     for (let i = 0; i < 6; i++) {
         if (i < team.length) {
             const p = team[i];
-            slots.innerHTML += `<div class="glass p-3 text-center rounded-xl hover-lift cursor-pointer" style="border:2px solid ${TC[p.type1]||'#888'}" onclick="removeTeam(${i})">
-                <img src="https://play.pokemonshowdown.com/sprites/ani/${p.name.toLowerCase()}.gif" class="w-16 h-16 mx-auto sprite-pop">
-                <p class="text-xs font-bold text-white mt-1">${p.name}</p>
+            slots.innerHTML += `<div class="card bg-base-300 poke-card p-3 text-center" onclick="removeTeam(${i})" style="border-top:3px solid ${TC[p.type1]||'#888'}">
+                <img src="${spr(p.name)}" class="w-16 h-16 mx-auto sprite-pop">
+                <p class="text-sm font-bold mt-1">${p.name}</p>
                 <div class="flex gap-1 justify-center mt-1">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div>
-                <p class="text-[9px] text-gray-500 mt-1">Clic pour retirer</p>
+                <p class="text-[9px] opacity-30 mt-1">Clic = retirer</p>
             </div>`;
         } else {
-            slots.innerHTML += `<div class="glass p-4 text-center border-2 border-dashed border-poke-border rounded-xl h-36 flex items-center justify-center"><p class="text-gray-600 text-sm">Slot ${i+1}</p></div>`;
+            slots.innerHTML += `<div class="card bg-base-300 border-2 border-dashed border-base-content/10 p-3 text-center h-32 flex items-center justify-center"><span class="opacity-20">Slot ${i+1}</span></div>`;
         }
     }
     analyzeTeam();
@@ -589,50 +508,57 @@ function toggleShowdown() { document.getElementById('showdown-import').classList
 async function importShowdown() {
     const text = document.getElementById('showdown-text').value;
     if (!text.trim()) return;
-    const res = await fetch('/api/import-showdown', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text})}).then(r=>r.json());
-    team = res.filter(p => p.id);  // Only keep Pokemon found in DB
-    document.getElementById('showdown-import').classList.add('hidden');
-    document.getElementById('showdown-text').value = '';
-    renderTeam();
+    try {
+        const res = await fetch('/api/import-showdown', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text})}).then(r=>r.json());
+        team = res.filter(p => p.id);
+        document.getElementById('showdown-import').classList.add('hidden');
+        document.getElementById('showdown-text').value = '';
+        renderTeam();
+    } catch(e) { console.error('Showdown import error:', e); }
 }
 
 async function analyzeTeam() {
-    if (!team.length) { document.getElementById('team-coverage').innerHTML = '<p class="text-gray-500">Ajoute des Pokemon...</p>'; return; }
-    const data = await fetch('/api/type-chart').then(r=>r.json());
-    const types = data.types;
-    const chart = data.chart;
-    // Offensive coverage
-    const covered = new Set();
-    team.forEach(p => {
-        [p.type1, p.type2].filter(Boolean).forEach(atk => {
-            types.forEach(def_ => { if ((chart[atk+'_'+def_]||1) > 1) covered.add(def_); });
-        });
-    });
-    const uncovered = types.filter(t => !covered.has(t));
-    // Defensive weaknesses
-    const weakCount = {};
-    types.forEach(t => weakCount[t] = 0);
-    team.forEach(p => {
-        types.forEach(atk => {
-            let m = chart[atk+'_'+p.type1] || 1;
-            if (p.type2) m *= (chart[atk+'_'+p.type2] || 1);
-            if (m > 1) weakCount[atk]++;
-        });
-    });
-    const dangers = Object.entries(weakCount).filter(([t,c]) => c >= 3).sort((a,b) => b[1]-a[1]);
-    const warns = Object.entries(weakCount).filter(([t,c]) => c === 2).sort((a,b) => b[1]-a[1]);
+    const el = document.getElementById('team-coverage');
+    if (!team.length) { el.innerHTML = '<span class="opacity-40">Ajoute des Pokemon...</span>'; return; }
+    try {
+        const data = await fetch('/api/type-chart').then(r=>r.json());
+        const types = data.types; const chart = data.chart;
+        const covered = new Set();
+        team.forEach(p => { [p.type1,p.type2].filter(Boolean).forEach(atk => { types.forEach(def_ => { if ((chart[atk+'_'+def_]||1) > 1) covered.add(def_); }); }); });
+        const uncovered = types.filter(t => !covered.has(t));
+        const weakCount = {}; types.forEach(t => weakCount[t]=0);
+        team.forEach(p => { types.forEach(atk => { let m = chart[atk+'_'+p.type1]||1; if(p.type2) m *= (chart[atk+'_'+p.type2]||1); if(m>1) weakCount[atk]++; }); });
+        const dangers = Object.entries(weakCount).filter(([t,c])=>c>=3).sort((a,b)=>b[1]-a[1]);
+        const warns = Object.entries(weakCount).filter(([t,c])=>c===2).sort((a,b)=>b[1]-a[1]);
+        let html = `<p><span class="text-primary font-bold">Couverture:</span> ${Math.round(covered.size/types.length*100)}% (${covered.size}/${types.length})</p>`;
+        if (uncovered.length) html += `<p class="text-sm opacity-60 mt-1">Non couverts: ${uncovered.map(t=>pill(t)).join(' ')}</p>`;
+        if (dangers.length) html += `<div class="alert alert-error mt-2 py-2"><span>DANGER: ${dangers.map(([t,c])=>`${pill(t)} (${c}/${team.length})`).join(' ')}</span></div>`;
+        else if (warns.length) html += `<div class="alert alert-warning mt-2 py-2"><span>Attention: ${warns.slice(0,4).map(([t,c])=>`${pill(t)} (${c}/${team.length})`).join(' ')}</span></div>`;
+        else html += `<div class="alert alert-success mt-2 py-2"><span>✅ Bon equilibre !</span></div>`;
+        el.innerHTML = html;
+    } catch(e) { console.error('Analysis error:', e); }
+}
 
-    let html = `<p class="text-sm mb-2"><span class="text-cyan-400 font-bold">Couverture offensive:</span> ${Math.round(covered.size/types.length*100)}% (${covered.size}/${types.length})</p>`;
-    if (uncovered.length) html += `<p class="text-xs text-gray-500 mb-2">Non couverts: ${uncovered.map(t=>pill(t)).join(' ')}</p>`;
-    if (dangers.length) html += `<p class="text-sm text-red-400 font-bold mt-2">⚠ DANGER: ${dangers.map(([t,c])=>`${pill(t)} (${c}/${team.length})`).join(' ')}</p>`;
-    if (warns.length) html += `<p class="text-sm text-orange-400 mt-1">Attention: ${warns.slice(0,4).map(([t,c])=>`${pill(t)} (${c}/${team.length})`).join(' ')}</p>`;
-    if (!dangers.length && !warns.length) html += `<p class="text-sm text-green-400 font-bold mt-2">✅ Bon equilibre defensif !</p>`;
-    document.getElementById('team-coverage').innerHTML = html;
+// === Collection ===
+async function loadCollection() {
+    window._colLoaded = true;
+    try {
+        const pokemon = await fetch('/api/pokemon/all').then(r=>r.json());
+        if (!Array.isArray(pokemon)) return;
+        const g = document.getElementById('collection-grid');
+        g.innerHTML = '';
+        pokemon.forEach(p => {
+            g.innerHTML += `<div class="card bg-base-200 p-1 text-center opacity-40 hover:opacity-100 transition cursor-pointer" style="border-bottom:2px solid ${TC[p.type1]||'#888'}">
+                <img src="${spr(p.name)}" class="w-8 h-8 mx-auto" loading="lazy"><p class="text-[8px] opacity-40">${p.id}</p>
+            </div>`;
+        });
+    } catch(e) { console.error('Collection error:', e); }
 }
 
 // Init
 loadDashboard();
 loadTypeChart();
+renderTeam();
 </script>
 </body>
 </html>
