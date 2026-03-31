@@ -233,6 +233,14 @@
     </div>
     <div id="dex-grid" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 gap-2"></div>
     <div id="dex-detail" class="hidden fade-in"></div>
+    <!-- Compare panel -->
+    <div id="compare-panel" class="hidden fade-in mt-6 glass-card p-6">
+        <div class="flex justify-between items-center mb-4">
+            <p class="text-xs font-bold tracking-widest text-gray-500">COMPARAISON</p>
+            <button onclick="clearCompare()" class="btn btn-xs btn-error btn-outline">Effacer</button>
+        </div>
+        <div id="compare-content"></div>
+    </div>
 </div>
 
 <!-- BATTLE -->
@@ -637,7 +645,10 @@ async function showP(id){
                     <h2 class="text-2xl font-black text-white mt-3">#${String(p.id).padStart(3,'0')} ${p.name}</h2>
                     <div class="flex gap-2 justify-center mt-2">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div>
                     <p class="text-[10px] text-gray-500 mt-2">${p.ability1||''}${p.ability2?' / '+p.ability2:''}${p.hidden_ability?' / '+p.hidden_ability+' (HA)':''}</p>
-                    <button onclick="event.stopPropagation();toggleFav(${p.id})" class="btn btn-xs mt-2 ${isFav(p.id)?'btn-warning':'btn-ghost'}">${isFav(p.id)?'★ Favori':'☆ Favoris'}</button>
+                    <div class="flex gap-2 mt-2">
+                        <button onclick="event.stopPropagation();toggleFav(${p.id})" class="btn btn-xs ${isFav(p.id)?'btn-warning':'btn-ghost'}">${isFav(p.id)?'★ Favori':'☆ Favoris'}</button>
+                        <button onclick="event.stopPropagation();addCompare(${p.id},'${p.name}',[${p.hp},${p.attack},${p.defense},${p.sp_attack},${p.sp_defense},${p.speed}])" class="btn btn-xs btn-info btn-outline">Comparer</button>
+                    </div>
                 </div>
                 <div class="flex-1">
                     <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">STATS DE BASE <span class="text-gray-600">(BST: ${bst})</span></p>
@@ -1118,6 +1129,70 @@ async function checkOCR(){
         }
         el.innerHTML=h;
     }catch(e){el.innerHTML='<p class="text-red-400">Erreur: '+e.message+'</p>';}
+}
+
+// Pokemon compare
+let compareList=[];
+function addCompare(id,name,stats){
+    if(compareList.length>=3){showToast('Maximum 3 Pokemon');return;}
+    if(compareList.find(c=>c.id===id)){showToast('Deja dans la comparaison');return;}
+    compareList.push({id,name,stats});
+    renderCompare();
+    showToast(name+' ajoute a la comparaison');
+}
+function clearCompare(){compareList=[];document.getElementById('compare-panel').classList.add('hidden');}
+function renderCompare(){
+    if(compareList.length<2){return;}
+    const panel=document.getElementById('compare-panel');
+    const content=document.getElementById('compare-content');
+    panel.classList.remove('hidden');
+
+    const colors=['#00e5ff','#ff4081','#ffd740'];
+    const labels=['HP','Atk','Def','SpA','SpD','Spe'];
+    const cx=120,cy=120,r=90,n=6;
+    const angle=i=>Math.PI*2*i/n-Math.PI/2;
+
+    // Build overlapped radar SVG
+    let svg=`<svg viewBox="0 0 240 240" class="w-64 h-64 mx-auto">`;
+    // Grid
+    [0.33,0.66,1].forEach(lv=>{let pts='';for(let i=0;i<n;i++){const a=angle(i);pts+=`${cx+r*lv*Math.cos(a)},${cy+r*lv*Math.sin(a)} `;}
+        svg+=`<polygon points="${pts}" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>`;});
+    // Axes
+    for(let i=0;i<n;i++){const a=angle(i);svg+=`<line x1="${cx}" y1="${cy}" x2="${cx+r*Math.cos(a)}" y2="${cy+r*Math.sin(a)}" stroke="rgba(255,255,255,0.05)"/>`;}
+    // Labels
+    for(let i=0;i<n;i++){const a=angle(i);const lx=cx+(r+16)*Math.cos(a);const ly=cy+(r+16)*Math.sin(a);
+        svg+=`<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" fill="#888" font-size="10">${labels[i]}</text>`;}
+    // Polygons for each Pokemon
+    compareList.forEach((p,pi)=>{
+        let pts='';for(let i=0;i<n;i++){const a=angle(i);const v=Math.min(p.stats[i]/255,1);pts+=`${cx+r*v*Math.cos(a)},${cy+r*v*Math.sin(a)} `;}
+        svg+=`<polygon points="${pts}" fill="${colors[pi]}20" stroke="${colors[pi]}" stroke-width="2"/>`;
+    });
+    svg+=`</svg>`;
+
+    // Legend + stats table
+    let legend=compareList.map((p,i)=>`<div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background:${colors[i]}"></div><img src="${spr(p.name)}" class="w-8 h-8"><span class="font-bold text-white text-sm">${p.name}</span></div>`).join('');
+
+    // Stats comparison table
+    let table='<table class="text-sm w-full mt-4"><tr><th class="text-left text-gray-500 text-xs p-1">Stat</th>';
+    compareList.forEach((p,i)=>table+=`<th class="text-center p-1" style="color:${colors[i]}">${p.name}</th>`);
+    table+='</tr>';
+    labels.forEach((l,li)=>{
+        table+=`<tr><td class="text-gray-400 text-xs p-1">${l}</td>`;
+        const vals=compareList.map(p=>p.stats[li]);
+        const max=Math.max(...vals);
+        compareList.forEach((p,pi)=>{
+            const v=p.stats[li];
+            const isBest=v===max&&vals.filter(x=>x===max).length===1;
+            table+=`<td class="text-center p-1 mono ${isBest?'font-black':'text-gray-400'}" style="${isBest?'color:'+colors[pi]:''}">${v}</td>`;
+        });
+        table+='</tr>';
+    });
+    // BST row
+    table+='<tr class="border-t border-gray-700"><td class="text-gray-400 text-xs p-1 font-bold">BST</td>';
+    compareList.forEach((p,i)=>{const bst=p.stats.reduce((a,b)=>a+b,0);table+=`<td class="text-center p-1 mono font-bold" style="color:${colors[i]}">${bst}</td>`;});
+    table+='</tr></table>';
+
+    content.innerHTML=`<div class="flex gap-8 items-center"><div>${svg}</div><div class="flex-1"><div class="flex gap-4 mb-3">${legend}</div>${table}</div></div>`;
 }
 
 // OCR test capture
