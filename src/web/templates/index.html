@@ -276,13 +276,39 @@
             <button onclick="shinyAdd(1)" class="btn btn-sm btn-info">+1 Rencontre</button>
             <button onclick="shinyAdd(5)" class="btn btn-sm btn-secondary">+5 Horde</button>
             <button onclick="shinyFound()" class="btn btn-sm btn-warning">✨ SHINY TROUVE !</button>
-            <button onclick="shinyReset()" class="btn btn-xs btn-error btn-outline">Reset Session</button>
+            <button onclick="shinyReset()" class="btn btn-xs btn-error btn-outline">Reinitialiser</button>
             <span class="text-xs text-gray-500 ml-auto" id="sh-time">00:00:00</span>
+        </div>
+        <!-- Rate modifier -->
+        <div class="flex gap-3 mt-3 items-center">
+            <span class="text-xs text-gray-500">Modificateur :</span>
+            <select id="sh-rate-mod" onchange="shinyUpdate()" class="select select-bordered select-xs">
+                <option value="30000">Base (1/30,000)</option>
+                <option value="27000">Donator (1/27,000)</option>
+                <option value="27000">Shiny Charm (1/27,000)</option>
+                <option value="24000">Donator + Charm (1/24,000)</option>
+            </select>
         </div>
         <!-- Probability bar -->
         <div class="mt-4">
             <div class="flex justify-between text-xs mb-1"><span class="text-gray-500">Probabilite cumulative</span><span id="sh-prob2" style="color:#69f0ae">0.00%</span></div>
             <div class="stat-track h-3 rounded-lg"><div id="sh-bar" class="stat-fill rounded-lg transition-all duration-500" style="width:0%;background:#69f0ae"></div></div>
+        </div>
+    </div>
+    <!-- Shiny History -->
+    <div class="glass-card p-5 mb-6">
+        <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">HISTORIQUE DES SHINIES</p>
+        <div id="sh-history" class="space-y-2 text-sm">
+            <p class="text-gray-600 italic">Aucun shiny trouve pour le moment...</p>
+        </div>
+    </div>
+    <!-- Stats -->
+    <div class="glass-card p-5 mb-6">
+        <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">STATISTIQUES</p>
+        <div class="grid grid-cols-3 gap-4 text-center">
+            <div><p class="text-gray-500 text-xs">Moyenne/Shiny</p><p id="sh-avg" class="text-lg font-bold mono text-white">-</p></div>
+            <div><p class="text-gray-500 text-xs">Record (le moins)</p><p id="sh-best" class="text-lg font-bold mono" style="color:#69f0ae">-</p></div>
+            <div><p class="text-gray-500 text-xs">Pire (dry streak)</p><p id="sh-worst" class="text-lg font-bold mono" style="color:#ff5252">-</p></div>
         </div>
     </div>
     <!-- Rates table -->
@@ -700,24 +726,54 @@ async function checkGame(){
 setInterval(checkGame,5000);
 
 // Shiny counter
-let shData=JSON.parse(localStorage.getItem('shiny_data')||'{"session":0,"total":0,"shinies":0,"start":0}');
+let shData=JSON.parse(localStorage.getItem('shiny_data')||'{"session":0,"total":0,"shinies":0,"start":0,"history":[],"lastShinyAt":0}');
 if(!shData.start)shData.start=Date.now();
+if(!shData.history)shData.history=[];
+if(!shData.lastShinyAt)shData.lastShinyAt=0;
+
 function shinyAdd(n){shData.session+=n;shData.total+=n;shinyUpdate();}
-function shinyFound(){shData.shinies++;shinyUpdate();showToast('SHINY TROUVE ! Felicitations !');}
-function shinyReset(){shData.session=0;shData.start=Date.now();shinyUpdate();showToast('Session reinitialisee');}
+function shinyFound(){
+    const name=prompt('Quel Pokemon shiny as-tu trouve ?')||'Inconnu';
+    const encounters=shData.session-shData.lastShinyAt;
+    shData.history.push({name,encounters,total:shData.total,date:new Date().toISOString().slice(0,10)});
+    shData.shinies++;
+    shData.lastShinyAt=shData.session;
+    shinyUpdate();
+    showToast(`SHINY ${name.toUpperCase()} TROUVE apres ${encounters.toLocaleString()} rencontres !`);
+}
+function shinyReset(){shData.session=0;shData.lastShinyAt=0;shData.start=Date.now();shinyUpdate();showToast('Session reinitialisee');}
 function shinyUpdate(){
     localStorage.setItem('shiny_data',JSON.stringify(shData));
     const el=id=>document.getElementById(id);
     if(el('sh-session'))el('sh-session').textContent=shData.session.toLocaleString();
     if(el('sh-total'))el('sh-total').textContent=shData.total.toLocaleString();
     if(el('sh-shinies'))el('sh-shinies').textContent=shData.shinies;
-    const prob=1-Math.pow(1-1/30000,shData.session);
+    // Rate from selector
+    const rateMod=parseInt(document.getElementById('sh-rate-mod')?.value||'30000');
+    const prob=1-Math.pow(1-1/rateMod,shData.session);
     const pct=(prob*100).toFixed(2);
     if(el('sh-prob'))el('sh-prob').textContent=pct+'%';
     if(el('sh-prob2'))el('sh-prob2').textContent=pct+'%';
     if(el('sh-bar')){
         el('sh-bar').style.width=Math.min(prob*100,100)+'%';
         el('sh-bar').style.background=prob>0.5?'#ff5252':prob>0.25?'#ffd740':'#69f0ae';
+    }
+    // History
+    const hist=el('sh-history');
+    if(hist&&shData.history.length){
+        hist.innerHTML=shData.history.slice().reverse().map(h=>
+            `<div class="flex items-center gap-3 p-2 glass-card"><span style="color:#ffd740" class="font-bold">✨ ${h.name}</span><span class="text-gray-500">apres ${h.encounters.toLocaleString()} rencontres</span><span class="text-gray-600 text-xs ml-auto">${h.date}</span></div>`
+        ).join('');
+    }
+    // Stats
+    if(shData.history.length){
+        const encs=shData.history.map(h=>h.encounters);
+        const avg=Math.round(encs.reduce((a,b)=>a+b,0)/encs.length);
+        const best=Math.min(...encs);
+        const worst=Math.max(...encs);
+        if(el('sh-avg'))el('sh-avg').textContent=avg.toLocaleString();
+        if(el('sh-best'))el('sh-best').textContent=best.toLocaleString();
+        if(el('sh-worst'))el('sh-worst').textContent=worst.toLocaleString();
     }
 }
 // Timer
