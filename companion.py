@@ -84,6 +84,7 @@ def main():
 
     def toggle_overlay_safe():
         """Toggle overlay from Qt main thread."""
+        log.info("Toggle overlay demande...")
         if not window._overlay:
             log.warning("Overlay non disponible")
             return
@@ -91,10 +92,14 @@ def main():
             window._overlay_visible = not window._overlay_visible
             if window._overlay_visible:
                 window._overlay.show()
+                log.info("Overlay AFFICHE")
             else:
                 window._overlay.hide()
+                log.info("Overlay MASQUE")
         except Exception as e:
-            log.warning(f"Erreur overlay: {e}")
+            log.error(f"Erreur overlay: {e}")
+
+    window._toggle_overlay = toggle_overlay_safe
 
     # Setup hotkeys (F9 for overlay toggle) — calls via QTimer for thread safety
     try:

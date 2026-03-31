@@ -107,8 +107,30 @@ class MainWindow(QMainWindow):
 
         sidebar_layout.addStretch()
 
+        # Overlay toggle button
+        self.overlay_btn = QPushButton("  Overlay")
+        self.overlay_btn.setFont(QFont("Segoe UI", 12))
+        self.overlay_btn.setFixedHeight(44)
+        self.overlay_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.overlay_btn.setStyleSheet(f"""
+            QPushButton {{
+                color: {COLORS['accent_yellow']};
+                background: {COLORS['bg_primary']};
+                border: 2px solid {COLORS['accent_yellow']};
+                border-radius: 8px;
+                text-align: left;
+                padding-left: 16px;
+                margin: 4px 8px;
+            }}
+            QPushButton:hover {{
+                background: {COLORS['bg_hover']};
+            }}
+        """)
+        self.overlay_btn.clicked.connect(self._on_overlay_click)
+        sidebar_layout.addWidget(self.overlay_btn)
+
         # Version info
-        version = QLabel("v0.2.0")
+        version = QLabel("v0.3.0")
         version.setFont(QFont("Segoe UI", 8))
         version.setStyleSheet(f"color: {COLORS['text_muted']}; padding: 12px;")
         sidebar_layout.addWidget(version)
@@ -241,6 +263,18 @@ class MainWindow(QMainWindow):
                 border-top: 1px solid {COLORS['border']};
                 padding: 0 8px;
             """)
+
+    def _on_overlay_click(self) -> None:
+        """Toggle overlay from the sidebar button."""
+        if hasattr(self, '_toggle_overlay') and self._toggle_overlay:
+            self._toggle_overlay()
+        elif hasattr(self, '_overlay') and self._overlay:
+            if self._overlay.isVisible():
+                self._overlay.hide()
+                self.overlay_btn.setText("  Overlay (OFF)")
+            else:
+                self._overlay.show()
+                self.overlay_btn.setText("  Overlay (ON)")
 
     def _focus_search(self) -> None:
         """Focus the Pokedex search bar."""
