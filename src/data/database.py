@@ -196,14 +196,17 @@ class Database:
                 chain.append({**dict(pokemon), "condition": ""})
 
             while True:
-                row = conn.execute(
+                # Use fetchall to handle branched evolutions (e.g., Eevee)
+                rows = conn.execute(
                     """SELECT e.to_pokemon_id, e.condition, p.name, p.type1, p.type2
                        FROM evolutions e
                        JOIN pokemon p ON e.to_pokemon_id = p.id
                        WHERE e.from_pokemon_id = ?""",
                     (current_id,)
-                ).fetchone()
-                if row:
+                ).fetchall()
+                if not rows:
+                    break
+                for row in rows:
                     r = dict(row)
                     chain.append({
                         "id": r["to_pokemon_id"],
@@ -212,9 +215,8 @@ class Database:
                         "type2": r["type2"],
                         "condition": r["condition"],
                     })
-                    current_id = r["to_pokemon_id"]
-                else:
-                    break
+                # Follow the first branch for linear display
+                current_id = dict(rows[0])["to_pokemon_id"]
 
             return chain
 

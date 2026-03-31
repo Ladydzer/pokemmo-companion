@@ -204,7 +204,7 @@ class CompanionApp:
             self._do_toggle_debug()
 
         if self.engine._game_connected:
-            self.overlay.update_status("PokeMMO Companion | Connected | F9: Toggle")
+            self.overlay.update_status("PokeMMO Companion | Connecte")
         else:
             self.overlay.update_status("PokeMMO Companion | Waiting for game... | F9: Toggle")
 
@@ -244,12 +244,12 @@ class CompanionApp:
     def _on_state_changed(self, new_state: str, old_state: str) -> None:
         """Handle game state change."""
         state_display = {
-            GameState.OVERWORLD: "Exploring",
-            GameState.BATTLE: "In Battle",
+            GameState.OVERWORLD: "Exploration",
+            GameState.BATTLE: "En Combat",
             GameState.MENU: "Menu",
             GameState.DIALOG: "Dialog",
-            GameState.LOADING: "Loading...",
-            GameState.UNKNOWN: "Detecting...",
+            GameState.LOADING: "Chargement...",
+            GameState.UNKNOWN: "Detection...",
         }
         status = state_display.get(new_state, new_state)
         self.overlay.update_status(f"PokeMMO Companion | {status} | F9: Toggle")
@@ -257,10 +257,10 @@ class CompanionApp:
     def _on_game_found(self, connected: bool) -> None:
         """Handle game connection/disconnection."""
         if connected:
-            self.overlay.update_status("PokeMMO Companion | Connected | F9: Toggle")
+            self.overlay.update_status("PokeMMO Companion | Connecte")
             self._toast = ToastNotification("PokeMMO detected! Companion active.", 3000, "#4CAF50")
         else:
-            self.overlay.update_status("PokeMMO Companion | Game not found | F9: Toggle")
+            self.overlay.update_status("PokeMMO Companion | Jeu non trouve")
 
     def _setup_hotkeys(self) -> None:
         """Setup global hotkeys. Requires admin rights on Windows."""

@@ -21,10 +21,16 @@ static_dir.mkdir(exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 
+from contextlib import contextmanager
+
+@contextmanager
 def _db():
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
-    return conn
+    try:
+        yield conn
+    finally:
+        conn.close()
 
 
 # === Pages ===
@@ -38,12 +44,11 @@ async def index():
 
 @app.get("/api/stats")
 async def get_stats():
-    conn = _db()
-    pokemon_count = conn.execute("SELECT COUNT(*) FROM pokemon").fetchone()[0]
-    route_count = conn.execute("SELECT COUNT(*) FROM routes").fetchone()[0]
-    spawn_count = conn.execute("SELECT COUNT(*) FROM spawns").fetchone()[0]
-    evo_count = conn.execute("SELECT COUNT(*) FROM evolutions").fetchone()[0]
-    conn.close()
+    with _db() as conn:
+        pokemon_count = conn.execute("SELECT COUNT(*) FROM pokemon").fetchone()[0]
+        route_count = conn.execute("SELECT COUNT(*) FROM routes").fetchone()[0]
+        spawn_count = conn.execute("SELECT COUNT(*) FROM spawns").fetchone()[0]
+        evo_count = conn.execute("SELECT COUNT(*) FROM evolutions").fetchone()[0]
     return {
         "pokemon": pokemon_count, "routes": route_count,
         "spawns": spawn_count, "evolutions": evo_count,
@@ -53,39 +58,35 @@ async def get_stats():
 
 @app.get("/api/pokemon/all")
 async def get_all_pokemon():
-    conn = _db()
-    rows = conn.execute(
-        "SELECT id, name, type1, type2, hp, attack, defense, sp_attack, sp_defense, speed FROM pokemon ORDER BY id"
-    ).fetchall()
-    conn.close()
+    with _db() as conn:
+        rows = conn.execute(
+            "SELECT id, name, type1, type2, hp, attack, defense, sp_attack, sp_defense, speed FROM pokemon ORDER BY id"
+        ).fetchall()
     return [dict(r) for r in rows]
 
 
 @app.get("/api/pokemon/search/{query}")
 async def search_pokemon(query: str):
-    conn = _db()
-    rows = conn.execute(
-        "SELECT id, name, type1, type2, hp, attack, defense, sp_attack, sp_defense, speed FROM pokemon WHERE LOWER(name) LIKE LOWER(?) ORDER BY id LIMIT 30",
-        (f"%{query}%",)
-    ).fetchall()
-    conn.close()
+    with _db() as conn:
+        rows = conn.execute(
+            "SELECT id, name, type1, type2, hp, attack, defense, sp_attack, sp_defense, speed FROM pokemon WHERE LOWER(name) LIKE LOWER(?) ORDER BY id LIMIT 30",
+            (f"%{query}%",)
+        ).fetchall()
     return [dict(r) for r in rows]
 
 
 @app.get("/api/pokemon/{pokemon_id}")
 async def get_pokemon(pokemon_id: int):
-    conn = _db()
-    row = conn.execute("SELECT * FROM pokemon WHERE id = ?", (pokemon_id,)).fetchone()
-    conn.close()
+    with _db() as conn:
+        row = conn.execute("SELECT * FROM pokemon WHERE id = ?", (pokemon_id,)).fetchone()
     return dict(row) if row else {"error": "Not found"}
 
 
 @app.get("/api/pokemon/{pokemon_id}/locations")
 async def get_pokemon_locations(pokemon_id: int):
-    conn = _db()
-    pokemon = conn.execute("SELECT name FROM pokemon WHERE id = ?", (pokemon_id,)).fetchone()
-    if not pokemon:
-        conn.close()
+    with _db() as conn:
+        pokemon = conn.execute("SELECT name FROM pokemon WHERE id = ?", (pokemon_id,)).fetchone()
+        if not pokemon:
         return []
     rows = conn.execute(
         """SELECT r.name as route_name, r.region, s.method, s.rate, s.level_min, s.level_max
@@ -100,60 +101,58 @@ async def get_pokemon_locations(pokemon_id: int):
 
 @app.get("/api/pokemon/{pokemon_id}/evolutions")
 async def get_evolutions(pokemon_id: int):
-    conn = _db()
-    # Walk back to base
-    base_id = pokemon_id
-    while True:
-        row = conn.execute("SELECT from_pokemon_id FROM evolutions WHERE to_pokemon_id = ?", (base_id,)).fetchone()
-        if row:
-            base_id = row[0]
-        else:
-            break
-    # Walk forward
-    chain = []
-    current = base_id
-    p = conn.execute("SELECT id, name, type1, type2 FROM pokemon WHERE id = ?", (current,)).fetchone()
-    if p:
-        chain.append({**dict(p), "condition": ""})
-    while True:
-        row = conn.execute(
-            """SELECT e.to_pokemon_id, e.condition, p.name, p.type1, p.type2
-               FROM evolutions e JOIN pokemon p ON e.to_pokemon_id = p.id
-               WHERE e.from_pokemon_id = ?""", (current,)
-        ).fetchone()
-        if row:
-            r = dict(row)
-            chain.append({"id": r["to_pokemon_id"], "name": r["name"],
-                          "type1": r["type1"], "type2": r["type2"], "condition": r["condition"]})
-            current = r["to_pokemon_id"]
-        else:
-            break
-    conn.close()
+    with _db() as conn:
+        # Walk back to base
+        base_id = pokemon_id
+        while True:
+            row = conn.execute("SELECT from_pokemon_id FROM evolutions WHERE to_pokemon_id = ?", (base_id,)).fetchone()
+            if row:
+                base_id = row[0]
+            else:
+                break
+        # Walk forward
+        chain = []
+        current = base_id
+        p = conn.execute("SELECT id, name, type1, type2 FROM pokemon WHERE id = ?", (current,)).fetchone()
+        if p:
+            chain.append({**dict(p), "condition": ""})
+        while True:
+            row = conn.execute(
+                """SELECT e.to_pokemon_id, e.condition, p.name, p.type1, p.type2
+                   FROM evolutions e JOIN pokemon p ON e.to_pokemon_id = p.id
+                   WHERE e.from_pokemon_id = ?""", (current,)
+            ).fetchone()
+            if row:
+                r = dict(row)
+                chain.append({"id": r["to_pokemon_id"], "name": r["name"],
+                              "type1": r["type1"], "type2": r["type2"], "condition": r["condition"]})
+                current = r["to_pokemon_id"]
+            else:
+                break
     return chain
 
 
 @app.get("/api/spawns/{route_name}")
 async def get_spawns(route_name: str, region: str = ""):
-    conn = _db()
-    if region:
-        rows = conn.execute(
-            """SELECT s.*, p.name as pokemon_name, p.id as pokemon_id, p.type1, p.type2
-               FROM spawns s JOIN pokemon p ON s.pokemon_id = p.id
-               JOIN routes r ON s.route_id = r.id
-               WHERE LOWER(r.name) LIKE LOWER(?) AND LOWER(r.region) = LOWER(?)
-               ORDER BY s.rate DESC LIMIT 20""",
-            (f"%{route_name}%", region)
-        ).fetchall()
-    else:
-        rows = conn.execute(
-            """SELECT s.*, p.name as pokemon_name, p.id as pokemon_id, p.type1, p.type2, r.region
-               FROM spawns s JOIN pokemon p ON s.pokemon_id = p.id
-               JOIN routes r ON s.route_id = r.id
-               WHERE LOWER(r.name) LIKE LOWER(?)
-               ORDER BY s.rate DESC LIMIT 20""",
-            (f"%{route_name}%",)
-        ).fetchall()
-    conn.close()
+    with _db() as conn:
+        if region:
+            rows = conn.execute(
+                """SELECT s.*, p.name as pokemon_name, p.id as pokemon_id, p.type1, p.type2
+                   FROM spawns s JOIN pokemon p ON s.pokemon_id = p.id
+                   JOIN routes r ON s.route_id = r.id
+                   WHERE LOWER(r.name) LIKE LOWER(?) AND LOWER(r.region) = LOWER(?)
+                   ORDER BY s.rate DESC LIMIT 20""",
+                (f"%{route_name}%", region)
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """SELECT s.*, p.name as pokemon_name, p.id as pokemon_id, p.type1, p.type2, r.region
+                   FROM spawns s JOIN pokemon p ON s.pokemon_id = p.id
+                   JOIN routes r ON s.route_id = r.id
+                   WHERE LOWER(r.name) LIKE LOWER(?)
+                   ORDER BY s.rate DESC LIMIT 20""",
+                (f"%{route_name}%",)
+            ).fetchall()
     return [dict(r) for r in rows]
 
 
@@ -161,14 +160,13 @@ async def get_spawns(route_name: str, region: str = ""):
 async def get_spotlight():
     """Random Pokemon for the spotlight."""
     pid = random.randint(1, 649)
-    conn = _db()
-    pokemon = conn.execute("SELECT * FROM pokemon WHERE id = ?", (pid,)).fetchone()
-    locs = conn.execute(
-        """SELECT r.name as route_name, r.region FROM spawns s
-           JOIN routes r ON s.route_id = r.id WHERE s.pokemon_id = ?
-           ORDER BY s.rate DESC LIMIT 1""", (pid,)
-    ).fetchall()
-    conn.close()
+    with _db() as conn:
+        pokemon = conn.execute("SELECT * FROM pokemon WHERE id = ?", (pid,)).fetchone()
+        locs = conn.execute(
+            """SELECT r.name as route_name, r.region FROM spawns s
+               JOIN routes r ON s.route_id = r.id WHERE s.pokemon_id = ?
+               ORDER BY s.rate DESC LIMIT 1""", (pid,)
+        ).fetchall()
     result = dict(pokemon) if pokemon else {}
     if locs:
         result["location"] = dict(locs[0])
@@ -184,10 +182,9 @@ async def get_type_chart():
 @app.get("/api/damage")
 async def calc_damage(attacker: str, defender: str, power: int = 80, move_type: str = "Normal"):
     """Calculate damage between two Pokemon."""
-    conn = _db()
-    atk = conn.execute("SELECT * FROM pokemon WHERE LOWER(name) LIKE LOWER(?)", (f"%{attacker}%",)).fetchone()
-    dfn = conn.execute("SELECT * FROM pokemon WHERE LOWER(name) LIKE LOWER(?)", (f"%{defender}%",)).fetchone()
-    conn.close()
+    with _db() as conn:
+        atk = conn.execute("SELECT * FROM pokemon WHERE LOWER(name) LIKE LOWER(?)", (f"%{attacker}%",)).fetchone()
+        dfn = conn.execute("SELECT * FROM pokemon WHERE LOWER(name) LIKE LOWER(?)", (f"%{defender}%",)).fetchone()
     if not atk or not dfn:
         return {"error": "Pokemon not found"}
     atk, dfn = dict(atk), dict(dfn)
@@ -207,9 +204,8 @@ async def calc_damage(attacker: str, defender: str, power: int = 80, move_type: 
 
 @app.get("/api/recommend-moves/{pokemon_id}")
 async def recommend_moves(pokemon_id: int):
-    conn = _db()
-    p = conn.execute("SELECT * FROM pokemon WHERE id = ?", (pokemon_id,)).fetchone()
-    conn.close()
+    with _db() as conn:
+        p = conn.execute("SELECT * FROM pokemon WHERE id = ?", (pokemon_id,)).fetchone()
     if not p:
         return []
     p = dict(p)
@@ -221,20 +217,18 @@ async def recommend_moves(pokemon_id: int):
 
 @app.get("/api/routes")
 async def get_routes(region: str = ""):
-    conn = _db()
-    if region:
-        rows = conn.execute("SELECT * FROM routes WHERE region = ? ORDER BY name", (region,)).fetchall()
-    else:
-        rows = conn.execute("SELECT * FROM routes ORDER BY region, name").fetchall()
-    conn.close()
+    with _db() as conn:
+        if region:
+            rows = conn.execute("SELECT * FROM routes WHERE region = ? ORDER BY name", (region,)).fetchall()
+        else:
+            rows = conn.execute("SELECT * FROM routes ORDER BY region, name").fetchall()
     return [dict(r) for r in rows]
 
 
 @app.get("/api/routes/{route_id}/items")
 async def get_route_items(route_id: int):
-    conn = _db()
-    rows = conn.execute("SELECT * FROM location_items WHERE route_id = ?", (route_id,)).fetchall()
-    conn.close()
+    with _db() as conn:
+        rows = conn.execute("SELECT * FROM location_items WHERE route_id = ?", (route_id,)).fetchall()
     return [dict(r) for r in rows]
 
 
@@ -245,33 +239,31 @@ async def import_showdown(body: dict):
     text = body.get("text", "")
     team = parse_showdown_team(text)
     # Enrich with DB data
-    conn = _db()
-    for p in team:
-        row = conn.execute("SELECT * FROM pokemon WHERE LOWER(name) = LOWER(?)", (p["name"],)).fetchone()
-        if row:
-            db_data = dict(row)
-            p["id"] = db_data["id"]
-            p["type1"] = db_data["type1"]
-            p["type2"] = db_data["type2"]
-            p["hp"] = db_data["hp"]
-            p["attack"] = db_data["attack"]
-            p["defense"] = db_data["defense"]
-            p["sp_attack"] = db_data["sp_attack"]
-            p["sp_defense"] = db_data["sp_defense"]
-            p["speed"] = db_data["speed"]
-    conn.close()
+    with _db() as conn:
+        for p in team:
+            row = conn.execute("SELECT * FROM pokemon WHERE LOWER(name) = LOWER(?)", (p["name"],)).fetchone()
+            if row:
+                db_data = dict(row)
+                p["id"] = db_data["id"]
+                p["type1"] = db_data["type1"]
+                p["type2"] = db_data["type2"]
+                p["hp"] = db_data["hp"]
+                p["attack"] = db_data["attack"]
+                p["defense"] = db_data["defense"]
+                p["sp_attack"] = db_data["sp_attack"]
+                p["sp_defense"] = db_data["sp_defense"]
+                p["speed"] = db_data["speed"]
     return team
 
 
 @app.get("/api/progression/{region}")
 async def get_progression(region: str):
     """Get walkthrough steps for a region."""
-    conn = _db()
-    rows = conn.execute(
-        "SELECT * FROM progression WHERE LOWER(region) = LOWER(?) ORDER BY step",
-        (region,)
-    ).fetchall()
-    conn.close()
+    with _db() as conn:
+        rows = conn.execute(
+            "SELECT * FROM progression WHERE LOWER(region) = LOWER(?) ORDER BY step",
+            (region,)
+        ).fetchall()
     return [dict(r) for r in rows]
 
 
