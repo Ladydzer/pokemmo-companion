@@ -31,7 +31,7 @@ class IVCalculatorTab(QWidget):
         name_row = QHBoxLayout()
         name_row.addWidget(QLabel("Pokemon:"))
         self.name_input = QLineEdit()
-        self.name_input.setPlaceholderText("e.g. Charizard")
+        self.name_input.setPlaceholderText("ex: Dracaufeu")
         self.name_input.setStyleSheet("color: #E0E0E0; background: rgba(40,40,60,200); border: 1px solid #555; border-radius: 3px; padding: 2px 4px;")
         name_row.addWidget(self.name_input)
         layout.addLayout(name_row)
@@ -92,7 +92,7 @@ class IVCalculatorTab(QWidget):
     def _calculate(self):
         pokemon_name = self.name_input.text().strip()
         if not pokemon_name or not self.db:
-            self.result_label.setText("Enter a Pokemon name")
+            self.result_label.setText("Entre un nom de Pokemon")
             return
 
         pokemon = self.db.get_pokemon_by_name(pokemon_name)
@@ -151,7 +151,7 @@ class EVTrainingTab(QWidget):
 
         row.addWidget(QLabel("Region:"))
         self.region_combo = QComboBox()
-        self.region_combo.addItems(["All", "Kanto", "Johto", "Hoenn", "Sinnoh", "Unova"])
+        self.region_combo.addItems(["Tous", "Kanto", "Johto", "Hoenn", "Sinnoh", "Unova"])
         self.region_combo.setStyleSheet("color: #E0E0E0; background: rgba(40,40,60,200); border: 1px solid #555;")
         self.region_combo.currentIndexChanged.connect(self._update)
         row.addWidget(self.region_combo)
@@ -178,12 +178,12 @@ class EVTrainingTab(QWidget):
                     "Sp.Attack": "sp_attack", "Sp.Defense": "sp_defense", "Speed": "speed"}
         stat = stat_map.get(self.stat_combo.currentText(), "speed")
         region = self.region_combo.currentText()
-        if region == "All":
+        if region == "Tous":
             region = None
 
         spots = get_ev_spots(stat, region)
         if not spots:
-            self.result_label.setText("No spots found")
+            self.result_label.setText("Aucun spot trouve")
             return
 
         power_item = POWER_ITEMS.get(stat, "Power Item")
@@ -195,7 +195,7 @@ class EVTrainingTab(QWidget):
             if s.get('notes'):
                 lines.append(f"    {s['notes']}")
 
-        lines.append(f"\nItem: {power_item} (+4 per battle)")
+        lines.append(f"\nItem: {power_item} (+4 par combat)")
         lines.append("Pokerus: doubles all EV gains")
         self.result_label.setText("\n".join(lines))
 
@@ -227,7 +227,7 @@ class BreedingTab(QWidget):
         row2 = QHBoxLayout()
         row2.addWidget(QLabel("Pokemon:"))
         self.name_input = QLineEdit()
-        self.name_input.setPlaceholderText("e.g. Garchomp")
+        self.name_input.setPlaceholderText("ex: Carchacroc")
         self.name_input.setStyleSheet("color: #E0E0E0; background: rgba(40,40,60,200); border: 1px solid #555; border-radius: 3px; padding: 2px 4px;")
         row2.addWidget(self.name_input)
         layout.addLayout(row2)
@@ -236,7 +236,7 @@ class BreedingTab(QWidget):
         row3 = QHBoxLayout()
         row3.addWidget(QLabel("Nature:"))
         self.nature_input = QLineEdit()
-        self.nature_input.setPlaceholderText("e.g. Jolly")
+        self.nature_input.setPlaceholderText("ex: Jovial")
         self.nature_input.setStyleSheet("color: #E0E0E0; background: rgba(40,40,60,200); border: 1px solid #555; border-radius: 3px; padding: 2px 4px;")
         row3.addWidget(self.nature_input)
         layout.addLayout(row3)

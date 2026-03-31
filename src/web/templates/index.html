@@ -378,6 +378,21 @@ async function loadDash(){
             `).join('');
         }
     }catch(e){console.error(e);}
+
+    // Default spawns (Route 1 Kanto)
+    try{
+        const sp=await fetch('/api/spawns/Route%201?region=Kanto').then(r=>r.json());
+        if(Array.isArray(sp)&&sp.length){
+            const sl=document.getElementById('spawns-list');
+            sl.innerHTML=sp.slice(0,6).map(s=>`<div class="spawn-row"><img src="${spr(s.pokemon_name)}" data-id="${s.pokemon_id}" class="w-8 h-8 sprite-hover"><span class="font-semibold text-white text-sm flex-1">${s.pokemon_name}</span>${pill(s.type1)}<div class="stat-track w-20"><div class="stat-fill bg-neon-green" style="width:${Math.min(s.rate,100)}%"></div></div><span class="mono text-xs text-gray-400">${s.rate.toFixed(0)}%</span><span class="text-xs text-gray-500">Lv.${s.level_min}-${s.level_max}</span></div>`).join('');
+            document.getElementById('spawn-subtitle').textContent='Route 1 (Kanto)';
+            document.getElementById('loc-route').textContent='ROUTE 1';
+        }
+    }catch(e){}
+
+    // Collection count for dashboard
+    const caught=JSON.parse(localStorage.getItem('caught')||'[]');
+    updateColCount(caught.length);
 }
 
 async function loadDex(){
@@ -403,7 +418,8 @@ function rDex(list){
     const g=document.getElementById('dex-grid');g.innerHTML='';
     document.getElementById('dex-detail').classList.add('hidden');g.classList.remove('hidden');
     list.forEach(p=>{
-        g.innerHTML+=`<div class="dex-card" onclick="showP(${p.id})" style="border-bottom:3px solid ${TC[p.type1]||'#888'}">
+        const t2 = p.type2 ? ' / '+p.type2 : '';
+        g.innerHTML+=`<div class="dex-card" onclick="showP(${p.id})" style="border-bottom:3px solid ${TC[p.type1]||'#888'}" title="${p.name} (${p.type1}${t2})">
             <img src="${spr(p.name)}" data-id="${p.id}" class="w-14 h-14 mx-auto sprite-hover" loading="lazy" alt="${p.name}">
             <p class="text-[11px] font-semibold text-white mt-1">${p.name}</p>
             <p class="text-[9px] text-gray-600">#${String(p.id).padStart(3,'0')}</p>
@@ -554,10 +570,16 @@ function selectRoute(id,name){
 }
 function saveNote(){
     if(!selRoute)return;
-    // Notes are local-only for now
     const note=document.getElementById('note-text').value;
     localStorage.setItem('note_'+selRoute, note);
-    alert('Note sauvegardee !');
+    showToast('Note sauvegardee !');
+}
+function showToast(msg){
+    const t=document.createElement('div');
+    t.textContent=msg;
+    t.style.cssText='position:fixed;bottom:24px;right:24px;background:rgba(0,229,255,0.15);color:#00e5ff;border:1px solid rgba(0,229,255,0.3);padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:9999;animation:fadeIn 0.3s ease';
+    document.body.appendChild(t);
+    setTimeout(()=>t.remove(),3000);
 }
 
 // Make collection interactive

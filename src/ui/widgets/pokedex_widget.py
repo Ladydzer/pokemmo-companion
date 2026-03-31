@@ -186,7 +186,7 @@ class PokedexWidget(QWidget):
                         )
                 self.locations_label.setText("\n".join(loc_lines))
             else:
-                self.locations_label.setText("Localisations : Not found in wild")
+                self.locations_label.setText("Localisations : Introuvable en sauvage")
 
         self.pokemon_selected.emit(pokemon)
 
