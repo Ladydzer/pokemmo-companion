@@ -1037,7 +1037,7 @@ document.addEventListener('keydown',e=>{
     if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT')return;
     const shortcuts={1:'dashboard',2:'pokedex',3:'battle',4:'team',5:'shiny',6:'guide',7:'collection',8:'notes',9:'settings'};
     if(shortcuts[e.key])go(shortcuts[e.key]);
-    if(e.key==='/'||e.key==='f'&&!e.ctrlKey){e.preventDefault();document.getElementById('global-search')?.focus();}
+    if((e.key==='/'||e.key==='f')&&!e.ctrlKey&&!e.metaKey){e.preventDefault();document.getElementById('global-search')?.focus();}
 });
 
 loadDash();loadChart();rTm();loadRoutes();checkGame();loadOptStats();shinyUpdate();
