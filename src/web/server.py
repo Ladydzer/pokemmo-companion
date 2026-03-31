@@ -224,7 +224,15 @@ async def get_routes(region: str = ""):
             rows = conn.execute("SELECT * FROM routes WHERE region = ? ORDER BY name", (region,)).fetchall()
         else:
             rows = conn.execute("SELECT * FROM routes ORDER BY region, name").fetchall()
-    return [dict(r) for r in rows]
+    result = []
+    for r in rows:
+        d = dict(r)
+        if d.get("name_fr"):
+            d["display_name"] = d["name_fr"]
+        else:
+            d["display_name"] = d["name"]
+        result.append(d)
+    return result
 
 
 @app.get("/api/routes/{route_id}/items")
@@ -260,13 +268,24 @@ async def import_showdown(body: dict):
 
 @app.get("/api/progression/{region}")
 async def get_progression(region: str):
-    """Get walkthrough steps for a region."""
+    """Get walkthrough steps for a region, preferring FR translations."""
     with _db() as conn:
         rows = conn.execute(
             "SELECT * FROM progression WHERE LOWER(region) = LOWER(?) ORDER BY step",
             (region,)
         ).fetchall()
-    return [dict(r) for r in rows]
+    result = []
+    for r in rows:
+        d = dict(r)
+        # Use FR fields if available
+        if d.get("title_fr"):
+            d["title"] = d["title_fr"]
+        if d.get("description_fr"):
+            d["description"] = d["description_fr"]
+        if d.get("location_fr"):
+            d["location"] = d["location_fr"]
+        result.append(d)
+    return result
 
 
 @app.get("/api/game-status")

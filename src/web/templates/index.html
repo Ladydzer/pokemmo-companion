@@ -1074,7 +1074,7 @@ async function loadRoutes(){
     const url=region?`/api/routes?region=${region}`:'/api/routes';
     const routes=await fetch(url).then(r=>r.json());
     const el=document.getElementById('routes-list');
-    el.innerHTML=routes.slice(0,50).map(r=>`<div class="px-3 py-2 rounded-lg cursor-pointer text-sm hover:bg-dark-600 transition" onclick="selectRoute(${r.id},'${r.name.replace("'","\\'")} (${r.region})')">${r.name} <span class="text-xs text-gray-600">${r.region}</span></div>`).join('');
+    el.innerHTML=routes.slice(0,50).map(r=>{const dn=r.display_name||r.name;return `<div class="px-3 py-2 rounded-lg cursor-pointer text-sm hover:bg-dark-600 transition" onclick="selectRoute(${r.id},'${dn.replace(/'/g,"\\'")} (${r.region})')">${dn} ${dn!==r.name?`<span class="text-[10px] text-gray-700">${r.name}</span>`:''} <span class="text-xs text-gray-600">${r.region}</span></div>`;}).join('');
     }catch(e){console.error(e);}
 }
 async function selectRoute(id,name){
@@ -1821,10 +1821,10 @@ async function dashRouteSearch(q){
     try{
         const region=document.getElementById('dash-region')?.value||'';
         const routes=await fetch(`/api/routes?region=${region}`).then(r=>r.json());
-        const filtered=routes.filter(r=>r.name.toLowerCase().includes(q.toLowerCase())).slice(0,8);
+        const filtered=routes.filter(r=>(r.display_name||r.name).toLowerCase().includes(q.toLowerCase())||r.name.toLowerCase().includes(q.toLowerCase())).slice(0,8);
         if(!filtered.length){el.classList.add('hidden');return;}
         el.classList.remove('hidden');
-        el.innerHTML=filtered.map(r=>`<div class="px-2 py-1.5 rounded cursor-pointer text-xs hover:bg-dark-600 flex justify-between" onclick="dashSelectRoute('${r.name.replace(/'/g,"\\'")}','${r.region}')"><span class="text-white">${r.name}</span><span class="text-gray-600">${r.region}</span></div>`).join('');
+        el.innerHTML=filtered.map(r=>{const dn=r.display_name||r.name;return `<div class="px-2 py-1.5 rounded cursor-pointer text-xs hover:bg-dark-600 flex justify-between" onclick="dashSelectRoute('${r.name.replace(/'/g,"\\'")}','${r.region}')"><span class="text-white">${dn}</span><span class="text-gray-600">${r.region}</span></div>`;}).join('');
     }catch(e){el.classList.add('hidden');}
 }
 async function dashSelectRoute(name,region){
@@ -1859,7 +1859,7 @@ function filterMoves(method){
     });
 }
 
-loadAbilityFR();loadDash();loadChart();rTm();loadRoutes();checkGame();loadOptStats();shinyUpdate();calcBreed();renderNatures(NATURES);loadHordeSummary();loadHordes();calcSS();updateEVTracker();loadGuide('Kanto');
+loadAbilityFR();loadDash();loadChart();rTm();loadRoutes();checkGame();loadOptStats();shinyUpdate();calcBreed();renderNatures(NATURES);loadHordeSummary();loadHordes();calcSS();updateEVTracker();loadGuide('Kanto');dashLoadRoute();
 </script>
 </body>
 </html>
