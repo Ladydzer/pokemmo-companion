@@ -238,6 +238,31 @@ async def get_route_items(route_id: int):
     return [dict(r) for r in rows]
 
 
+@app.post("/api/import-showdown")
+async def import_showdown(body: dict):
+    """Parse a Showdown format team."""
+    from ..tools.showdown_parser import parse_showdown_team
+    text = body.get("text", "")
+    team = parse_showdown_team(text)
+    # Enrich with DB data
+    conn = _db()
+    for p in team:
+        row = conn.execute("SELECT * FROM pokemon WHERE LOWER(name) = LOWER(?)", (p["name"],)).fetchone()
+        if row:
+            db_data = dict(row)
+            p["id"] = db_data["id"]
+            p["type1"] = db_data["type1"]
+            p["type2"] = db_data["type2"]
+            p["hp"] = db_data["hp"]
+            p["attack"] = db_data["attack"]
+            p["defense"] = db_data["defense"]
+            p["sp_attack"] = db_data["sp_attack"]
+            p["sp_defense"] = db_data["sp_defense"]
+            p["speed"] = db_data["speed"]
+    conn.close()
+    return team
+
+
 @app.get("/sprite/{pokemon_id}")
 async def get_sprite(pokemon_id: int):
     sprite_path = SPRITES_DIR / f"{pokemon_id}.png"

@@ -211,7 +211,14 @@
         <div class="flex gap-3 mb-4">
             <input type="text" id="team-input" placeholder="Tape un nom de Pokemon et appuie Entree..."
                    class="flex-1 bg-poke-bg border border-poke-border rounded-xl px-4 py-3 text-white text-sm focus:border-cyan-400 focus:outline-none transition">
+            <button onclick="toggleShowdown()" class="bg-purple-500/20 border border-purple-500 text-purple-400 hover:bg-purple-500/30 px-4 py-2 rounded-xl text-sm font-bold transition">Import Showdown</button>
             <button onclick="clearTeam()" class="bg-red-500/20 border border-red-500 text-red-400 hover:bg-red-500/30 px-4 py-2 rounded-xl text-sm font-bold transition">Tout effacer</button>
+        </div>
+        <!-- Showdown import -->
+        <div id="showdown-import" class="hidden mb-4">
+            <textarea id="showdown-text" rows="8" placeholder="Colle ta team au format Showdown ici...&#10;&#10;Charizard @ Life Orb&#10;Ability: Blaze&#10;EVs: 252 SpA / 4 SpD / 252 Spe&#10;Timid Nature&#10;- Flamethrower&#10;- Air Slash"
+                      class="w-full bg-poke-bg border border-poke-border rounded-xl px-4 py-3 text-white text-sm font-mono focus:border-purple-400 focus:outline-none transition"></textarea>
+            <button onclick="importShowdown()" class="mt-2 bg-purple-500 hover:bg-purple-600 text-white font-bold px-6 py-2 rounded-lg transition text-sm">Importer</button>
         </div>
         <div id="team-slots" class="grid grid-cols-6 gap-4">
             <div class="glass p-4 text-center border-2 border-dashed border-poke-border rounded-xl h-36 flex items-center justify-center"><p class="text-gray-600 text-sm">Slot 1</p></div>
@@ -578,6 +585,16 @@ function renderTeam() {
 
 function removeTeam(idx) { team.splice(idx, 1); renderTeam(); }
 function clearTeam() { team = []; renderTeam(); }
+function toggleShowdown() { document.getElementById('showdown-import').classList.toggle('hidden'); }
+async function importShowdown() {
+    const text = document.getElementById('showdown-text').value;
+    if (!text.trim()) return;
+    const res = await fetch('/api/import-showdown', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text})}).then(r=>r.json());
+    team = res.filter(p => p.id);  // Only keep Pokemon found in DB
+    document.getElementById('showdown-import').classList.add('hidden');
+    document.getElementById('showdown-text').value = '';
+    renderTeam();
+}
 
 async function analyzeTeam() {
     if (!team.length) { document.getElementById('team-coverage').innerHTML = '<p class="text-gray-500">Ajoute des Pokemon...</p>'; return; }
