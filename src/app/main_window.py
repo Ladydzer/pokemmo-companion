@@ -13,6 +13,7 @@ from .pages.battle import BattlePage
 from .pages.team_builder import TeamBuilderPage
 from .pages.shiny_lab import ShinyLabPage
 from .pages.settings import SettingsPage
+from .pages.collection import CollectionPage
 
 
 class SidebarButton(QPushButton):
@@ -89,6 +90,7 @@ class MainWindow(QMainWindow):
             ("⚔", "Battle"),
             ("👥", "Team"),
             ("✨", "Shiny Lab"),
+            ("📋", "Collection"),
             ("⚙", "Settings"),
         ]
 
@@ -128,6 +130,9 @@ class MainWindow(QMainWindow):
         self.shiny_lab = ShinyLabPage()
         self.pages.addWidget(self.shiny_lab)
 
+        self.collection = CollectionPage(self.db)
+        self.pages.addWidget(self.collection)
+
         self.settings = SettingsPage()
         self.pages.addWidget(self.settings)
 
@@ -165,7 +170,8 @@ class MainWindow(QMainWindow):
             "Battle": 2,
             "Team": 3,
             "Shiny Lab": 4,
-            "Settings": 5,
+            "Collection": 5,
+            "Settings": 6,
         }
         idx = page_map.get(page_name, 0)
         self.pages.setCurrentIndex(idx)
