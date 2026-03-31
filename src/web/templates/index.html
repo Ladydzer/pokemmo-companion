@@ -398,6 +398,23 @@
     </div>
 </div>
 
+<!-- Shiny Modal -->
+<dialog id="shiny-modal" class="modal">
+    <div class="modal-box bg-dark-700 border border-neon-yellow/30">
+        <h3 class="text-lg font-black" style="color:#ffd740">✨ SHINY TROUVE !</h3>
+        <p class="text-sm text-gray-400 mt-2">Quel Pokemon shiny as-tu trouve ?</p>
+        <input type="text" id="shiny-name-input" placeholder="Nom du Pokemon..." class="input input-bordered input-warning w-full mt-3" autofocus>
+        <div id="shiny-modal-preview" class="mt-3 text-center hidden">
+            <img id="shiny-modal-sprite" src="" class="w-20 h-20 mx-auto sprite-pop">
+        </div>
+        <div class="modal-action">
+            <button onclick="confirmShiny()" class="btn btn-warning">Confirmer</button>
+            <form method="dialog"><button class="btn btn-ghost">Annuler</button></form>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>close</button></form>
+</dialog>
+
 </main>
 
 <script>
@@ -733,15 +750,31 @@ if(!shData.lastShinyAt)shData.lastShinyAt=0;
 
 function shinyAdd(n){shData.session+=n;shData.total+=n;shinyUpdate();}
 function shinyFound(){
-    const name=prompt('Quel Pokemon shiny as-tu trouve ?')||'Inconnu';
+    document.getElementById('shiny-name-input').value='';
+    document.getElementById('shiny-modal-preview').classList.add('hidden');
+    document.getElementById('shiny-modal').showModal();
+    // Auto-complete preview
+    document.getElementById('shiny-name-input').oninput=async function(){
+        const q=this.value.trim();if(q.length<2)return;
+        try{const r=await fetch(`/api/pokemon/search/${q}`).then(r=>r.json());
+        if(Array.isArray(r)&&r.length){
+            document.getElementById('shiny-modal-sprite').src=spr(r[0].name);
+            document.getElementById('shiny-modal-preview').classList.remove('hidden');
+        }}catch(e){}
+    };
+}
+function confirmShiny(){
+    const name=document.getElementById('shiny-name-input').value||'Inconnu';
     const encounters=shData.session-shData.lastShinyAt;
     shData.history.push({name,encounters,total:shData.total,date:new Date().toISOString().slice(0,10)});
     shData.shinies++;
     shData.lastShinyAt=shData.session;
     shinyUpdate();
+    document.getElementById('shiny-modal').close();
     showToast(`SHINY ${name.toUpperCase()} TROUVE apres ${encounters.toLocaleString()} rencontres !`);
 }
 function shinyReset(){shData.session=0;shData.lastShinyAt=0;shData.start=Date.now();shinyUpdate();showToast('Session reinitialisee');}
+function deleteShiny(idx){shData.history.splice(idx,1);shData.shinies=shData.history.length;shinyUpdate();showToast('Shiny supprime');}
 function shinyUpdate(){
     localStorage.setItem('shiny_data',JSON.stringify(shData));
     const el=id=>document.getElementById(id);
@@ -761,9 +794,10 @@ function shinyUpdate(){
     // History
     const hist=el('sh-history');
     if(hist&&shData.history.length){
-        hist.innerHTML=shData.history.slice().reverse().map(h=>
-            `<div class="flex items-center gap-3 p-2 glass-card"><span style="color:#ffd740" class="font-bold">✨ ${h.name}</span><span class="text-gray-500">apres ${h.encounters.toLocaleString()} rencontres</span><span class="text-gray-600 text-xs ml-auto">${h.date}</span></div>`
-        ).join('');
+        hist.innerHTML=shData.history.slice().reverse().map((h,i)=>{
+            const idx=shData.history.length-1-i;
+            return `<div class="flex items-center gap-3 p-2 glass-card"><span style="color:#ffd740" class="font-bold">✨ ${h.name}</span><span class="text-gray-500">apres ${h.encounters.toLocaleString()} rencontres</span><span class="text-gray-600 text-xs ml-auto">${h.date}</span><button onclick="deleteShiny(${idx})" class="btn btn-xs btn-ghost text-gray-600 hover:text-red-400">✕</button></div>`;
+        }).join('');
     }
     // Stats
     if(shData.history.length){
