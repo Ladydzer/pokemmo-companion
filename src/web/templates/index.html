@@ -478,7 +478,16 @@
         <div id="ocr-status" class="space-y-2 text-sm">
             <p class="text-gray-500">Chargement...</p>
         </div>
-        <button onclick="checkOCR()" class="btn btn-sm btn-info mt-3">Verifier OCR</button>
+        <div class="flex gap-2 mt-3">
+            <button onclick="checkOCR()" class="btn btn-sm btn-info">Verifier OCR</button>
+            <button onclick="testOCR()" class="btn btn-sm btn-warning">Tester Capture</button>
+        </div>
+        <div id="ocr-preview" class="hidden mt-4">
+            <p class="text-xs font-bold tracking-widest text-gray-500 mb-2">CAPTURE OCR</p>
+            <img id="ocr-preview-img" class="w-full rounded-lg border border-gray-700" alt="Preview">
+            <p class="mt-2 text-sm"><span class="text-gray-400">Texte lu :</span> <span id="ocr-text-result" class="font-bold text-white"></span></p>
+            <p class="text-xs text-gray-500" id="ocr-window-size"></p>
+        </div>
     </div>
 </div>
 
@@ -1109,6 +1118,20 @@ async function checkOCR(){
         }
         el.innerHTML=h;
     }catch(e){el.innerHTML='<p class="text-red-400">Erreur: '+e.message+'</p>';}
+}
+
+// OCR test capture
+async function testOCR(){
+    const prev=document.getElementById('ocr-preview');
+    prev.classList.remove('hidden');
+    document.getElementById('ocr-text-result').textContent='Capture en cours...';
+    try{
+        const r=await fetch('/api/ocr/capture').then(r=>r.json());
+        if(r.error){document.getElementById('ocr-text-result').textContent='Erreur: '+r.error;return;}
+        document.getElementById('ocr-preview-img').src=r.preview;
+        document.getElementById('ocr-text-result').textContent=r.text||'(rien detecte)';
+        document.getElementById('ocr-window-size').textContent='Fenetre: '+r.window_size;
+    }catch(e){document.getElementById('ocr-text-result').textContent='Erreur: '+e.message;}
 }
 
 // Favorites

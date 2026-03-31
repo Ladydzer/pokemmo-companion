@@ -311,6 +311,72 @@ async def ocr_status():
     }
 
 
+@app.post("/api/ocr/calibrate")
+async def calibrate_ocr(body: dict):
+    """Update OCR ROI positions from the web interface."""
+    from ..detection.route_detector import RouteDetector
+    rd = RouteDetector()
+    if "route_roi" in body:
+        roi = body["route_roi"]
+        rd.set_roi(
+            float(roi.get("x", rd._route_roi["x_ratio"])),
+            float(roi.get("y", rd._route_roi["y_ratio"])),
+            float(roi.get("w", rd._route_roi["w_ratio"])),
+            float(roi.get("h", rd._route_roi["h_ratio"])),
+        )
+        return {"status": "ok", "roi": rd._route_roi}
+    return {"status": "no changes"}
+
+
+@app.get("/api/ocr/capture")
+async def ocr_capture():
+    """Capture a screenshot and try OCR on the route name region."""
+    from ..capture.screen_capture import ScreenCapture
+    from ..detection.ocr_engine import read_route_name, init_tesseract
+    import base64, cv2, numpy as np
+
+    if not init_tesseract():
+        return {"error": "Tesseract non installe"}
+
+    cap = ScreenCapture()
+    if not cap.initialize():
+        return {"error": "Fenetre PokeMMO non trouvee"}
+
+    frame = cap.capture_full()
+    cap.cleanup()
+
+    if frame is None:
+        return {"error": "Capture echouee"}
+
+    h, w = frame.shape[:2]
+    # Try OCR on route region
+    roi_x = int(0.01 * w)
+    roi_y = int(0.01 * h)
+    roi_w = int(0.18 * w)
+    roi_h = int(0.04 * h)
+    route_region = frame[roi_y:roi_y+roi_h, roi_x:roi_x+roi_w]
+
+    text = ""
+    if route_region.size > 0:
+        text = read_route_name(route_region)
+
+    # Encode a small preview as base64
+    preview = cv2.resize(frame, (640, 360))
+    # Draw ROI rectangle
+    cv2.rectangle(preview,
+                  (int(0.01*640), int(0.01*360)),
+                  (int(0.19*640), int(0.05*360)),
+                  (0, 255, 0), 2)
+    _, buf = cv2.imencode('.jpg', preview, [cv2.IMWRITE_JPEG_QUALITY, 70])
+    img_b64 = base64.b64encode(buf).decode()
+
+    return {
+        "text": text,
+        "window_size": f"{w}x{h}",
+        "preview": f"data:image/jpeg;base64,{img_b64}"
+    }
+
+
 @app.get("/sprite/{pokemon_id}")
 async def get_sprite(pokemon_id: int):
     sprite_path = SPRITES_DIR / f"{pokemon_id}.png"
