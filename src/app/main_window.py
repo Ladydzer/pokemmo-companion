@@ -10,6 +10,7 @@ from .theme import COLORS, APP_STYLESHEET
 from .pages.dashboard import DashboardPage
 from .pages.pokedex import PokedexPage
 from .pages.battle import BattlePage
+from .pages.team_builder import TeamBuilderPage
 
 
 class SidebarButton(QPushButton):
@@ -84,6 +85,7 @@ class MainWindow(QMainWindow):
             ("🏠", "Dashboard"),
             ("📖", "Pokedex"),
             ("⚔", "Battle"),
+            ("👥", "Team"),
         ]
 
         for icon, label in nav_items:
@@ -116,6 +118,9 @@ class MainWindow(QMainWindow):
         self.battle = BattlePage(self.db)
         self.pages.addWidget(self.battle)
 
+        self.team_builder = TeamBuilderPage(self.db)
+        self.pages.addWidget(self.team_builder)
+
         main_layout.addWidget(self.pages, 1)
 
         # Default to dashboard
@@ -127,6 +132,7 @@ class MainWindow(QMainWindow):
             "Dashboard": 0,
             "Pokedex": 1,
             "Battle": 2,
+            "Team": 3,
         }
         idx = page_map.get(page_name, 0)
         self.pages.setCurrentIndex(idx)

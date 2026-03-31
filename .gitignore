@@ -12,7 +12,6 @@ release/
 *.egg-info/
 .eggs/
 data/raw/
-data/sprites/
 *.db-journal
 *.db-wal
 .pytest_cache/
