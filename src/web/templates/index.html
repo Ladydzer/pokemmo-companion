@@ -203,7 +203,7 @@
     <h1 class="text-3xl font-black text-white mb-5">Pokedex</h1>
     <div class="relative mb-4">
         <svg class="absolute left-4 top-3.5 w-4 h-4 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="dex-search" placeholder="Rechercher un Pokemon..." class="w-full bg-dark-700 border border-dark-500 rounded-xl pl-11 pr-4 py-3 text-white text-sm focus:border-neon-cyan/40 focus:outline-none transition">
+        <input type="text" id="dex-search" placeholder="Rechercher un Pokemon..." class="input input-bordered input-primary w-full">
     </div>
     <div id="type-filters" class="flex flex-wrap gap-1 mb-5"></div>
     <div id="dex-grid" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 gap-2"></div>
@@ -228,7 +228,7 @@
                 <select id="dmg-type" class="flex-1 bg-dark-700 border border-dark-500 rounded-lg px-2 py-2 text-white text-sm focus:outline-none"></select>
             </div>
         </div>
-        <button onclick="calcDmg()" class="px-4 py-2 rounded-lg text-sm font-bold" style="background:rgba(255,110,64,0.15);color:#ff6e40;border:1px solid rgba(255,110,64,0.3)">Calculer</button>
+        <button onclick="calcDmg()" class="btn btn-sm btn-warning">Calculer</button>
         <div id="dmg-result" class="hidden mt-3 glass-card p-4 text-sm"></div>
     </div>
     <div class="glass-card p-6">
@@ -243,8 +243,8 @@
     <div class="glass-card p-6 mb-5">
         <div class="flex gap-3 mb-4">
             <input type="text" id="team-input" placeholder="Ajouter un Pokemon (Entree)..." class="flex-1 bg-dark-700 border border-dark-500 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none">
-            <button onclick="toggleSD()" class="px-3 py-2 rounded-lg text-xs font-bold" style="background:rgba(213,0,249,0.1);color:#d500f9;border:1px solid rgba(213,0,249,0.3)">Import Showdown</button>
-            <button onclick="clearTm()" class="px-3 py-2 rounded-lg text-xs font-bold" style="background:rgba(255,82,82,0.1);color:#ff5252;border:1px solid rgba(255,82,82,0.3)">Effacer</button>
+            <button onclick="toggleSD()" class="btn btn-xs btn-secondary">Import Showdown</button>
+            <button onclick="clearTm()" class="btn btn-xs btn-error btn-outline">Effacer</button>
         </div>
         <div id="sd-import" class="hidden mb-4">
             <textarea id="sd-text" rows="5" placeholder="Colle ta team Showdown..." class="w-full bg-dark-700 border border-dark-500 rounded-xl px-4 py-3 text-white text-sm mono focus:outline-none"></textarea>
@@ -284,7 +284,8 @@
     <div class="flex items-center justify-between mb-4">
         <h1 class="text-3xl font-black text-white">Collection</h1>
         <div class="flex items-center gap-3">
-            <button onclick="exportCol()" class="px-3 py-1.5 rounded-lg text-xs font-bold" style="background:rgba(0,229,255,0.1);color:#00e5ff;border:1px solid rgba(0,229,255,0.3)">Exporter JSON</button>
+            <button onclick="exportCol()" class="btn btn-xs btn-outline btn-info">Exporter</button>
+            <label class="btn btn-xs btn-outline btn-success cursor-pointer"><input type="file" accept=".json" onchange="importCol(event)" class="hidden">Importer</label>
             <span id="col-header-count" class="text-lg font-bold" style="color:#69f0ae">0 / 649</span>
         </div>
     </div>
@@ -463,7 +464,7 @@ async function showP(id){
                         <div>${radarSVG([p.hp,p.attack,p.defense,p.sp_attack,p.sp_defense,p.speed])}</div>
                         <div class="flex-1">${sb('HP',p.hp,'hp')}${sb('ATK',p.attack,'attack')}${sb('DEF',p.defense,'defense')}${sb('SPA',p.sp_attack,'sp_attack')}${sb('SPD',p.sp_defense,'sp_defense')}${sb('SPE',p.speed,'speed')}</div>
                     </div>
-                    <p class="text-xs text-gray-500 mt-3"><span class="font-bold">${p.attack>p.sp_attack?'Physical: Adamant/Jolly':'Special: Modest/Timid'}</span></p>
+                    <p class="text-xs text-gray-500 mt-3"><span class="font-bold">${p.attack>p.sp_attack?'Physique : Rigide/Jovial':'Special : Modeste/Timide'}</span></p>
                 </div>
             </div>
             ${evoH?`<div class="mt-6 pt-6 border-t border-gray-800"><p class="text-xs font-bold tracking-widest text-gray-500 mb-3">CHAINE D'EVOLUTION</p><div class="flex items-center gap-1 flex-wrap">${evoH}</div></div>`:''}
@@ -723,6 +724,24 @@ function exportCol(){
     const blob=new Blob([data],{type:'application/json'});
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='pokemmo-collection.json';a.click();
     showToast('Collection exportee !');
+}
+
+// Import collection
+function importCol(event){
+    const file=event.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=function(e){
+        try{
+            const data=JSON.parse(e.target.result);
+            if(data.caught&&Array.isArray(data.caught)){
+                localStorage.setItem('caught',JSON.stringify(data.caught));
+                showToast(`Collection importee : ${data.caught.length} Pokemon !`);
+                if(window._cl) loadCol();
+                updateColCount(data.caught.length);
+            }
+        }catch(err){showToast('Erreur: fichier invalide');}
+    };
+    reader.readAsText(file);
 }
 
 // Dynamic Options stats
