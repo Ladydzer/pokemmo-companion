@@ -64,42 +64,55 @@ def main():
 
     splash.set_progress(70, "Preparation de l'overlay...")
 
-    # Create overlay (integrated)
-    from src.ui.overlay import OverlayWindow
+    # Create overlay (integrated) — wrapped in try/except for robustness
     config = AppConfig.load()
-    overlay = OverlayWindow(config)
+    overlay = None
+    try:
+        from src.ui.overlay import OverlayWindow
+        overlay = OverlayWindow(config)
+        if db:
+            overlay.guide_panel.db = db
+            overlay.pokedex_widget.db = db
+            overlay.tools_panel.iv_tab.db = db
+        log.info("Overlay cree avec succes")
+    except Exception as e:
+        log.warning(f"Overlay non disponible: {e}")
 
-    # Pass DB to overlay widgets
-    if db:
-        overlay.guide_panel.db = db
-        overlay.pokedex_widget.db = db
-        overlay.tools_panel.iv_tab.db = db
-
-    # Setup overlay toggle from main window
+    # Setup overlay toggle — must run on Qt thread via QTimer
     window._overlay = overlay
     window._overlay_visible = False
 
-    def toggle_overlay():
-        window._overlay_visible = not window._overlay_visible
-        if window._overlay_visible:
-            overlay.show()
-            log.info("Overlay affiche")
-        else:
-            overlay.hide()
-            log.info("Overlay masque")
+    def toggle_overlay_safe():
+        """Toggle overlay from Qt main thread."""
+        if not window._overlay:
+            log.warning("Overlay non disponible")
+            return
+        try:
+            window._overlay_visible = not window._overlay_visible
+            if window._overlay_visible:
+                window._overlay.show()
+            else:
+                window._overlay.hide()
+        except Exception as e:
+            log.warning(f"Erreur overlay: {e}")
 
-    window._toggle_overlay = toggle_overlay
-
-    # Setup hotkeys (F9 for overlay toggle)
+    # Setup hotkeys (F9 for overlay toggle) — calls via QTimer for thread safety
     try:
         import keyboard
-        keyboard.add_hotkey(config.overlay.toggle_hotkey, toggle_overlay)
-        keyboard.add_hotkey("f10", overlay.toggle_extended)
+        keyboard.add_hotkey(
+            config.overlay.toggle_hotkey,
+            lambda: QTimer.singleShot(0, toggle_overlay_safe)
+        )
+        if overlay:
+            keyboard.add_hotkey(
+                "f10",
+                lambda: QTimer.singleShot(0, overlay.toggle_extended)
+            )
         log.info(f"Hotkeys: {config.overlay.toggle_hotkey.upper()}=overlay, F10=etendu")
     except ImportError:
-        log.warning("keyboard non installe -- hotkeys desactives. Pip install keyboard")
+        log.warning("keyboard non installe -- pip install keyboard")
     except OSError:
-        log.warning("Hotkeys necessitent les droits admin. Lance en administrateur.")
+        log.warning("Hotkeys necessitent les droits admin")
     except Exception as e:
         log.warning(f"Hotkeys: {e}")
 
