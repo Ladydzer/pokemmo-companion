@@ -175,7 +175,7 @@
 </div>
 
 <!-- ===== COMBAT ===== -->
-<div id="page-battle" class="page hidden fade-in max-w-4xl">
+<div id="page-battle" class="page hidden fade-in max-w-5xl">
     <h2 class="text-3xl font-extrabold text-white mb-6">Assistant Combat</h2>
     <div class="glass p-6 mb-6">
         <p class="text-[10px] font-bold text-red-400 tracking-widest mb-3">RECHERCHE POKEMON</p>
@@ -183,9 +183,24 @@
                class="w-full bg-poke-bg border border-poke-border rounded-xl px-4 py-3 text-white text-sm focus:border-red-400 focus:outline-none transition">
         <div id="battle-result" class="mt-4 hidden"></div>
     </div>
+    <!-- Damage Calculator -->
+    <div class="glass p-6 mb-6">
+        <p class="text-[10px] font-bold text-orange-400 tracking-widest mb-3">CALCULATEUR DE DEGATS</p>
+        <div class="grid grid-cols-3 gap-3 mb-4">
+            <input type="text" id="dmg-atk" placeholder="Ton Pokemon" class="bg-poke-bg border border-poke-border rounded-lg px-3 py-2 text-white text-sm focus:border-orange-400 focus:outline-none">
+            <input type="text" id="dmg-def" placeholder="Pokemon adverse" class="bg-poke-bg border border-poke-border rounded-lg px-3 py-2 text-white text-sm focus:border-orange-400 focus:outline-none">
+            <div class="flex gap-2">
+                <input type="number" id="dmg-power" value="90" class="w-16 bg-poke-bg border border-poke-border rounded-lg px-2 py-2 text-white text-sm text-center">
+                <select id="dmg-type" class="flex-1 bg-poke-bg border border-poke-border rounded-lg px-2 py-2 text-white text-sm"></select>
+            </div>
+        </div>
+        <button onclick="calcDamage()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold px-6 py-2 rounded-lg transition text-sm">Calculer</button>
+        <div id="dmg-result" class="mt-4 hidden glass p-4 text-sm"></div>
+    </div>
+    <!-- Type Chart -->
     <div class="glass p-6">
-        <p class="text-[10px] font-bold text-cyan-400 tracking-widest mb-3">TABLE DES TYPES</p>
-        <p class="text-xs text-gray-500">La table complete des types sera ajoutee prochainement.</p>
+        <p class="text-[10px] font-bold text-cyan-400 tracking-widest mb-3">TABLE DES TYPES (17x17)</p>
+        <div id="type-chart" class="overflow-x-auto"></div>
     </div>
 </div>
 
@@ -193,13 +208,23 @@
 <div id="page-team" class="page hidden fade-in max-w-5xl">
     <h2 class="text-3xl font-extrabold text-white mb-6">Constructeur d'Equipe</h2>
     <div class="glass p-6 mb-6">
-        <input type="text" id="team-input" placeholder="Ajoute un Pokemon a ton equipe..."
-               class="w-full bg-poke-bg border border-poke-border rounded-xl px-4 py-3 text-white text-sm focus:border-cyan-400 focus:outline-none transition mb-4">
-        <div id="team-slots" class="grid grid-cols-6 gap-4"></div>
+        <div class="flex gap-3 mb-4">
+            <input type="text" id="team-input" placeholder="Tape un nom de Pokemon et appuie Entree..."
+                   class="flex-1 bg-poke-bg border border-poke-border rounded-xl px-4 py-3 text-white text-sm focus:border-cyan-400 focus:outline-none transition">
+            <button onclick="clearTeam()" class="bg-red-500/20 border border-red-500 text-red-400 hover:bg-red-500/30 px-4 py-2 rounded-xl text-sm font-bold transition">Tout effacer</button>
+        </div>
+        <div id="team-slots" class="grid grid-cols-6 gap-4">
+            <div class="glass p-4 text-center border-2 border-dashed border-poke-border rounded-xl h-36 flex items-center justify-center"><p class="text-gray-600 text-sm">Slot 1</p></div>
+            <div class="glass p-4 text-center border-2 border-dashed border-poke-border rounded-xl h-36 flex items-center justify-center"><p class="text-gray-600 text-sm">Slot 2</p></div>
+            <div class="glass p-4 text-center border-2 border-dashed border-poke-border rounded-xl h-36 flex items-center justify-center"><p class="text-gray-600 text-sm">Slot 3</p></div>
+            <div class="glass p-4 text-center border-2 border-dashed border-poke-border rounded-xl h-36 flex items-center justify-center"><p class="text-gray-600 text-sm">Slot 4</p></div>
+            <div class="glass p-4 text-center border-2 border-dashed border-poke-border rounded-xl h-36 flex items-center justify-center"><p class="text-gray-600 text-sm">Slot 5</p></div>
+            <div class="glass p-4 text-center border-2 border-dashed border-poke-border rounded-xl h-36 flex items-center justify-center"><p class="text-gray-600 text-sm">Slot 6</p></div>
+        </div>
     </div>
     <div id="team-analysis" class="glass p-6">
         <p class="text-[10px] font-bold text-cyan-400 tracking-widest mb-3">ANALYSE DE COUVERTURE</p>
-        <p class="text-sm text-gray-500">Ajoute des Pokemon pour voir l'analyse...</p>
+        <p id="team-coverage" class="text-sm text-gray-500">Ajoute des Pokemon pour voir l'analyse...</p>
     </div>
 </div>
 
@@ -402,8 +427,34 @@ async function showDetail(id) {
                 <p class="text-xs font-bold text-green-400 tracking-widest mb-3">LOCALISATIONS POKEMMO</p>
                 ${locsHtml}
             </div>` : ''}
+            <div id="moves-section" class="mt-6 pt-6 border-t border-poke-border">
+                <p class="text-xs font-bold text-orange-400 tracking-widest mb-3">MOVESET RECOMMANDE (PvE)</p>
+                <div id="moves-list" class="text-sm text-gray-400">Chargement...</div>
+            </div>
+            <div class="mt-6 pt-6 border-t border-poke-border">
+                <p class="text-xs font-bold text-purple-400 tracking-widest mb-3">NATURE RECOMMANDEE</p>
+                <p class="text-sm">${p.attack > p.sp_attack
+                    ? '<span class="text-orange-300">Attaquant Physique:</span> Adamant (+Atk, -SpA) ou Jolly (+Spe, -SpA)'
+                    : '<span class="text-blue-300">Attaquant Special:</span> Modest (+SpA, -Atk) ou Timid (+Spe, -Atk)'
+                }${p.speed > 100 ? '<br><span class="text-pink-300">Rapide:</span> Jolly (+Spe) ou Timid (+Spe)' : ''}</p>
+            </div>
         </div>
     `;
+    // Load move recommendations async
+    fetch(\`/api/recommend-moves/\${id}\`).then(r=>r.json()).then(moves => {
+        const ml = document.getElementById('moves-list');
+        if (ml && moves.length) {
+            ml.innerHTML = moves.map((m,i) => \`
+                <div class="spawn-row">
+                    <span class="w-5 text-gray-500 font-bold">\${i+1}.</span>
+                    <span class="type-pill text-[9px]" style="background:\${TC[m.type]||'#888'}">\${m.type}</span>
+                    <span class="font-semibold text-white">\${m.move}</span>
+                    <span class="text-gray-500 text-xs">\${m.power ? m.power+' pwr' : 'status'}</span>
+                    <span class="text-gray-600 text-xs flex-1 text-right">\${m.reason}</span>
+                </div>
+            \`).join('');
+        }
+    });
 }
 
 function closeDex() {
@@ -448,8 +499,123 @@ async function loadCollection() {
     });
 }
 
+// === Damage Calculator ===
+async function calcDamage() {
+    const atk = document.getElementById('dmg-atk').value;
+    const def_ = document.getElementById('dmg-def').value;
+    const power = document.getElementById('dmg-power').value;
+    const type = document.getElementById('dmg-type').value;
+    if (!atk || !def_) return;
+    const r = await fetch(`/api/damage?attacker=${atk}&defender=${def_}&power=${power}&move_type=${type}`).then(r=>r.json());
+    const rd = document.getElementById('dmg-result');
+    rd.classList.remove('hidden');
+    if (r.error) { rd.innerHTML = `<p class="text-red-400">${r.error}</p>`; return; }
+    const effColor = r.type_mult >= 2 ? 'text-red-400' : r.type_mult <= 0.5 ? 'text-green-400' : r.type_mult === 0 ? 'text-blue-400' : 'text-gray-300';
+    rd.innerHTML = `
+        <p class="font-bold text-white">${r.attacker} vs ${r.defender}</p>
+        <p class="text-lg font-mono ${effColor}">${r.min_damage}-${r.max_damage} HP (${r.min_pct}%-${r.max_pct}%)</p>
+        <p class="text-xs text-gray-400 mt-1">${r.text.replace(/\n/g,'<br>')}</p>
+    `;
+}
+
+// Load type chart
+async function loadTypeChart() {
+    const data = await fetch('/api/type-chart').then(r=>r.json());
+    const types = data.types;
+    const chart = data.chart;
+    let html = '<table class="text-[9px] border-collapse"><tr><th class="p-1"></th>';
+    types.forEach(t => html += `<th class="p-1" style="color:${TC[t]}">${t.slice(0,3)}</th>`);
+    html += '</tr>';
+    types.forEach(atk => {
+        html += `<tr><td class="p-1 font-bold" style="color:${TC[atk]}">${atk.slice(0,3)}</td>`;
+        types.forEach(def_ => {
+            const m = chart[atk+'_'+def_] || 1.0;
+            const bg = m>=2?'#c62828':m===0?'#1a237e':m<=0.5?'#1b5e20':'transparent';
+            const txt = m>=2?'2':m===0?'0':m<=0.5?'½':'';
+            html += `<td class="p-1 text-center text-white font-bold" style="background:${bg};border-radius:2px">${txt}</td>`;
+        });
+        html += '</tr>';
+    });
+    html += '</table>';
+    document.getElementById('type-chart').innerHTML = html;
+    // Populate damage type select
+    const sel = document.getElementById('dmg-type');
+    if (sel) { sel.innerHTML = ''; types.forEach(t => sel.innerHTML += `<option>${t}</option>`); }
+}
+
+// === Team Builder ===
+let team = [];
+document.getElementById('team-input')?.addEventListener('keydown', async e => {
+    if (e.key !== 'Enter') return;
+    const q = e.target.value.trim();
+    if (!q || team.length >= 6) return;
+    const res = await fetch(`/api/pokemon/search/${q}`).then(r=>r.json());
+    if (!res.length) return;
+    const p = res[0];
+    team.push(p);
+    e.target.value = '';
+    renderTeam();
+});
+
+function renderTeam() {
+    const slots = document.getElementById('team-slots');
+    slots.innerHTML = '';
+    for (let i = 0; i < 6; i++) {
+        if (i < team.length) {
+            const p = team[i];
+            slots.innerHTML += `<div class="glass p-3 text-center rounded-xl hover-lift cursor-pointer" style="border:2px solid ${TC[p.type1]||'#888'}" onclick="removeTeam(${i})">
+                <img src="https://play.pokemonshowdown.com/sprites/ani/${p.name.toLowerCase()}.gif" class="w-16 h-16 mx-auto sprite-pop">
+                <p class="text-xs font-bold text-white mt-1">${p.name}</p>
+                <div class="flex gap-1 justify-center mt-1">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div>
+                <p class="text-[9px] text-gray-500 mt-1">Clic pour retirer</p>
+            </div>`;
+        } else {
+            slots.innerHTML += `<div class="glass p-4 text-center border-2 border-dashed border-poke-border rounded-xl h-36 flex items-center justify-center"><p class="text-gray-600 text-sm">Slot ${i+1}</p></div>`;
+        }
+    }
+    analyzeTeam();
+}
+
+function removeTeam(idx) { team.splice(idx, 1); renderTeam(); }
+function clearTeam() { team = []; renderTeam(); }
+
+async function analyzeTeam() {
+    if (!team.length) { document.getElementById('team-coverage').innerHTML = '<p class="text-gray-500">Ajoute des Pokemon...</p>'; return; }
+    const data = await fetch('/api/type-chart').then(r=>r.json());
+    const types = data.types;
+    const chart = data.chart;
+    // Offensive coverage
+    const covered = new Set();
+    team.forEach(p => {
+        [p.type1, p.type2].filter(Boolean).forEach(atk => {
+            types.forEach(def_ => { if ((chart[atk+'_'+def_]||1) > 1) covered.add(def_); });
+        });
+    });
+    const uncovered = types.filter(t => !covered.has(t));
+    // Defensive weaknesses
+    const weakCount = {};
+    types.forEach(t => weakCount[t] = 0);
+    team.forEach(p => {
+        types.forEach(atk => {
+            let m = chart[atk+'_'+p.type1] || 1;
+            if (p.type2) m *= (chart[atk+'_'+p.type2] || 1);
+            if (m > 1) weakCount[atk]++;
+        });
+    });
+    const dangers = Object.entries(weakCount).filter(([t,c]) => c >= 3).sort((a,b) => b[1]-a[1]);
+    const warns = Object.entries(weakCount).filter(([t,c]) => c === 2).sort((a,b) => b[1]-a[1]);
+
+    let html = `<p class="text-sm mb-2"><span class="text-cyan-400 font-bold">Couverture offensive:</span> ${Math.round(covered.size/types.length*100)}% (${covered.size}/${types.length})</p>`;
+    if (uncovered.length) html += `<p class="text-xs text-gray-500 mb-2">Non couverts: ${uncovered.map(t=>pill(t)).join(' ')}</p>`;
+    if (dangers.length) html += `<p class="text-sm text-red-400 font-bold mt-2">⚠ DANGER: ${dangers.map(([t,c])=>`${pill(t)} (${c}/${team.length})`).join(' ')}</p>`;
+    if (warns.length) html += `<p class="text-sm text-orange-400 mt-1">Attention: ${warns.slice(0,4).map(([t,c])=>`${pill(t)} (${c}/${team.length})`).join(' ')}</p>`;
+    if (!dangers.length && !warns.length) html += `<p class="text-sm text-green-400 font-bold mt-2">✅ Bon equilibre defensif !</p>`;
+    document.getElementById('team-coverage').innerHTML = html;
+}
+
 // Init
 loadDashboard();
+loadTypeChart();
 </script>
 </body>
 </html>

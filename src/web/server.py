@@ -181,6 +181,63 @@ async def get_type_chart():
     return {"types": TYPES, "chart": {f"{k[0]}_{k[1]}": v for k, v in TYPE_CHART.items()}}
 
 
+@app.get("/api/damage")
+async def calc_damage(attacker: str, defender: str, power: int = 80, move_type: str = "Normal"):
+    """Calculate damage between two Pokemon."""
+    conn = _db()
+    atk = conn.execute("SELECT * FROM pokemon WHERE LOWER(name) LIKE LOWER(?)", (f"%{attacker}%",)).fetchone()
+    dfn = conn.execute("SELECT * FROM pokemon WHERE LOWER(name) LIKE LOWER(?)", (f"%{defender}%",)).fetchone()
+    conn.close()
+    if not atk or not dfn:
+        return {"error": "Pokemon not found"}
+    atk, dfn = dict(atk), dict(dfn)
+    from ..tools.damage_calc import calc_damage as _calc, format_damage_result
+    atk_stat = max(atk["attack"], atk["sp_attack"])
+    def_stat = dfn["defense"] if atk["attack"] >= atk["sp_attack"] else dfn["sp_defense"]
+    def_types = [dfn["type1"]]
+    if dfn.get("type2"): def_types.append(dfn["type2"])
+    atk_types = [atk["type1"]]
+    if atk.get("type2"): atk_types.append(atk["type2"])
+    result = _calc(50, power, move_type, atk_stat, def_stat, dfn["hp"]+60, def_types, atk_types)
+    result["attacker"] = atk["name"]
+    result["defender"] = dfn["name"]
+    result["text"] = format_damage_result(result)
+    return result
+
+
+@app.get("/api/recommend-moves/{pokemon_id}")
+async def recommend_moves(pokemon_id: int):
+    conn = _db()
+    p = conn.execute("SELECT * FROM pokemon WHERE id = ?", (pokemon_id,)).fetchone()
+    conn.close()
+    if not p:
+        return []
+    p = dict(p)
+    types = [p["type1"]]
+    if p.get("type2"): types.append(p["type2"])
+    from ..tools.move_recommender import recommend_moves as _rec
+    return _rec(types, p["attack"], p["sp_attack"], p["speed"])
+
+
+@app.get("/api/routes")
+async def get_routes(region: str = ""):
+    conn = _db()
+    if region:
+        rows = conn.execute("SELECT * FROM routes WHERE region = ? ORDER BY name", (region,)).fetchall()
+    else:
+        rows = conn.execute("SELECT * FROM routes ORDER BY region, name").fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+@app.get("/api/routes/{route_id}/items")
+async def get_route_items(route_id: int):
+    conn = _db()
+    rows = conn.execute("SELECT * FROM location_items WHERE route_id = ?", (route_id,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
 @app.get("/sprite/{pokemon_id}")
 async def get_sprite(pokemon_id: int):
     sprite_path = SPRITES_DIR / f"{pokemon_id}.png"
