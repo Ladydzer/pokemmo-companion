@@ -473,13 +473,20 @@ const spr=n=>`https://play.pokemonshowdown.com/sprites/ani/${n.toLowerCase().rep
 document.addEventListener('error',e=>{if(e.target.tagName==='IMG'&&e.target.src.includes('showdown')){const id=e.target.dataset?.id;if(id)e.target.src=`/sprite/${id}`;}},true);
 
 function go(p){
-    document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));
-    const el=document.getElementById('page-'+p);
-    if(el){el.classList.remove('hidden');el.classList.add('fade-in');}
-    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-    document.querySelector(`[data-page="${p}"]`)?.classList.add('active');
-    if(p==='pokedex'&&!window._dx)loadDex();
-    if(p==='collection'&&!window._cl)loadCol();
+    // Smooth transition: fade out current, fade in new
+    const current=document.querySelector('.page:not(.hidden)');
+    if(current){current.style.opacity='0';current.style.transform='translateY(8px)';}
+    setTimeout(()=>{
+        document.querySelectorAll('.page').forEach(x=>{x.classList.add('hidden');x.style.opacity='';x.style.transform='';});
+        const el=document.getElementById('page-'+p);
+        if(el){el.classList.remove('hidden');el.style.opacity='0';el.style.transform='translateY(8px)';
+            requestAnimationFrame(()=>{el.style.transition='opacity 0.3s ease, transform 0.3s ease';el.style.opacity='1';el.style.transform='translateY(0)';});
+        }
+        document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+        document.querySelector(`[data-page="${p}"]`)?.classList.add('active');
+        if(p==='pokedex'&&!window._dx)loadDex();
+        if(p==='collection'&&!window._cl)loadCol();
+    }, current?150:0);
 }
 
 async function loadDash(){
