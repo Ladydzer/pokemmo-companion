@@ -97,7 +97,7 @@ class IVCalculatorTab(QWidget):
 
         pokemon = self.db.get_pokemon_by_name(pokemon_name)
         if not pokemon:
-            self.result_label.setText(f"Pokemon '{pokemon_name}' not found")
+            self.result_label.setText(f"Pokemon '{pokemon_name}' introuvable")
             return
 
         try:
