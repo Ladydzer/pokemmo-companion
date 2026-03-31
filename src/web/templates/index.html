@@ -977,9 +977,15 @@ function radarSVG(stats){
     });
     // Axes
     for(let i=0;i<n;i++){const a=angle(i);svg+=`<line x1="${cx}" y1="${cy}" x2="${cx+r*Math.cos(a)}" y2="${cy+r*Math.sin(a)}" stroke="rgba(0,229,255,0.08)" stroke-width="1"/>`;}
-    // Stat polygon
+    // Stat polygon with animation
     let pts='';for(let i=0;i<n;i++){const a=angle(i);const v=Math.min(stats[i]/255,1);pts+=`${cx+r*v*Math.cos(a)},${cy+r*v*Math.sin(a)} `;}
-    svg+=`<polygon points="${pts}" fill="rgba(0,229,255,0.15)" stroke="#00e5ff" stroke-width="2"/>`;
+    // Start from center, animate to full
+    let ptsZero='';for(let i=0;i<n;i++) ptsZero+=`${cx},${cy} `;
+    svg+=`<polygon fill="rgba(0,229,255,0.15)" stroke="#00e5ff" stroke-width="2"><animate attributeName="points" from="${ptsZero}" to="${pts}" dur="0.6s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1"/></polygon>`;
+    // Dots at each stat point
+    for(let i=0;i<n;i++){const a=angle(i);const v=Math.min(stats[i]/255,1);
+        svg+=`<circle cx="${cx+r*v*Math.cos(a)}" cy="${cy+r*v*Math.sin(a)}" r="3" fill="#00e5ff" opacity="0"><animate attributeName="opacity" from="0" to="1" begin="0.5s" dur="0.3s" fill="freeze"/></circle>`;
+    }
     // Labels
     for(let i=0;i<n;i++){const a=angle(i);const lx=cx+(r+18)*Math.cos(a);const ly=cy+(r+18)*Math.sin(a);
         svg+=`<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" fill="${colors[i]}" font-size="10" font-weight="700">${labels[i]}</text>`;
