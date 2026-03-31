@@ -28,13 +28,13 @@ class TeamAnalyzerWidget(QWidget):
         layout.addWidget(sep)
 
         # Header
-        header = QLabel("Team Analysis")
+        header = QLabel("Analyse d'Equipe")
         header.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
         header.setStyleSheet("color: #FFF176;")
         layout.addWidget(header)
 
         # Team members
-        self.team_label = QLabel("No team data")
+        self.team_label = QLabel("Aucune donnee d'equipe")
         self.team_label.setFont(QFont("Consolas", 8))
         self.team_label.setStyleSheet("color: #E0E0E0;")
         self.team_label.setWordWrap(True)
@@ -71,7 +71,7 @@ class TeamAnalyzerWidget(QWidget):
     def clear_team(self) -> None:
         """Clear the team."""
         self._team = []
-        self.team_label.setText("No team data")
+        self.team_label.setText("Aucune donnee d'equipe")
         self.coverage_label.setText("")
         self.weakness_label.setText("")
 
@@ -103,7 +103,7 @@ class TeamAnalyzerWidget(QWidget):
 
         coverage_text = f"Coverage: {coverage_pct:.0f}% ({len(covered_types)}/{len(TYPES)} types)"
         if uncovered:
-            coverage_text += f"\nNot covered: {', '.join(sorted(uncovered))}"
+            coverage_text += f"\nNon couverts : {', '.join(sorted(uncovered))}"
         self.coverage_label.setText(coverage_text)
 
         # Calculate defensive weaknesses (what types hit the whole team hard)
@@ -123,12 +123,12 @@ class TeamAnalyzerWidget(QWidget):
 
         if common_weak:
             weak_parts = [f"{t} ({c}/6)" for t, c in sorted(common_weak.items(), key=lambda x: -x[1])]
-            self.weakness_label.setText(f"DANGER: {', '.join(weak_parts)}")
+            self.weakness_label.setText(f"DANGER : {', '.join(weak_parts)}")
             self.weakness_label.setStyleSheet("color: #EF5350;")
         elif shared_weak:
             weak_parts = [f"{t} ({c}/6)" for t, c in sorted(shared_weak.items(), key=lambda x: -x[1])[:4]]
-            self.weakness_label.setText(f"Watch: {', '.join(weak_parts)}")
+            self.weakness_label.setText(f"Attention : {', '.join(weak_parts)}")
             self.weakness_label.setStyleSheet("color: #FFB74D;")
         else:
-            self.weakness_label.setText("Good balance!")
+            self.weakness_label.setText("Bon equilibre !")
             self.weakness_label.setStyleSheet("color: #A5D6A7;")

@@ -210,7 +210,7 @@ class OverlayWindow(QMainWindow):
         """Update the displayed route information."""
         self.route_label.setText(f"Route: {route_name}")
         if region:
-            self.region_label.setText(f"Region: {region}")
+            self.region_label.setText(f"Region : {region}")
             self.region_label.show()
         else:
             self.region_label.hide()
@@ -291,7 +291,7 @@ class OverlayWindow(QMainWindow):
             lines.append("and src/detection/battle_detector.py")
             self.debug_label.setText("\n".join(lines))
             self.debug_label.show()
-            self.update_status("DEBUG ON | F11 to disable")
+            self.update_status("DEBUG ON | F11 pour desactiver")
         self._adjust_size()
 
     def save_position(self) -> None:

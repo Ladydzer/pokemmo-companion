@@ -404,7 +404,7 @@ function rDex(list){
     document.getElementById('dex-detail').classList.add('hidden');g.classList.remove('hidden');
     list.forEach(p=>{
         g.innerHTML+=`<div class="dex-card" onclick="showP(${p.id})" style="border-bottom:3px solid ${TC[p.type1]||'#888'}">
-            <img src="${spr(p.name)}" class="w-14 h-14 mx-auto sprite-hover" loading="lazy" alt="${p.name}">
+            <img src="${spr(p.name)}" data-id="${p.id}" class="w-14 h-14 mx-auto sprite-hover" loading="lazy" alt="${p.name}">
             <p class="text-[11px] font-semibold text-white mt-1">${p.name}</p>
             <p class="text-[9px] text-gray-600">#${String(p.id).padStart(3,'0')}</p>
         </div>`;
@@ -416,7 +416,7 @@ async function showP(id){
         const[p,locs,evos]=await Promise.all([fetch(`/api/pokemon/${id}`).then(r=>r.json()),fetch(`/api/pokemon/${id}/locations`).then(r=>r.json()),fetch(`/api/pokemon/${id}/evolutions`).then(r=>r.json())]);
         const bst=p.hp+p.attack+p.defense+p.sp_attack+p.sp_defense+p.speed;
         const sb=(l,v,k)=>`<div class="flex items-center gap-2 mb-1.5"><span class="w-8 text-[10px] text-gray-500">${l}</span><span class="w-7 text-xs text-right mono text-gray-300">${v}</span><div class="flex-1 stat-track"><div class="stat-fill" style="width:${v/255*100}%;background:${SC[k]}"></div></div></div>`;
-        const evoH=evos.length>1?evos.map((e,i)=>{const hl=e.id===id?'ring-2 ring-cyan-400':'';const ar=i>0?`<span class="text-gray-600 text-xs mx-1">${e.condition||'→'}</span>`:'';return`${ar}<div class="text-center ${hl} rounded-xl p-2"><img src="${spr(e.name)}" class="w-12 h-12 mx-auto sprite-hover"><p class="text-[10px] mt-1">${e.name}</p></div>`;}).join(''):'';
+        const evoH=evos.length>1?evos.map((e,i)=>{const hl=e.id===id?'ring-2 ring-cyan-400':'';const ar=i>0?`<span class="text-gray-600 text-xs mx-1">${e.condition||'→'}</span>`:'';return`${ar}<div class="text-center ${hl} rounded-xl p-2"><img src="${spr(e.name)}" data-id="${e.id}" class="w-12 h-12 mx-auto sprite-hover"><p class="text-[10px] mt-1">${e.name}</p></div>`;}).join(''):'';
         const locH=(Array.isArray(locs)?locs:[]).slice(0,8).map(l=>`<div class="spawn-row"><span class="flex-1 text-sm">${l.route_name}</span><span class="text-xs text-gray-500">${l.region}</span><span class="text-xs mono w-10 text-right" style="color:#69f0ae">${l.rate.toFixed(0)}%</span><span class="text-xs text-gray-500 w-20 text-right">Lv.${l.level_min}-${l.level_max}</span></div>`).join('');
         document.getElementById('dex-grid').classList.add('hidden');
         const d=document.getElementById('dex-detail');d.classList.remove('hidden');
@@ -424,7 +424,7 @@ async function showP(id){
         <div class="glass-card p-8" style="border-top:4px solid ${TC[p.type1]||'#00e5ff'}">
             <div class="flex flex-col md:flex-row gap-8">
                 <div class="text-center flex-shrink-0">
-                    <img src="${spr(p.name)}" class="w-36 h-36 mx-auto sprite-hover">
+                    <img src="${spr(p.name)}" data-id="${p.id}" class="w-36 h-36 mx-auto sprite-hover">
                     <h2 class="text-2xl font-black text-white mt-3">#${String(p.id).padStart(3,'0')} ${p.name}</h2>
                     <div class="flex gap-2 justify-center mt-2">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div>
                     <p class="text-[10px] text-gray-500 mt-2">${p.ability1||''}${p.ability2?' / '+p.ability2:''}${p.hidden_ability?' / '+p.hidden_ability+' (HA)':''}</p>
@@ -456,7 +456,7 @@ document.getElementById('battle-input')?.addEventListener('input',async e=>{
     try{const res=await fetch(`/api/pokemon/search/${q}`).then(r=>r.json());
     if(!Array.isArray(res)||!res.length)return;const p=res[0];const bst=p.hp+p.attack+p.defense+p.sp_attack+p.sp_defense+p.speed;
     document.getElementById('battle-result').classList.remove('hidden');
-    document.getElementById('battle-result').innerHTML=`<div class="flex items-center gap-6 p-4 glass-card"><img src="${spr(p.name)}" class="w-20 h-20 sprite-hover"><div><h4 class="text-xl font-black text-white">#${String(p.id).padStart(3,'0')} ${p.name}</h4><div class="flex gap-2 mt-1">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div><p class="text-xs text-gray-400 mt-2 mono">BST ${bst}</p></div></div>`;
+    document.getElementById('battle-result').innerHTML=`<div class="flex items-center gap-6 p-4 glass-card"><img src="${spr(p.name)}" data-id="${p.id}" class="w-20 h-20 sprite-hover"><div><h4 class="text-xl font-black text-white">#${String(p.id).padStart(3,'0')} ${p.name}</h4><div class="flex gap-2 mt-1">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div><p class="text-xs text-gray-400 mt-2 mono">BST ${bst}</p></div></div>`;
     }catch(e){console.error(e);}
 });
 
@@ -505,7 +505,7 @@ document.getElementById('team-input')?.addEventListener('keydown',async e=>{
 function rTm(){
     const s=document.getElementById('team-slots');s.innerHTML='';
     for(let i=0;i<6;i++){
-        if(i<tm.length){const p=tm[i];s.innerHTML+=`<div class="dex-card p-3" onclick="rmTm(${i})" style="border-top:3px solid ${TC[p.type1]||'#888'}"><img src="${spr(p.name)}" class="w-14 h-14 mx-auto sprite-hover"><p class="text-xs font-bold text-white mt-1">${p.name}</p><div class="flex gap-1 justify-center mt-1">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div></div>`;}
+        if(i<tm.length){const p=tm[i];s.innerHTML+=`<div class="dex-card p-3" onclick="rmTm(${i})" style="border-top:3px solid ${TC[p.type1]||'#888'}"><img src="${spr(p.name)}" data-id="${p.id}" class="w-14 h-14 mx-auto sprite-hover"><p class="text-xs font-bold text-white mt-1">${p.name}</p><div class="flex gap-1 justify-center mt-1">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div></div>`;}
         else{s.innerHTML+=`<div class="glass-card border-2 border-dashed border-gray-800 p-3 text-center h-28 flex items-center justify-center"><span class="text-gray-700 text-sm">Slot ${i+1}</span></div>`;}
     }
     aTm();
@@ -568,7 +568,7 @@ async function loadCol(){
     const g=document.getElementById('col-grid');g.innerHTML='';
     pk.forEach(p=>{
         const isCaught=caught.includes(p.id);
-        g.innerHTML+=`<div class="dex-card p-1 ${isCaught?'':'opacity-30'} hover:opacity-100 transition cursor-pointer" style="border-bottom:2px solid ${TC[p.type1]||'#888'}${isCaught?';box-shadow:0 0 8px rgba(105,240,174,0.3)':''}" onclick="toggleCatch(${p.id})" id="col-${p.id}"><img src="${spr(p.name)}" class="w-8 h-8 mx-auto" loading="lazy"><p class="text-[7px] text-gray-600">${p.id}</p></div>`;
+        g.innerHTML+=`<div class="dex-card p-1 ${isCaught?'':'opacity-30'} hover:opacity-100 transition cursor-pointer" style="border-bottom:2px solid ${TC[p.type1]||'#888'}${isCaught?';box-shadow:0 0 8px rgba(105,240,174,0.3)':''}" onclick="toggleCatch(${p.id})" id="col-${p.id}"><img src="${spr(p.name)}" data-id="${p.id}" class="w-8 h-8 mx-auto" loading="lazy"><p class="text-[7px] text-gray-600">${p.id}</p></div>`;
     });
     updateColCount(caught.length);
     }catch(e){console.error(e);}

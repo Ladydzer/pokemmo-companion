@@ -122,7 +122,7 @@ class BattlePanelWidget(QWidget):
         self.main_layout.addWidget(self.extended_container)
 
         # Weaknesses detail (extended)
-        self.weak_header = QLabel("WEAK TO:")
+        self.weak_header = QLabel("FAIBLE CONTRE :")
         self.weak_header.setFont(QFont("Segoe UI", 8, QFont.Weight.Bold))
         self.weak_header.setStyleSheet("color: #EF9A9A;")
         self.extended_layout.addWidget(self.weak_header)
@@ -133,7 +133,7 @@ class BattlePanelWidget(QWidget):
         self.extended_layout.addLayout(self.weak_badges_layout)
 
         # Resistances detail (extended)
-        self.resist_header = QLabel("RESISTS:")
+        self.resist_header = QLabel("RESISTE :")
         self.resist_header.setFont(QFont("Segoe UI", 8, QFont.Weight.Bold))
         self.resist_header.setStyleSheet("color: #A5D6A7;")
         self.extended_layout.addWidget(self.resist_header)
@@ -211,12 +211,12 @@ class BattlePanelWidget(QWidget):
 
             # Immunities
             if immune:
-                self.immune_label.setText(f"IMMUNE TO: {', '.join(immune)}")
+                self.immune_label.setText(f"IMMUNE A : {', '.join(immune)}")
                 self.immune_label.show()
             else:
                 self.immune_label.hide()
         else:
-            self.compact_weak_label.setText("Type data unavailable")
+            self.compact_weak_label.setText("Donnees de type indisponibles")
 
         # Stats (extended)
         if pokemon_data:

@@ -43,7 +43,7 @@ class GuidePanelWidget(QWidget):
         layout.addWidget(self.badge_label)
 
         # Current objective
-        self.objective_label = QLabel("Detecting location...")
+        self.objective_label = QLabel("Detection en cours...")
         self.objective_label.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
         self.objective_label.setStyleSheet("color: #E3F2FD;")
         self.objective_label.setWordWrap(True)
@@ -87,7 +87,7 @@ class GuidePanelWidget(QWidget):
 
         # Update badge display
         badge_icons = "O" * self._badges + "." * (8 - self._badges)
-        self.badge_label.setText(f"Badges: [{badge_icons}] {self._badges}/8")
+        self.badge_label.setText(f"Badges : [{badge_icons}] {self._badges}/8")
 
         # Find current progression step
         current = self.db.get_current_step(region, route_name)
@@ -97,7 +97,7 @@ class GuidePanelWidget(QWidget):
             self.tip_label.setText(current.get("description", ""))
             rec_level = current.get("recommended_level", 0)
             if rec_level:
-                self.level_label.setText(f"Rec. Level: {rec_level}")
+                self.level_label.setText(f"Niv. recommande : {rec_level}")
             else:
                 self.level_label.setText("")
         else:
@@ -107,25 +107,25 @@ class GuidePanelWidget(QWidget):
             for step in progression:
                 if step.get("badge_number", 0) >= self._badges:
                     self._current_step = step["step"]
-                    self.objective_label.setText(f"Next: {step['title']}")
+                    self.objective_label.setText(f"Prochain : {step['title']}")
                     self.tip_label.setText(step.get("description", ""))
                     rec_level = step.get("recommended_level", 0)
                     if rec_level:
-                        self.level_label.setText(f"Rec. Level: {rec_level}")
+                        self.level_label.setText(f"Niv. recommande : {rec_level}")
                     break
 
         # Show next step
         next_step = self.db.get_next_step(region, self._current_step)
         if next_step:
-            self.next_label.setText(f"Then: {next_step['title']}")
+            self.next_label.setText(f"Ensuite : {next_step['title']}")
         else:
-            self.next_label.setText("Final step reached!")
+            self.next_label.setText("Derniere etape atteinte !")
 
     def set_badges(self, count: int) -> None:
         """Manually set badge count (from setup or detection)."""
         self._badges = max(0, min(8, count))
         badge_icons = "O" * self._badges + "." * (8 - self._badges)
-        self.badge_label.setText(f"Badges: [{badge_icons}] {self._badges}/8")
+        self.badge_label.setText(f"Badges : [{badge_icons}] {self._badges}/8")
 
     def get_compact_text(self) -> str:
         """Get one-line summary for compact mode."""

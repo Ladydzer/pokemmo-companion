@@ -114,19 +114,19 @@ class EncounterCounterWidget(QWidget):
         layout.addWidget(header)
 
         # Session encounters
-        self.session_label = QLabel("Session: 0")
+        self.session_label = QLabel("Session : 0")
         self.session_label.setFont(QFont("Consolas", 10, QFont.Weight.Bold))
         self.session_label.setStyleSheet("color: #FFFFFF;")
         layout.addWidget(self.session_label)
 
         # Total encounters
-        self.total_label = QLabel("Total: 0")
+        self.total_label = QLabel("Total : 0")
         self.total_label.setFont(QFont("Consolas", 9))
         self.total_label.setStyleSheet("color: #B0BEC5;")
         layout.addWidget(self.total_label)
 
         # Shiny probability
-        self.prob_label = QLabel("Shiny chance: 0.00%")
+        self.prob_label = QLabel("Chance shiny : 0.00%")
         self.prob_label.setFont(QFont("Consolas", 9))
         self.prob_label.setStyleSheet("color: #FFD54F;")
         layout.addWidget(self.prob_label)
@@ -192,12 +192,12 @@ class EncounterCounterWidget(QWidget):
 
         # Total
         self.total_label.setText(
-            f"Total: {self.data.total_encounters:,} | Shinies: {self.data.shinies_found}"
+            f"Total : {self.data.total_encounters:,} | Shinies : {self.data.shinies_found}"
         )
 
         # Shiny probability for session
         prob = cumulative_shiny_probability(sess.encounters, self.data.shiny_rate)
-        self.prob_label.setText(f"Shiny chance: {prob * 100:.2f}%")
+        self.prob_label.setText(f"Chance shiny : {prob * 100:.2f}%")
 
         # Color the probability based on value
         if prob > 0.5:
@@ -215,13 +215,13 @@ class EncounterCounterWidget(QWidget):
         if self.data.use_charm:
             modifiers.append("Charm")
         mod_str = f" ({'+'.join(modifiers)})" if modifiers else ""
-        self.rate_label.setText(f"Rate: 1/{rate_inv:,}{mod_str}")
+        self.rate_label.setText(f"Taux : 1/{rate_inv:,}{mod_str}")
 
         # Session timer
         elapsed = time.time() - sess.started_at
         hours = int(elapsed // 3600)
         minutes = int((elapsed % 3600) // 60)
-        self.timer_label.setText(f"Time: {hours}h{minutes:02d}m")
+        self.timer_label.setText(f"Temps : {hours}h{minutes:02d}m")
 
     def get_compact_text(self) -> str:
         """Get a compact one-line summary for the overlay compact mode."""

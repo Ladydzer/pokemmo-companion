@@ -37,7 +37,7 @@ class PokedexWidget(QWidget):
 
         # Search bar
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Search Pokemon...")
+        self.search_input.setPlaceholderText("Rechercher un Pokemon...")
         self.search_input.setFont(QFont("Segoe UI", 9))
         self.search_input.setStyleSheet("""
             QLineEdit {
@@ -107,7 +107,7 @@ class PokedexWidget(QWidget):
         # Search for Pokemon
         results = self.db.search_pokemon(text, limit=5)
         if not results:
-            self.results_label.setText("No Pokemon found")
+            self.results_label.setText("Aucun Pokemon trouve")
             self.detail_widget.hide()
             return
 
@@ -168,13 +168,13 @@ class PokedexWidget(QWidget):
             abilities.append(pokemon["ability2"])
         if pokemon.get("hidden_ability"):
             abilities.append(f"{pokemon['hidden_ability']} (HA)")
-        self.abilities_label.setText(f"Abilities: {', '.join(abilities)}" if abilities else "")
+        self.abilities_label.setText(f"Talents : {', '.join(abilities)}" if abilities else "")
 
         # Locations
         if self.db:
             locations = self.db.get_pokemon_locations(pokemon["name"])
             if locations:
-                loc_lines = ["Locations:"]
+                loc_lines = ["Localisations :"]
                 seen = set()
                 for loc in locations[:6]:
                     key = f"{loc['route_name']}_{loc['region']}"
@@ -186,7 +186,7 @@ class PokedexWidget(QWidget):
                         )
                 self.locations_label.setText("\n".join(loc_lines))
             else:
-                self.locations_label.setText("Locations: Not found in wild")
+                self.locations_label.setText("Localisations : Not found in wild")
 
         self.pokemon_selected.emit(pokemon)
 

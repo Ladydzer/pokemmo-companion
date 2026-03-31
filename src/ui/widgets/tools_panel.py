@@ -71,7 +71,7 @@ class IVCalculatorTab(QWidget):
             layout.addLayout(row)
 
         # Calculate button
-        calc_btn = QPushButton("Calculate IVs")
+        calc_btn = QPushButton("Calculer IVs")
         calc_btn.setStyleSheet("color: white; background: #1565C0; border-radius: 3px; padding: 4px;")
         calc_btn.clicked.connect(self._calculate)
         layout.addWidget(calc_btn)
@@ -121,7 +121,7 @@ class IVCalculatorTab(QWidget):
                 visible_stats[stat] = 0
 
         if all(v == 0 for v in visible_stats.values()):
-            self.result_label.setText("Enter the visible stats from the game")
+            self.result_label.setText("Entre les stats visibles du jeu")
             return
 
         results = estimate_ivs(base_stats, visible_stats, level, nature)
@@ -158,7 +158,7 @@ class EVTrainingTab(QWidget):
         layout.addLayout(row)
 
         # Results
-        self.result_label = QLabel("Select a stat to see training spots")
+        self.result_label = QLabel("Selectionne une stat")
         self.result_label.setFont(QFont("Consolas", 8))
         self.result_label.setStyleSheet("color: #E0E0E0;")
         self.result_label.setWordWrap(True)
@@ -187,7 +187,7 @@ class EVTrainingTab(QWidget):
             return
 
         power_item = POWER_ITEMS.get(stat, "Power Item")
-        lines = [f"Best {stat.upper()} training spots:"]
+        lines = [f"Meilleurs {stat.upper()} spots d'entrainement :"]
         for s in spots[:8]:
             lines.append(
                 f"  {s['pokemon']:12} +{s['ev_yield']} | {s['location']:18} ({s['region']})"
