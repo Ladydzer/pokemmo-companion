@@ -388,7 +388,7 @@ async def play_sound(sound_type: str):
 
 
 @app.get("/api/hordes")
-async def get_hordes(region: str = "", pokemon: str = "", type: str = ""):
+async def get_hordes(region: str = "", pokemon: str = "", poke_type: str = ""):
     """Get horde encounter spots, optionally filtered by region/pokemon/type."""
     with _db() as conn:
         query = """SELECT p.id as pokemon_id, p.name, p.type1, p.type2,
@@ -404,10 +404,10 @@ async def get_hordes(region: str = "", pokemon: str = "", type: str = ""):
         if pokemon:
             query += " AND LOWER(p.name) LIKE LOWER(?)"
             params.append(f"%{pokemon}%")
-        if type:
+        if poke_type:
             query += " AND (LOWER(p.type1) = LOWER(?) OR LOWER(p.type2) = LOWER(?))"
-            params.extend([type, type])
-        query += " ORDER BY r.region, r.name, p.name LIMIT 200"
+            params.extend([poke_type, poke_type])
+        query += " ORDER BY r.region, r.name, p.name"
         rows = conn.execute(query, params).fetchall()
     return [dict(r) for r in rows]
 

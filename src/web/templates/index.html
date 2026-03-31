@@ -1625,7 +1625,7 @@ async function loadHordes(){
     try{
         let url='/api/hordes?';
         if(region)url+=`region=${region}&`;
-        if(type)url+=`type=${type}&`;
+        if(type)url+=`poke_type=${type}&`;
         if(pokemon&&pokemon.length>=2)url+=`pokemon=${pokemon}&`;
         const data=await fetch(url).then(r=>r.json());
         const el=document.getElementById('horde-list');
