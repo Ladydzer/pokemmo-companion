@@ -13,7 +13,7 @@ SPRITES_DIR = PROJECT_ROOT / "data" / "sprites"
 WEB_DIR = Path(__file__).parent
 TEMPLATES_DIR = WEB_DIR / "templates"
 
-app = FastAPI(title="PokeMMO Companion", version="0.3.0")
+app = FastAPI(title="PokeMMO Companion", version="0.5.0")
 
 # Mount static files (create dir if missing)
 static_dir = WEB_DIR / "static"
@@ -77,9 +77,12 @@ async def search_pokemon(query: str):
 
 @app.get("/api/pokemon/{pokemon_id}")
 async def get_pokemon(pokemon_id: int):
+    from fastapi.responses import JSONResponse
     with _db() as conn:
         row = conn.execute("SELECT * FROM pokemon WHERE id = ?", (pokemon_id,)).fetchone()
-    return dict(row) if row else {"error": "Not found"}
+    if row:
+        return dict(row)
+    return JSONResponse(status_code=404, content={"error": "Pokemon non trouve"})
 
 
 @app.get("/api/pokemon/{pokemon_id}/locations")

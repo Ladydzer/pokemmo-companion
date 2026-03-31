@@ -89,7 +89,7 @@ def start_overlay():
 
 def main():
     log.info("=" * 50)
-    log.info("PokeMMO Companion v0.3.0")
+    log.info("PokeMMO Companion v0.5.0")
     log.info("=" * 50)
 
     # Start web server in background

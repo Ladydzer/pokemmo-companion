@@ -79,7 +79,7 @@ class SplashScreen(QWidget):
         layout.addWidget(self.progress)
 
         # Version
-        version = QLabel("v0.2.0")
+        version = QLabel("v0.5.0")
         version.setFont(QFont("Segoe UI", 8))
         version.setStyleSheet(f"color: {COLORS['text_muted']};")
         version.setAlignment(Qt.AlignmentFlag.AlignCenter)

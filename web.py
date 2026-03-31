@@ -21,7 +21,7 @@ PORT = 8080
 
 
 def main():
-    log.info("PokeMMO Companion Web v0.3.0 starting...")
+    log.info("PokeMMO Companion Web v0.5.0 starting...")
 
     # Open browser after a short delay
     def open_browser():

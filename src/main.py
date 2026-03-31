@@ -233,8 +233,10 @@ class CompanionApp:
     def _on_battle_started(self, info: dict) -> None:
         """Handle battle detection — show battle panel + increment counter."""
         self.overlay.show_battle(info)
-        # Auto-increment encounter counter on wild battles
-        # TODO: distinguish wild vs trainer battles
+        # Auto-increment encounter counter
+        # Note: counts all battles including trainers — accurate counter requires
+        # OCR to read battle type text (wild/trainer). For now, user can manually
+        # adjust in the Shiny Lab web interface.
         self.overlay.increment_encounter(is_horde=False)
 
     def _on_battle_ended(self) -> None:
