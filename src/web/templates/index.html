@@ -558,7 +558,7 @@ async function loadDex(){
         if(!Array.isArray(pk))return;
         window._pk=pk;
         const f=document.getElementById('type-filters');
-        f.innerHTML=`<button onclick="fDex('')" class="type-pill cursor-pointer" style="background:#00e5ff">ALL</button> `;
+        f.innerHTML=`<button onclick="fDex('')" class="type-pill cursor-pointer" style="background:#00e5ff">TOUS</button> <button onclick="filterFavs()" class="type-pill cursor-pointer" style="background:#ffd740;color:#000">★ FAV</button> `;
         Object.keys(TC).forEach(t=>{f.innerHTML+=`<button onclick="fDex('${t}')" class="type-pill cursor-pointer" style="background:${TC[t]}">${t.slice(0,3)}</button> `;});
         rDex(pk);
         document.getElementById('dex-search').addEventListener('input',e=>{
@@ -1086,6 +1086,15 @@ function toggleFav(id){
     if(favs.includes(id)){favs=favs.filter(f=>f!==id);showToast('Retire des favoris');}
     else{favs.push(id);showToast('Ajoute aux favoris !');}
     localStorage.setItem('favorites',JSON.stringify(favs));
+    // Update button visually
+    const btn=event?.target;
+    if(btn){btn.textContent=favs.includes(id)?'★ Favori':'☆ Favoris';btn.className=`btn btn-xs mt-2 ${favs.includes(id)?'btn-warning':'btn-ghost'}`;}
+}
+function filterFavs(){
+    const favs=getFavs();
+    if(!favs.length){showToast('Aucun favori');return;}
+    rDex((window._pk||[]).filter(p=>favs.includes(p.id)));
+    document.getElementById('dex-count').textContent=favs.length+' favoris';
 }
 
 // Breeding calculator
