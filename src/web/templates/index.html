@@ -276,9 +276,41 @@
         <button onclick="calcDmg()" class="btn btn-sm btn-warning">Calculer</button>
         <div id="dmg-result" class="hidden mt-3 glass-card p-4 text-sm"></div>
     </div>
-    <div class="glass-card p-6">
+    <div class="glass-card p-6 mb-5">
         <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">TABLE DES TYPES</p>
         <div id="type-chart" class="overflow-x-auto"></div>
+    </div>
+    <!-- Natures Reference -->
+    <div class="glass-card p-6">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <p class="text-xs font-bold tracking-widest text-gray-500 mb-1">GUIDE DES NATURES</p>
+                <p class="text-[10px] text-gray-600">25 natures — chaque nature donne +10% a une stat et -10% a une autre (5 neutres)</p>
+            </div>
+            <div class="flex gap-2">
+                <select id="nature-filter" onchange="filterNatures()" class="select select-bordered select-xs">
+                    <option value="">Toutes</option>
+                    <option value="attack">Boost Attaque</option>
+                    <option value="defense">Boost Defense</option>
+                    <option value="sp_attack">Boost Att. Spe</option>
+                    <option value="sp_defense">Boost Def. Spe</option>
+                    <option value="speed">Boost Vitesse</option>
+                    <option value="neutral">Neutres</option>
+                </select>
+            </div>
+        </div>
+        <div id="natures-table" class="overflow-x-auto"></div>
+        <div class="mt-4 p-3 rounded-lg" style="background:rgba(0,229,255,0.05);border:1px solid rgba(0,229,255,0.1)">
+            <p class="text-xs font-bold text-gray-400 mb-2">NATURES POPULAIRES POKEMMO</p>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+                <div><span class="font-bold text-white">Sweeper Physique :</span> <span style="color:#F08030">Rigide</span> / <span style="color:#F85888">Jovial</span></div>
+                <div><span class="font-bold text-white">Sweeper Special :</span> <span style="color:#6890F0">Modeste</span> / <span style="color:#F85888">Timide</span></div>
+                <div><span class="font-bold text-white">Tank Physique :</span> <span style="color:#F8D030">Assure</span> / <span style="color:#F8D030">Relax</span></div>
+                <div><span class="font-bold text-white">Tank Special :</span> <span style="color:#78C850">Calme</span> / <span style="color:#78C850">Malpoli</span></div>
+                <div><span class="font-bold text-white">Mixte :</span> <span style="color:#A8A77A">Docile</span> / <span style="color:#A8A77A">Serieux</span></div>
+                <div><span class="font-bold text-white">Stall/Wall :</span> <span style="color:#F8D030">Hardi</span> / <span style="color:#78C850">Calme</span></div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -692,7 +724,25 @@ async function showP(id){
                         <div>${radarSVG([p.hp,p.attack,p.defense,p.sp_attack,p.sp_defense,p.speed])}</div>
                         <div class="flex-1">${sb('HP',p.hp,'hp')}${sb('ATK',p.attack,'attack')}${sb('DEF',p.defense,'defense')}${sb('SPA',p.sp_attack,'sp_attack')}${sb('SPD',p.sp_defense,'sp_defense')}${sb('SPE',p.speed,'speed')}</div>
                     </div>
-                    <p class="text-xs text-gray-500 mt-3"><span class="font-bold">${p.attack>p.sp_attack?'Physique : Rigide/Jovial':'Special : Modeste/Timide'}</span></p>
+                    ${(()=>{
+                        const nr=recommendNatures(p);
+                        let nh='<div class="mt-3 p-3 rounded-lg" style="background:rgba(0,229,255,0.05);border:1px solid rgba(0,229,255,0.08)">';
+                        nh+='<p class="text-[10px] font-bold tracking-widest text-gray-500 mb-2">NATURES RECOMMANDEES</p>';
+                        if(nr.all.length){
+                            nh+='<div class="flex flex-wrap gap-2">';
+                            nr.all.forEach((n,i)=>{
+                                const star=i===0?'★ ':'';
+                                nh+=`<div class="px-3 py-1.5 rounded-lg text-xs ${i===0?'font-bold':'text-gray-400'}" style="background:${i===0?'rgba(0,229,255,0.12)':'rgba(255,255,255,0.03)'};${i===0?'color:#00e5ff':''}">`;
+                                nh+=`${star}${n.name} <span class="text-gray-600">(${n.name_en})</span>`;
+                                nh+=`<span class="ml-1" style="color:${STAT_COLORS[n.up]}">↑${STAT_NAMES[n.up]}</span>`;
+                                nh+=`<span class="ml-1 text-gray-600">↓${STAT_NAMES[n.down]}</span>`;
+                                nh+=`</div>`;
+                            });
+                            nh+='</div>';
+                        }
+                        nh+='</div>';
+                        return nh;
+                    })()}
                 </div>
             </div>
             ${evoH?`<div class="mt-6 pt-6 border-t border-gray-800"><p class="text-xs font-bold tracking-widest text-gray-500 mb-3">CHAINE D'EVOLUTION</p><div class="flex items-center gap-1 flex-wrap">${evoH}</div></div>`:''}
@@ -1306,7 +1356,91 @@ document.addEventListener('keydown',e=>{
     if((e.key==='/'||e.key==='f')&&!e.ctrlKey&&!e.metaKey){e.preventDefault();document.getElementById('global-search')?.focus();}
 });
 
-loadDash();loadChart();rTm();loadRoutes();checkGame();loadOptStats();shinyUpdate();calcBreed();
+// Natures data (Gen 5 mechanics)
+const NATURES=[
+    {name:'Hardi',name_en:'Adamant',up:'attack',down:'sp_attack',use:'Sweeper physique'},
+    {name:'Rigide',name_en:'Brave',up:'attack',down:'speed',use:'Trick Room physique'},
+    {name:'Jovial',name_en:'Jolly',up:'speed',down:'sp_attack',use:'Sweeper rapide physique'},
+    {name:'Mauvais',name_en:'Naughty',up:'attack',down:'sp_defense',use:'Attaquant mixte'},
+    {name:'Solo',name_en:'Lonely',up:'attack',down:'defense',use:'Attaquant physique fragile'},
+    {name:'Modeste',name_en:'Modest',up:'sp_attack',down:'attack',use:'Sweeper special'},
+    {name:'Doux',name_en:'Mild',up:'sp_attack',down:'defense',use:'Attaquant special fragile'},
+    {name:'Discret',name_en:'Quiet',up:'sp_attack',down:'speed',use:'Trick Room special'},
+    {name:'Foufou',name_en:'Rash',up:'sp_attack',down:'sp_defense',use:'Attaquant special mixte'},
+    {name:'Timide',name_en:'Timid',up:'speed',down:'attack',use:'Sweeper rapide special'},
+    {name:'Presse',name_en:'Hasty',up:'speed',down:'defense',use:'Rapide fragile'},
+    {name:'Naif',name_en:'Naive',up:'speed',down:'sp_defense',use:'Rapide mixte'},
+    {name:'Assure',name_en:'Bold',up:'defense',down:'attack',use:'Wall physique'},
+    {name:'Relax',name_en:'Relaxed',up:'defense',down:'speed',use:'Tank physique lent'},
+    {name:'Malin',name_en:'Impish',up:'defense',down:'sp_attack',use:'Wall physique'},
+    {name:'Lache',name_en:'Lax',up:'defense',down:'sp_defense',use:'Def physique uniquement'},
+    {name:'Calme',name_en:'Calm',up:'sp_defense',down:'attack',use:'Wall special'},
+    {name:'Gentil',name_en:'Gentle',up:'sp_defense',down:'defense',use:'Def speciale uniquement'},
+    {name:'Malpoli',name_en:'Sassy',up:'sp_defense',down:'speed',use:'Tank special lent'},
+    {name:'Prudent',name_en:'Careful',up:'sp_defense',down:'sp_attack',use:'Wall special'},
+    {name:'Docile',name_en:'Docile',up:null,down:null,use:'Neutre'},
+    {name:'Bizarre',name_en:'Quirky',up:null,down:null,use:'Neutre'},
+    {name:'Serieux',name_en:'Serious',up:null,down:null,use:'Neutre'},
+    {name:'Pudique',name_en:'Bashful',up:null,down:null,use:'Neutre'},
+    {name:'Hardy',name_en:'Hardy',up:null,down:null,use:'Neutre'},
+];
+const STAT_NAMES={attack:'Attaque',defense:'Defense',sp_attack:'Att. Spe',sp_defense:'Def. Spe',speed:'Vitesse'};
+const STAT_COLORS={attack:'#F08030',defense:'#F8D030',sp_attack:'#6890F0',sp_defense:'#78C850',speed:'#F85888'};
+
+function renderNatures(list){
+    const el=document.getElementById('natures-table');
+    let h='<table class="w-full text-sm"><thead><tr>';
+    h+='<th class="text-left p-2 text-gray-500 text-xs">Nature</th>';
+    h+='<th class="text-left p-2 text-gray-500 text-xs">EN</th>';
+    h+='<th class="text-center p-2 text-xs" style="color:#69f0ae">+10%</th>';
+    h+='<th class="text-center p-2 text-xs" style="color:#ff5252">-10%</th>';
+    h+='<th class="text-left p-2 text-gray-500 text-xs">Usage</th>';
+    h+='</tr></thead><tbody>';
+    list.forEach(n=>{
+        const upTxt=n.up?STAT_NAMES[n.up]:'—';
+        const downTxt=n.down?STAT_NAMES[n.down]:'—';
+        const upClr=n.up?STAT_COLORS[n.up]:'#888';
+        const downClr=n.down?STAT_COLORS[n.down]:'#888';
+        const isNeutral=!n.up;
+        h+=`<tr class="border-b border-gray-800/50 hover:bg-dark-600/30">`;
+        h+=`<td class="p-2 font-bold ${isNeutral?'text-gray-500':'text-white'}">${n.name}</td>`;
+        h+=`<td class="p-2 text-gray-600 text-xs">${n.name_en}</td>`;
+        h+=`<td class="p-2 text-center font-bold" style="color:${upClr}">${isNeutral?'—':'↑ '+upTxt}</td>`;
+        h+=`<td class="p-2 text-center font-bold" style="color:${isNeutral?'#888':downClr}">${isNeutral?'—':'↓ '+downTxt}</td>`;
+        h+=`<td class="p-2 text-gray-400 text-xs">${n.use}</td>`;
+        h+=`</tr>`;
+    });
+    h+='</tbody></table>';
+    el.innerHTML=h;
+}
+function filterNatures(){
+    const f=document.getElementById('nature-filter').value;
+    if(!f){renderNatures(NATURES);return;}
+    if(f==='neutral'){renderNatures(NATURES.filter(n=>!n.up));return;}
+    renderNatures(NATURES.filter(n=>n.up===f));
+}
+
+// Recommend natures for a Pokemon based on stats
+function recommendNatures(p){
+    const stats={attack:p.attack,defense:p.defense,sp_attack:p.sp_attack,sp_defense:p.sp_defense,speed:p.speed};
+    const sorted=Object.entries(stats).sort((a,b)=>b[1]-a[1]);
+    const topStat=sorted[0][0]; // highest stat
+    const lowStat=sorted[sorted.length-1][0]; // lowest stat
+    // Find natures that boost the top stat
+    const good=NATURES.filter(n=>n.up===topStat).sort((a,b)=>{
+        // Prefer natures that lower the least useful stat
+        const aScore=stats[a.down]||999;
+        const bScore=stats[b.down]||999;
+        return aScore-bScore;
+    });
+    // Best nature = boost top, lower bottom
+    const best=good.length?good[0]:null;
+    // Secondary: speed nature if speed is decent
+    const speedNature=NATURES.find(n=>n.up==='speed'&&n.down===(p.attack>p.sp_attack?'sp_attack':'attack'));
+    return {best,speedNature,all:good.slice(0,3)};
+}
+
+loadDash();loadChart();rTm();loadRoutes();checkGame();loadOptStats();shinyUpdate();calcBreed();renderNatures(NATURES);
 </script>
 </body>
 </html>
