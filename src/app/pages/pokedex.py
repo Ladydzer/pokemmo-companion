@@ -142,6 +142,31 @@ class PokemonDetail(QWidget):
         nature_layout.addWidget(self.nature_label)
 
         layout.addWidget(nature_frame)
+
+        # Move Recommender
+        moves_frame = QFrame()
+        moves_frame.setStyleSheet(f"""
+            QFrame {{
+                background-color: {COLORS['bg_card']};
+                border: 1px solid {COLORS['border']};
+                border-radius: 8px;
+            }}
+        """)
+        moves_layout = QVBoxLayout(moves_frame)
+        moves_layout.setContentsMargins(12, 8, 12, 8)
+
+        moves_title = QLabel("Recommended Moveset (PvE)")
+        moves_title.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        moves_title.setStyleSheet(f"color: {COLORS['accent_orange']};")
+        moves_layout.addWidget(moves_title)
+
+        self.moves_label = QLabel("")
+        self.moves_label.setFont(QFont("Consolas", 9))
+        self.moves_label.setStyleSheet(f"color: {COLORS['text_secondary']};")
+        self.moves_label.setWordWrap(True)
+        moves_layout.addWidget(self.moves_label)
+
+        layout.addWidget(moves_frame)
         layout.addStretch()
 
     def show_pokemon(self, pokemon: dict) -> None:
@@ -233,6 +258,15 @@ class PokemonDetail(QWidget):
             natures.append("Flexible — choose based on your team's needs")
 
         self.nature_label.setText("\n".join(natures))
+
+        # Move recommender
+        from ...tools.move_recommender import recommend_moves, format_recommendations
+        types = [pokemon["type1"]]
+        if pokemon.get("type2"):
+            types.append(pokemon["type2"])
+        recs = recommend_moves(types, pokemon.get("attack", 0),
+                               pokemon.get("sp_attack", 0), pokemon.get("speed", 0))
+        self.moves_label.setText(format_recommendations(recs))
 
 
 class PokedexPage(QWidget):
