@@ -1715,12 +1715,14 @@ function calcSS(){
     <p class="text-xs text-gray-500 mt-2">Avec Leppa Berry + Pickup, tu peux chasser indefiniment. 5 Pokemon par horde = taux shiny effectif 5x meilleur.</p>`;
 }
 
-// EV Training
+// EV Training (with localStorage persistence)
 function updateEVTracker(){
     const stats=['hp','attack','defense','sp_attack','sp_defense','speed'];
     let total=0;
+    const evData={};
     stats.forEach(s=>{
         const v=parseInt(document.getElementById('ev-t-'+s)?.value||0);
+        evData[s]=v;
         total+=v;
         const bar=document.getElementById('ev-b-'+s);
         if(bar)bar.style.width=(v/252*100)+'%';
@@ -1729,6 +1731,13 @@ function updateEVTracker(){
     if(el){el.textContent=total;el.style.color=total>510?'#ff5252':total===510?'#69f0ae':'#fff';}
     const bar=document.getElementById('ev-total-bar');
     if(bar){bar.style.width=(Math.min(total,510)/510*100)+'%';bar.style.background=total>510?'#ff5252':'#00e5ff';}
+    localStorage.setItem('ev_tracker',JSON.stringify(evData));
+}
+function loadEVTracker(){
+    const saved=JSON.parse(localStorage.getItem('ev_tracker')||'{}');
+    const stats=['hp','attack','defense','sp_attack','sp_defense','speed'];
+    stats.forEach(s=>{const el=document.getElementById('ev-t-'+s);if(el&&saved[s]!==undefined)el.value=saved[s];});
+    updateEVTracker();
 }
 function presetEV(preset){
     const stats=['hp','attack','defense','sp_attack','sp_defense','speed'];
@@ -1741,6 +1750,7 @@ function presetEV(preset){
     const p=presets[preset]||{};
     stats.forEach(s=>{const el=document.getElementById('ev-t-'+s);if(el)el.value=p[s]||0;});
     updateEVTracker();
+    if(preset!=='reset')showToast('Preset applique');
 }
 
 async function loadEVSpots(stat){
@@ -1859,7 +1869,7 @@ function filterMoves(method){
     });
 }
 
-loadAbilityFR();loadDash();loadChart();rTm();loadRoutes();checkGame();loadOptStats();shinyUpdate();calcBreed();renderNatures(NATURES);loadHordeSummary();loadHordes();calcSS();updateEVTracker();loadGuide('Kanto');dashLoadRoute();
+loadAbilityFR();loadDash();loadChart();rTm();loadRoutes();checkGame();loadOptStats();shinyUpdate();calcBreed();renderNatures(NATURES);loadHordeSummary();loadHordes();calcSS();loadEVTracker();loadGuide('Kanto');dashLoadRoute();
 </script>
 </body>
 </html>
