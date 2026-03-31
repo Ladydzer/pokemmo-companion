@@ -156,7 +156,7 @@ class CompanionApp:
     def run(self) -> int:
         """Start the companion app."""
         log.info("=" * 50)
-        log.info("PokeMMO Companion v0.1.0 starting...")
+        log.info("PokeMMO Companion v0.5.0 starting...")
         log.info("=" * 50)
 
         # Setup overlay

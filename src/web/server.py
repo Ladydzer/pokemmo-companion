@@ -119,18 +119,18 @@ async def get_evolutions(pokemon_id: int):
         if p:
             chain.append({**dict(p), "condition": ""})
         while True:
-            row = conn.execute(
+            rows = conn.execute(
                 """SELECT e.to_pokemon_id, e.condition, p.name, p.type1, p.type2
                    FROM evolutions e JOIN pokemon p ON e.to_pokemon_id = p.id
                    WHERE e.from_pokemon_id = ?""", (current,)
-            ).fetchone()
-            if row:
+            ).fetchall()
+            if not rows:
+                break
+            for row in rows:
                 r = dict(row)
                 chain.append({"id": r["to_pokemon_id"], "name": r["name"],
                               "type1": r["type1"], "type2": r["type2"], "condition": r["condition"]})
-                current = r["to_pokemon_id"]
-            else:
-                break
+            current = dict(rows[0])["to_pokemon_id"]
     return chain
 
 
@@ -188,7 +188,7 @@ async def calc_damage(attacker: str, defender: str, power: int = 80, move_type: 
         atk = conn.execute("SELECT * FROM pokemon WHERE LOWER(name) LIKE LOWER(?)", (f"%{attacker}%",)).fetchone()
         dfn = conn.execute("SELECT * FROM pokemon WHERE LOWER(name) LIKE LOWER(?)", (f"%{defender}%",)).fetchone()
     if not atk or not dfn:
-        return {"error": "Pokemon not found"}
+        return {"error": "Pokemon non trouve"}
     atk, dfn = dict(atk), dict(dfn)
     from ..tools.damage_calc import calc_damage as _calc, format_damage_result
     atk_stat = max(atk["attack"], atk["sp_attack"])

@@ -167,13 +167,13 @@ class SettingsPage(QWidget):
         # About section
         about_section = SettingsSection("A Propos")
         about_text = QLabel(
-            "PokeMMO Companion v0.2.0\n\n"
-            "Real-time overlay and desktop companion for PokeMMO.\n"
-            "Provides route detection, spawn data, battle type counters,\n"
-            "shiny tracking, team building, and progression guides.\n\n"
-            "Built with Python + PyQt6\n"
-            "Pokemon data from PokeAPI + PokeMMOZone\n"
-            "Sprites from PokeAPI\n\n"
+            "PokeMMO Companion v0.5.0\n\n"
+            "Overlay et application compagnon pour PokeMMO.\n"
+            "Detection de route, spawns, counters de types,\n"
+            "tracker shiny, constructeur d'equipe et guide de progression.\n\n"
+            "Python + PyQt6 + FastAPI + Tailwind CSS\n"
+            "Donnees : PokeAPI + PokeMMOZone\n"
+            "Sprites : Pokemon Showdown\n\n"
             "github.com/Ladydzer/pokemmo-companion"
         )
         about_text.setFont(QFont("Segoe UI", 9))
