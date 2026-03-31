@@ -15,8 +15,10 @@ TEMPLATES_DIR = WEB_DIR / "templates"
 
 app = FastAPI(title="PokeMMO Companion", version="0.3.0")
 
-# Mount static files
-app.mount("/static", StaticFiles(directory=str(WEB_DIR / "static")), name="static")
+# Mount static files (create dir if missing)
+static_dir = WEB_DIR / "static"
+static_dir.mkdir(exist_ok=True)
+app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 
 def _db():
