@@ -11,6 +11,7 @@ from .pages.dashboard import DashboardPage
 from .pages.pokedex import PokedexPage
 from .pages.battle import BattlePage
 from .pages.team_builder import TeamBuilderPage
+from .pages.shiny_lab import ShinyLabPage
 
 
 class SidebarButton(QPushButton):
@@ -86,6 +87,7 @@ class MainWindow(QMainWindow):
             ("📖", "Pokedex"),
             ("⚔", "Battle"),
             ("👥", "Team"),
+            ("✨", "Shiny Lab"),
         ]
 
         for icon, label in nav_items:
@@ -121,6 +123,9 @@ class MainWindow(QMainWindow):
         self.team_builder = TeamBuilderPage(self.db)
         self.pages.addWidget(self.team_builder)
 
+        self.shiny_lab = ShinyLabPage()
+        self.pages.addWidget(self.shiny_lab)
+
         main_layout.addWidget(self.pages, 1)
 
         # Default to dashboard
@@ -133,6 +138,7 @@ class MainWindow(QMainWindow):
             "Pokedex": 1,
             "Battle": 2,
             "Team": 3,
+            "Shiny Lab": 4,
         }
         idx = page_map.get(page_name, 0)
         self.pages.setCurrentIndex(idx)
