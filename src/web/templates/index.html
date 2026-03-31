@@ -422,7 +422,7 @@
         <div id="sh-chart" class="h-32"></div>
     </div>
     <!-- Rates table -->
-    <div class="glass-card p-6">
+    <div class="glass-card p-6 mb-6">
         <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">TAUX SHINY POKEMMO</p>
         <div class="space-y-2 text-sm">
             <div class="flex justify-between"><span class="text-gray-400">Base</span><span class="mono text-white">1/30,000</span></div>
@@ -430,6 +430,60 @@
             <div class="flex justify-between"><span class="text-gray-400">Shiny Charm</span><span class="mono text-white">1/27,000</span></div>
             <div class="flex justify-between"><span class="text-gray-400">Donator + Charm</span><span class="mono text-white">1/24,000</span></div>
             <div class="flex justify-between"><span class="text-gray-400">Horde Sweet Scent (5x)</span><span class="mono text-neon-green">~1/6,000 eff.</span></div>
+        </div>
+    </div>
+    <!-- Horde Encounter Optimizer -->
+    <div class="glass-card p-6">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <p class="text-xs font-bold tracking-widest mb-1" style="color:#d500f9">OPTIMISEUR HORDES</p>
+                <p class="text-[10px] text-gray-600">Trouve les meilleurs spots de horde pour shiny hunting avec Sweet Scent</p>
+            </div>
+            <div id="horde-stats" class="text-right text-xs text-gray-500"></div>
+        </div>
+        <!-- Filters -->
+        <div class="flex gap-3 mb-4 flex-wrap">
+            <select id="horde-region" onchange="loadHordes()" class="select select-bordered select-xs">
+                <option value="">Toutes les regions</option>
+                <option value="Kanto">Kanto</option>
+                <option value="Johto">Johto</option>
+                <option value="Hoenn">Hoenn</option>
+                <option value="Sinnoh">Sinnoh</option>
+                <option value="Unova">Unova</option>
+            </select>
+            <select id="horde-type" onchange="loadHordes()" class="select select-bordered select-xs">
+                <option value="">Tous les types</option>
+            </select>
+            <input type="text" id="horde-search" placeholder="Rechercher Pokemon..." class="input input-bordered input-xs w-40" oninput="loadHordes()">
+            <span id="horde-count" class="text-xs text-gray-500 ml-auto self-center"></span>
+        </div>
+        <!-- Region summary cards -->
+        <div id="horde-summary" class="grid grid-cols-5 gap-2 mb-4"></div>
+        <!-- Results -->
+        <div id="horde-list" class="space-y-1 max-h-96 overflow-y-auto">
+            <p class="text-gray-600 text-sm italic">Chargement...</p>
+        </div>
+        <!-- Sweet Scent Calculator -->
+        <div class="mt-4 p-3 rounded-lg" style="background:rgba(213,0,249,0.05);border:1px solid rgba(213,0,249,0.1)">
+            <p class="text-xs font-bold text-gray-400 mb-2">CALCULATEUR SWEET SCENT</p>
+            <div class="grid grid-cols-3 gap-3 text-xs">
+                <div>
+                    <label class="text-gray-500">PP Sweet Scent</label>
+                    <input type="number" id="ss-pp" value="5" min="1" max="8" class="input input-bordered input-xs w-full mt-1" onchange="calcSS()">
+                </div>
+                <div>
+                    <label class="text-gray-500">Pokemon avec SS</label>
+                    <input type="number" id="ss-mons" value="2" min="1" max="6" class="input input-bordered input-xs w-full mt-1" onchange="calcSS()">
+                </div>
+                <div>
+                    <label class="text-gray-500">Leppa Berry ?</label>
+                    <select id="ss-leppa" class="select select-bordered select-xs w-full mt-1" onchange="calcSS()">
+                        <option value="no">Non</option>
+                        <option value="yes" selected>Oui (infini)</option>
+                    </select>
+                </div>
+            </div>
+            <div id="ss-result" class="mt-3 text-sm"></div>
         </div>
     </div>
 </div>
@@ -1440,7 +1494,93 @@ function recommendNatures(p){
     return {best,speedNature,all:good.slice(0,3)};
 }
 
-loadDash();loadChart();rTm();loadRoutes();checkGame();loadOptStats();shinyUpdate();calcBreed();renderNatures(NATURES);
+// Horde Optimizer
+async function loadHordes(){
+    const region=document.getElementById('horde-region')?.value||'';
+    const type=document.getElementById('horde-type')?.value||'';
+    const pokemon=document.getElementById('horde-search')?.value||'';
+    try{
+        let url='/api/hordes?';
+        if(region)url+=`region=${region}&`;
+        if(type)url+=`type=${type}&`;
+        if(pokemon&&pokemon.length>=2)url+=`pokemon=${pokemon}&`;
+        const data=await fetch(url).then(r=>r.json());
+        const el=document.getElementById('horde-list');
+        const cnt=document.getElementById('horde-count');
+        if(cnt)cnt.textContent=`${data.length} spots`;
+        if(!data.length){el.innerHTML='<p class="text-gray-600 italic text-sm">Aucun spot trouve.</p>';return;}
+        // Group by route
+        const byRoute={};
+        data.forEach(h=>{
+            const key=h.route_name+' ('+h.region+')';
+            if(!byRoute[key])byRoute[key]={route:h.route_name,region:h.region,pokemon:[]};
+            byRoute[key].pokemon.push(h);
+        });
+        el.innerHTML=Object.values(byRoute).map(group=>{
+            const regionClr={Kanto:'#40c4ff',Johto:'#ffd740',Hoenn:'#69f0ae',Sinnoh:'#d500f9',Unova:'#ff6e40'}[group.region]||'#888';
+            return `<div class="glass-card p-3 mb-2">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-[10px] px-2 py-0.5 rounded font-bold" style="background:${regionClr}20;color:${regionClr}">${group.region}</span>
+                    <span class="font-bold text-white text-sm">${group.route}</span>
+                    <span class="text-[10px] text-gray-600 ml-auto">${group.pokemon.length} Pokemon</span>
+                </div>
+                <div class="flex flex-wrap gap-2">${group.pokemon.map(p=>`<div class="flex items-center gap-1.5 px-2 py-1 rounded" style="background:rgba(255,255,255,0.03)">
+                    <img src="${spr(p.name)}" data-id="${p.pokemon_id}" class="w-6 h-6 sprite-hover" loading="lazy">
+                    <span class="text-xs text-white">${p.name}</span>
+                    ${pill(p.type1)}${p.type2?' '+pill(p.type2):''}
+                    <span class="text-[10px] text-gray-500">Lv.${p.level_min}-${p.level_max}</span>
+                </div>`).join('')}</div>
+            </div>`;
+        }).join('');
+    }catch(e){console.error(e);}
+}
+
+async function loadHordeSummary(){
+    try{
+        const data=await fetch('/api/hordes/summary').then(r=>r.json());
+        const el=document.getElementById('horde-summary');
+        const regionClr={Kanto:'#40c4ff',Johto:'#ffd740',Hoenn:'#69f0ae',Sinnoh:'#d500f9',Unova:'#ff6e40'};
+        el.innerHTML=data.map(r=>`<div class="glass-card p-3 text-center cursor-pointer hover:border-white/20" onclick="document.getElementById('horde-region').value='${r.region}';loadHordes();">
+            <p class="text-[10px] font-bold tracking-widest" style="color:${regionClr[r.region]||'#888'}">${r.region.toUpperCase()}</p>
+            <p class="text-lg font-black text-white mono">${r.pokemon_count}</p>
+            <p class="text-[10px] text-gray-500">${r.route_count} routes</p>
+        </div>`).join('');
+        // Total for stats
+        const total=data.reduce((a,r)=>a+r.pokemon_count,0);
+        const routes=data.reduce((a,r)=>a+r.route_count,0);
+        const st=document.getElementById('horde-stats');
+        if(st)st.innerHTML=`<span class="mono font-bold text-white">${total}</span> Pokemon<br><span class="mono">${routes}</span> routes`;
+    }catch(e){}
+    // Populate type filter
+    const sel=document.getElementById('horde-type');
+    if(sel&&sel.options.length<=1){
+        Object.keys(TC).forEach(t=>{sel.innerHTML+=`<option value="${t}">${tfr(t)}</option>`;});
+    }
+}
+
+function calcSS(){
+    const pp=parseInt(document.getElementById('ss-pp')?.value||5);
+    const mons=parseInt(document.getElementById('ss-mons')?.value||2);
+    const leppa=document.getElementById('ss-leppa')?.value==='yes';
+    const totalPP=pp*mons;
+    const encountersPerPP=5; // 5 Pokemon per horde
+    const timePerHorde=30; // ~30 seconds per horde encounter
+    const totalEncounters=leppa?Infinity:totalPP*encountersPerPP;
+    const totalTime=leppa?'Infini':Math.round(totalPP*timePerHorde/60)+' min';
+    const rate=30000; // base shiny rate
+    const effRate=Math.round(rate/encountersPerPP); // effective rate with hordes
+    const prob=leppa?'-':((1-Math.pow(1-1/rate,totalEncounters))*100).toFixed(2)+'%';
+    const el=document.getElementById('ss-result');
+    el.innerHTML=`<div class="grid grid-cols-4 gap-3 text-center">
+        <div><p class="text-[10px] text-gray-500">TOTAL PP</p><p class="font-bold mono text-white">${leppa?'∞':totalPP}</p></div>
+        <div><p class="text-[10px] text-gray-500">RENCONTRES</p><p class="font-bold mono" style="color:#40c4ff">${leppa?'∞':totalEncounters}</p></div>
+        <div><p class="text-[10px] text-gray-500">DUREE</p><p class="font-bold mono" style="color:#ffd740">${totalTime}</p></div>
+        <div><p class="text-[10px] text-gray-500">TAUX EFF.</p><p class="font-bold mono" style="color:#69f0ae">~1/${effRate.toLocaleString()}</p></div>
+    </div>
+    <p class="text-xs text-gray-500 mt-2">Avec Leppa Berry + Pickup, tu peux chasser indefiniment. 5 Pokemon par horde = taux shiny effectif 5x meilleur.</p>`;
+}
+
+loadDash();loadChart();rTm();loadRoutes();checkGame();loadOptStats();shinyUpdate();calcBreed();renderNatures(NATURES);loadHordeSummary();loadHordes();calcSS();
 </script>
 </body>
 </html>

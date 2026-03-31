@@ -387,6 +387,47 @@ async def play_sound(sound_type: str):
     return {"status": "unknown sound"}
 
 
+@app.get("/api/hordes")
+async def get_hordes(region: str = "", pokemon: str = "", type: str = ""):
+    """Get horde encounter spots, optionally filtered by region/pokemon/type."""
+    with _db() as conn:
+        query = """SELECT p.id as pokemon_id, p.name, p.type1, p.type2,
+                   r.name as route_name, r.region, s.rate, s.level_min, s.level_max
+                   FROM spawns s
+                   JOIN pokemon p ON s.pokemon_id = p.id
+                   JOIN routes r ON s.route_id = r.id
+                   WHERE s.method = 'horde'"""
+        params = []
+        if region:
+            query += " AND LOWER(r.region) = LOWER(?)"
+            params.append(region)
+        if pokemon:
+            query += " AND LOWER(p.name) LIKE LOWER(?)"
+            params.append(f"%{pokemon}%")
+        if type:
+            query += " AND (LOWER(p.type1) = LOWER(?) OR LOWER(p.type2) = LOWER(?))"
+            params.extend([type, type])
+        query += " ORDER BY r.region, r.name, p.name LIMIT 200"
+        rows = conn.execute(query, params).fetchall()
+    return [dict(r) for r in rows]
+
+
+@app.get("/api/hordes/summary")
+async def horde_summary():
+    """Get horde stats per region."""
+    with _db() as conn:
+        rows = conn.execute("""
+            SELECT r.region, COUNT(DISTINCT p.id) as pokemon_count,
+                   COUNT(DISTINCT r.id) as route_count
+            FROM spawns s
+            JOIN pokemon p ON s.pokemon_id = p.id
+            JOIN routes r ON s.route_id = r.id
+            WHERE s.method = 'horde'
+            GROUP BY r.region ORDER BY r.region
+        """).fetchall()
+    return [dict(r) for r in rows]
+
+
 @app.get("/sprite/{pokemon_id}")
 async def get_sprite(pokemon_id: int):
     sprite_path = SPRITES_DIR / f"{pokemon_id}.png"
