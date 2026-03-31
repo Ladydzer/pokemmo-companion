@@ -719,8 +719,11 @@
         <!-- Region list -->
         <div id="ocr-region-list" class="space-y-2 mb-4"></div>
         <!-- Add region -->
-        <div class="flex gap-2 mb-4">
+        <div class="flex gap-2 mb-4 flex-wrap">
             <button onclick="ocrAddRegion()" class="btn btn-xs btn-outline btn-info">+ Ajouter une zone</button>
+            <button onclick="ocrTestAll()" class="btn btn-xs btn-warning" id="ocr-test-all-btn" disabled>Tester toutes les zones</button>
+            <button onclick="ocrExportConfig()" class="btn btn-xs btn-outline btn-success">Exporter config</button>
+            <label class="btn btn-xs btn-outline btn-secondary cursor-pointer"><input type="file" accept=".json" onchange="ocrImportConfig(event)" class="hidden">Importer config</label>
             <button onclick="ocrResetRegions()" class="btn btn-xs btn-outline btn-error">Reinitialiser</button>
         </div>
         <!-- OCR test results -->
@@ -1978,6 +1981,8 @@ function ocrUpload(ev){
             document.getElementById('ocr-placeholder').style.display='none';
             document.getElementById('ocr-regions-overlay').style.display='block';
             ocrDrawRegions();
+            const testAllBtn=document.getElementById('ocr-test-all-btn');
+            if(testAllBtn)testAllBtn.disabled=false;
             showToast(`Screenshot charge : ${img.width}x${img.height}`);
         };
         img.src=e.target.result;
@@ -2054,6 +2059,57 @@ async function ocrSaveRegions(){
     try{await fetch('/api/ocr/regions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({regions:ocrRegions})});
     showToast('Zones sauvegardees ! L\'overlay utilisera ces reglages.');
     }catch(e){showToast('Erreur sauvegarde');}
+}
+
+async function ocrTestAll(){
+    if(!ocrImage){showToast('Charge un screenshot d\'abord');return;}
+    const resEl=document.getElementById('ocr-test-results');
+    const listEl=document.getElementById('ocr-results-list');
+    resEl.classList.remove('hidden');
+    listEl.innerHTML='<p class="text-gray-500">Test OCR sur toutes les zones...</p>';
+    let html='';
+    for(let i=0;i<ocrRegions.length;i++){
+        const r=ocrRegions[i];
+        try{
+            const res=await fetch('/api/ocr/test-region',{method:'POST',headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({image:ocrImage,x:r.x,y:r.y,w:r.w,h:r.h})}).then(r=>r.json());
+            html+=`<div class="flex items-center gap-3 p-2 rounded" style="border-left:3px solid ${r.color}">
+                <div class="w-3 h-3 rounded-full" style="background:${r.color}"></div>
+                <span class="text-sm text-gray-400 w-32">${r.label}</span>
+                <span class="font-bold text-white">${res.text}</span>
+                ${!res.available?'<span class="text-[10px] text-yellow-400">(Tesseract non dispo)</span>':''}
+            </div>`;
+            // If opponent detected, show combat preview
+            if(r.id==='opponent_name'&&res.text&&res.available&&!res.text.startsWith('(')){
+                const match=await fetch(`/api/pokemon/search/${encodeURIComponent(res.text)}`).then(r=>r.json());
+                if(Array.isArray(match)&&match.length)ocrShowCombatPreview(match[0]);
+            }
+        }catch(e){html+=`<div class="text-red-400 text-xs">Erreur zone ${r.label}</div>`;}
+    }
+    listEl.innerHTML=html||'<p class="text-gray-500">Aucun resultat</p>';
+}
+
+function ocrExportConfig(){
+    const data=JSON.stringify({regions:ocrRegions,exported:new Date().toISOString()},null,2);
+    const blob=new Blob([data],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='pokemmo-ocr-config.json';a.click();
+    showToast('Config OCR exportee !');
+}
+
+function ocrImportConfig(ev){
+    const file=ev.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=function(e){
+        try{
+            const data=JSON.parse(e.target.result);
+            if(data.regions&&Array.isArray(data.regions)){
+                ocrRegions=data.regions;
+                ocrDrawRegions();ocrRenderRegions();
+                showToast(`Config importee : ${ocrRegions.length} zones`);
+            }
+        }catch(err){showToast('Erreur : fichier invalide');}
+    };
+    reader.readAsText(file);
 }
 
 async function ocrTestRegion(idx){
