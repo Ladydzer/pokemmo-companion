@@ -1,7 +1,7 @@
 """Pokedex page — grid of Pokemon sprites with detailed view."""
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QScrollArea, QGridLayout, QFrame, QStackedWidget,
+    QScrollArea, QGridLayout, QFrame, QStackedWidget, QPushButton,
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
@@ -117,6 +117,31 @@ class PokemonDetail(QWidget):
         loc_layout.addWidget(self.locations_label)
 
         layout.addWidget(loc_frame)
+
+        # Nature advisor
+        nature_frame = QFrame()
+        nature_frame.setStyleSheet(f"""
+            QFrame {{
+                background-color: {COLORS['bg_card']};
+                border: 1px solid {COLORS['border']};
+                border-radius: 8px;
+            }}
+        """)
+        nature_layout = QVBoxLayout(nature_frame)
+        nature_layout.setContentsMargins(12, 8, 12, 8)
+
+        nature_title = QLabel("Recommended Natures")
+        nature_title.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        nature_title.setStyleSheet(f"color: {COLORS['accent_purple']};")
+        nature_layout.addWidget(nature_title)
+
+        self.nature_label = QLabel("")
+        self.nature_label.setFont(QFont("Consolas", 9))
+        self.nature_label.setStyleSheet(f"color: {COLORS['text_secondary']};")
+        self.nature_label.setWordWrap(True)
+        nature_layout.addWidget(self.nature_label)
+
+        layout.addWidget(nature_frame)
         layout.addStretch()
 
     def show_pokemon(self, pokemon: dict) -> None:
@@ -184,6 +209,31 @@ class PokemonDetail(QWidget):
             else:
                 self.locations_label.setText("Not found in wild — may be starter/evolution only")
 
+        # Nature advisor
+        atk = pokemon.get("attack", 0)
+        spa = pokemon.get("sp_attack", 0)
+        spe = pokemon.get("speed", 0)
+        defn = pokemon.get("defense", 0)
+        spd = pokemon.get("sp_defense", 0)
+
+        natures = []
+        if atk > spa:
+            # Physical attacker
+            natures.append(f"Physical Attacker: Adamant (+Atk, -SpA) or Jolly (+Spe, -SpA)")
+        if spa > atk:
+            # Special attacker
+            natures.append(f"Special Attacker: Modest (+SpA, -Atk) or Timid (+Spe, -Atk)")
+        if atk == spa and atk > 80:
+            natures.append(f"Mixed Attacker: Naive (+Spe, -SpD) or Hasty (+Spe, -Def)")
+        if defn > 90 or spd > 90:
+            natures.append(f"Tank: Bold (+Def, -Atk) or Calm (+SpD, -Atk)")
+        if spe > 100:
+            natures.append(f"Speed: Jolly (+Spe, -SpA) or Timid (+Spe, -Atk)")
+        if not natures:
+            natures.append("Flexible — choose based on your team's needs")
+
+        self.nature_label.setText("\n".join(natures))
+
 
 class PokedexPage(QWidget):
     """Pokedex page with grid of sprites and detail view."""
@@ -216,10 +266,48 @@ class PokedexPage(QWidget):
 
         # Search bar
         self.search = QLineEdit()
-        self.search.setPlaceholderText("Search Pokemon by name or number...")
+        self.search.setPlaceholderText("Search Pokemon by name, number, or type...")
         self.search.setFont(QFont("Segoe UI", 12))
         self.search.textChanged.connect(self._filter_grid)
         grid_layout.addWidget(self.search)
+
+        # Type filter buttons
+        from ...utils.constants import TYPES
+        from ..theme import TYPE_COLORS
+        type_row = QHBoxLayout()
+        type_row.setSpacing(3)
+        self._active_type_filter: str | None = None
+
+        all_btn = QPushButton("All")
+        all_btn.setFixedHeight(24)
+        all_btn.setStyleSheet(f"""
+            QPushButton {{
+                color: white; background: {COLORS['accent_blue']};
+                border-radius: 3px; padding: 2px 8px; font-size: 10px; font-weight: bold;
+            }}
+        """)
+        all_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        all_btn.clicked.connect(lambda: self._filter_by_type(None))
+        type_row.addWidget(all_btn)
+
+        for t in TYPES:
+            btn = QPushButton(t[:3])
+            btn.setFixedHeight(24)
+            btn.setFixedWidth(36)
+            btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn.setToolTip(t)
+            color = TYPE_COLORS.get(t, "#888")
+            btn.setStyleSheet(f"""
+                QPushButton {{
+                    color: white; background: {color};
+                    border-radius: 3px; font-size: 9px; font-weight: bold;
+                }}
+                QPushButton:hover {{ border: 2px solid white; }}
+            """)
+            btn.clicked.connect(lambda checked, type_name=t: self._filter_by_type(type_name))
+            type_row.addWidget(btn)
+        type_row.addStretch()
+        grid_layout.addLayout(type_row)
 
         # Scroll area with grid of cards
         scroll = QScrollArea()
@@ -269,8 +357,20 @@ class PokedexPage(QWidget):
             card.mousePressEvent = lambda e, pid=p["id"]: self._show_detail(pid)
             self.grid.addWidget(card, i // cols, i % cols)
 
+    def _filter_by_type(self, type_name: str | None) -> None:
+        """Filter grid by type."""
+        self._active_type_filter = type_name
+        self.search.clear()
+        if type_name is None:
+            self._populate_grid(self._all_pokemon)
+        else:
+            filtered = [p for p in self._all_pokemon
+                        if p["type1"] == type_name or p.get("type2") == type_name]
+            self._populate_grid(filtered)
+
     def _filter_grid(self, text: str) -> None:
         """Filter Pokemon grid by search text."""
+        self._active_type_filter = None
         if not text or len(text) < 2:
             self._populate_grid(self._all_pokemon)
             return
