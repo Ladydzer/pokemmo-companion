@@ -277,10 +277,38 @@ async def get_progression(region: str):
 
 @app.get("/api/game-status")
 async def game_status():
-    """Check if PokeMMO is running."""
-    from ..capture.screen_capture import find_window
+    """Check if PokeMMO is running and return window info."""
+    from ..capture.screen_capture import find_window, get_window_rect, get_window_title
     hwnd = find_window("PokeMMO")
-    return {"connected": hwnd is not None and hwnd != 0}
+    if hwnd and hwnd != 0:
+        rect = get_window_rect(hwnd)
+        title = get_window_title(hwnd)
+        return {
+            "connected": True,
+            "title": title,
+            "window": {"left": rect[0], "top": rect[1], "right": rect[2], "bottom": rect[3],
+                        "width": rect[2]-rect[0], "height": rect[3]-rect[1]} if rect else None
+        }
+    return {"connected": False, "title": "", "window": None}
+
+
+@app.get("/api/ocr/status")
+async def ocr_status():
+    """Check OCR availability and show current ROI settings."""
+    from ..detection.ocr_engine import init_tesseract
+    tesseract_ok = init_tesseract()
+    from ..detection.route_detector import RouteDetector
+    rd = RouteDetector()
+    return {
+        "tesseract_available": tesseract_ok,
+        "route_roi": rd._route_roi,
+        "ocr_regions": [
+            {"name": "Route Name", "x": rd._route_roi["x_ratio"], "y": rd._route_roi["y_ratio"],
+             "w": rd._route_roi["w_ratio"], "h": rd._route_roi["h_ratio"]},
+            {"name": "Opponent Name", "x": 0.52, "y": 0.05, "w": 0.35, "h": 0.04},
+            {"name": "Opponent Level", "x": 0.80, "y": 0.05, "w": 0.12, "h": 0.04},
+        ]
+    }
 
 
 @app.get("/sprite/{pokemon_id}")

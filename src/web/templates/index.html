@@ -463,12 +463,22 @@
             <div class="flex justify-between"><span class="text-gray-400">Sprites</span><span class="mono text-white" id="opt-sprites">649</span></div>
         </div>
     </div>
-    <div class="glass-card p-6">
+    <div class="glass-card p-6 mb-5">
         <p class="text-xs font-bold tracking-widest text-gray-500 mb-4">RACCOURCIS</p>
         <div class="space-y-2 text-sm">
             <div class="flex justify-between"><span class="text-gray-400">F9</span><span class="text-gray-300">Toggle overlay</span></div>
             <div class="flex justify-between"><span class="text-gray-400">F10</span><span class="text-gray-300">Mode etendu</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">1-9</span><span class="text-gray-300">Naviguer entre pages</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">/</span><span class="text-gray-300">Recherche globale</span></div>
         </div>
+    </div>
+    <!-- OCR Debug -->
+    <div class="glass-card p-6">
+        <p class="text-xs font-bold tracking-widest text-gray-500 mb-4">OCR / DETECTION DU JEU</p>
+        <div id="ocr-status" class="space-y-2 text-sm">
+            <p class="text-gray-500">Chargement...</p>
+        </div>
+        <button onclick="checkOCR()" class="btn btn-sm btn-info mt-3">Verifier OCR</button>
     </div>
 </div>
 
@@ -1076,6 +1086,29 @@ async function loadOptStats(){
     if(el('opt-spawns'))el('opt-spawns').textContent=s.spawns;
     if(el('opt-sprites'))el('opt-sprites').textContent=s.sprites;
     }catch(e){}
+}
+
+// OCR status check
+async function checkOCR(){
+    const el=document.getElementById('ocr-status');
+    try{
+        const[game,ocr]=await Promise.all([fetch('/api/game-status').then(r=>r.json()),fetch('/api/ocr/status').then(r=>r.json())]);
+        let h='';
+        h+=`<div class="flex justify-between"><span class="text-gray-400">Tesseract</span><span class="${ocr.tesseract_available?'text-green-400':'text-red-400'} font-bold">${ocr.tesseract_available?'Installe':'Non installe'}</span></div>`;
+        h+=`<div class="flex justify-between"><span class="text-gray-400">PokeMMO</span><span class="${game.connected?'text-green-400':'text-red-400'} font-bold">${game.connected?'Detecte':'Non detecte'}</span></div>`;
+        if(game.connected&&game.window){
+            h+=`<div class="flex justify-between"><span class="text-gray-400">Fenetre</span><span class="text-gray-300 mono text-xs">${game.window.width}x${game.window.height}</span></div>`;
+            h+=`<div class="flex justify-between"><span class="text-gray-400">Titre</span><span class="text-gray-300 text-xs">${game.title}</span></div>`;
+        }
+        h+=`<p class="text-xs font-bold text-gray-500 mt-3">ZONES OCR</p>`;
+        (ocr.ocr_regions||[]).forEach(r=>{
+            h+=`<div class="flex justify-between text-xs"><span class="text-gray-400">${r.name}</span><span class="mono text-gray-300">x:${(r.x*100).toFixed(0)}% y:${(r.y*100).toFixed(0)}% w:${(r.w*100).toFixed(0)}% h:${(r.h*100).toFixed(0)}%</span></div>`;
+        });
+        if(!ocr.tesseract_available){
+            h+=`<p class="text-xs text-red-400 mt-3">⚠ Installe Tesseract OCR : github.com/UB-Mannheim/tesseract/wiki</p>`;
+        }
+        el.innerHTML=h;
+    }catch(e){el.innerHTML='<p class="text-red-400">Erreur: '+e.message+'</p>';}
 }
 
 // Favorites
