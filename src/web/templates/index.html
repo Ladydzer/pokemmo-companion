@@ -406,9 +406,23 @@
 <!-- SETTINGS -->
 <div id="page-settings" class="page hidden fade-in max-w-3xl">
     <h1 class="text-3xl font-black text-white mb-5">Options</h1>
+    <!-- Theme selector -->
+    <div class="glass-card p-6 mb-5">
+        <p class="text-xs font-bold tracking-widest text-gray-500 mb-4">THEME</p>
+        <div class="flex flex-wrap gap-2">
+            <button onclick="setTheme('night')" class="btn btn-xs btn-outline">Night</button>
+            <button onclick="setTheme('dark')" class="btn btn-xs btn-outline">Dark</button>
+            <button onclick="setTheme('synthwave')" class="btn btn-xs btn-outline btn-secondary">Synthwave</button>
+            <button onclick="setTheme('cyberpunk')" class="btn btn-xs btn-outline btn-warning">Cyberpunk</button>
+            <button onclick="setTheme('dracula')" class="btn btn-xs btn-outline btn-error">Dracula</button>
+            <button onclick="setTheme('forest')" class="btn btn-xs btn-outline btn-success">Forest</button>
+            <button onclick="setTheme('luxury')" class="btn btn-xs btn-outline">Luxury</button>
+            <button onclick="setTheme('black')" class="btn btn-xs btn-outline">Black</button>
+        </div>
+    </div>
     <div class="glass-card p-6 mb-5">
         <p class="text-xs font-bold tracking-widest text-gray-500 mb-4">A PROPOS</p>
-        <p class="text-sm text-gray-300 mb-2"><span class="font-bold text-white">PokeMMO Companion</span> v0.3.0</p>
+        <p class="text-sm text-gray-300 mb-2"><span class="font-bold text-white">PokeMMO Companion</span> v0.4.1</p>
         <p class="text-sm text-gray-500 mb-1">Application compagnon pour PokeMMO avec overlay temps reel, Pokedex, assistant combat, team builder, tracker shiny et guide de progression.</p>
         <p class="text-sm text-gray-500 mb-3">Donnees : PokeAPI + PokeMMOZone | Sprites : Pokemon Showdown</p>
         <p class="text-sm" style="color:#00e5ff">github.com/Ladydzer/pokemmo-companion</p>
@@ -1004,6 +1018,12 @@ async function loadOptStats(){
     if(el('opt-sprites'))el('opt-sprites').textContent=s.sprites;
     }catch(e){}
 }
+
+// Theme
+function setTheme(t){document.documentElement.setAttribute('data-theme',t);localStorage.setItem('theme',t);showToast('Theme: '+t);}
+// Restore saved theme
+const savedTheme=localStorage.getItem('theme');
+if(savedTheme)document.documentElement.setAttribute('data-theme',savedTheme);
 
 loadDash();loadChart();rTm();loadRoutes();checkGame();loadOptStats();shinyUpdate();
 </script>
