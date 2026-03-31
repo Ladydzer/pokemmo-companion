@@ -281,6 +281,31 @@
         <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">ANALYSE DE COUVERTURE</p>
         <div id="team-cov" class="text-gray-500">Ajoute des Pokemon...</div>
     </div>
+    <!-- Breeding Calculator -->
+    <div class="glass-card p-6 mb-5">
+        <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">CALCULATEUR BREEDING</p>
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
+                <label class="text-xs text-gray-500">IVs parfaits souhaites</label>
+                <select id="breed-ivs" onchange="calcBreed()" class="select select-bordered select-sm w-full mt-1">
+                    <option value="1">1x31 (simple)</option>
+                    <option value="2">2x31</option>
+                    <option value="3">3x31</option>
+                    <option value="4">4x31</option>
+                    <option value="5" selected>5x31 (competitif)</option>
+                    <option value="6">6x31 (parfait)</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-xs text-gray-500">Nature specifique ?</label>
+                <select id="breed-nature" onchange="calcBreed()" class="select select-bordered select-sm w-full mt-1">
+                    <option value="no">Non</option>
+                    <option value="yes" selected>Oui (Everstone)</option>
+                </select>
+            </div>
+        </div>
+        <div id="breed-result" class="space-y-2"></div>
+    </div>
     <!-- Type defense matrix -->
     <div class="glass-card p-6" id="team-matrix-card" style="display:none">
         <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">MATRICE DEFENSIVE</p>
@@ -1032,6 +1057,28 @@ async function loadOptStats(){
     }catch(e){}
 }
 
+// Breeding calculator
+function calcBreed(){
+    const ivs=parseInt(document.getElementById('breed-ivs').value);
+    const nature=document.getElementById('breed-nature').value==='yes';
+    const costs={1:{parents:2,steps:1,min:5,max:15},2:{parents:4,steps:3,min:30,max:80},3:{parents:8,steps:7,min:100,max:250},4:{parents:16,steps:15,min:300,max:600},5:{parents:32,steps:31,min:800,max:1500},6:{parents:64,steps:63,min:3000,max:8000}};
+    const c=costs[ivs]||costs[1];
+    const items=nature?'Destiny Knot + Everstone':'Destiny Knot';
+    const el=document.getElementById('breed-result');
+    el.innerHTML=`
+        <div class="grid grid-cols-3 gap-4 text-center mb-3">
+            <div class="glass-card p-3"><p class="text-[10px] text-gray-500">PARENTS</p><p class="text-xl font-black mono" style="color:#d500f9">~${c.parents}</p></div>
+            <div class="glass-card p-3"><p class="text-[10px] text-gray-500">ETAPES</p><p class="text-xl font-black mono" style="color:#40c4ff">~${c.steps}</p></div>
+            <div class="glass-card p-3"><p class="text-[10px] text-gray-500">COUT</p><p class="text-lg font-black mono" style="color:#ffd740">${c.min}k - ${c.max}k</p><p class="text-[9px] text-gray-500">PokéYen</p></div>
+        </div>
+        <div class="text-sm space-y-1">
+            <p class="text-gray-400">Items : <span class="text-white font-medium">${items}</span></p>
+            <p class="text-gray-400">Difficulte : <span class="${ivs>=5?'text-red-400':ivs>=3?'text-yellow-400':'text-green-400'} font-medium">${ivs>=5?'Tres difficile':ivs>=3?'Intermediaire':'Facile'}</span></p>
+            ${ivs>=5?'<p class="text-xs text-gray-500 mt-2">💡 Conseil : acheter un 5IV sur le GTL est souvent moins cher que de breed from scratch.</p>':''}
+        </div>
+    `;
+}
+
 // Theme
 function setTheme(t){document.documentElement.setAttribute('data-theme',t);localStorage.setItem('theme',t);showToast('Theme: '+t);}
 // Restore saved theme
@@ -1046,7 +1093,7 @@ document.addEventListener('keydown',e=>{
     if((e.key==='/'||e.key==='f')&&!e.ctrlKey&&!e.metaKey){e.preventDefault();document.getElementById('global-search')?.focus();}
 });
 
-loadDash();loadChart();rTm();loadRoutes();checkGame();loadOptStats();shinyUpdate();
+loadDash();loadChart();rTm();loadRoutes();checkGame();loadOptStats();shinyUpdate();calcBreed();
 </script>
 </body>
 </html>
