@@ -648,12 +648,12 @@ async function aTm(){
     if(matEl&&tm.length>=2){
         matCard.style.display='block';
         let mh='<table><tr><td class="p-1"></td>';
-        types.forEach(t=>mh+=`<td class="p-1 text-center"><span class="type-pill" style="background:${TC[t]};font-size:7px;padding:1px 3px">${t.slice(0,3)}</span></td>`);
+        ts.forEach(t=>mh+=`<td class="p-1 text-center"><span class="type-pill" style="background:${TC[t]};font-size:7px;padding:1px 3px">${t.slice(0,3)}</span></td>`);
         mh+='</tr>';
         tm.forEach(p=>{
             mh+=`<tr><td class="p-1 font-bold text-white text-[10px] whitespace-nowrap">${p.name.slice(0,10)}</td>`;
-            types.forEach(atk=>{
-                let m=chart[atk+'_'+p.type1]||1;if(p.type2)m*=(chart[atk+'_'+p.type2]||1);
+            ts.forEach(atk=>{
+                let m=ch[atk+'_'+p.type1]||1;if(p.type2)m*=(ch[atk+'_'+p.type2]||1);
                 const bg=m>=2?'rgba(255,82,82,0.4)':m===0?'rgba(64,196,255,0.3)':m<1?'rgba(105,240,174,0.2)':'';
                 const tx=m>=4?'4x':m>=2?'2x':m===0?'0':m<=0.25?'1/4':m<=0.5?'1/2':'';
                 const cl=m>=2?'color:#ff8a80':m===0?'color:#82b1ff':m<1?'color:#a5d6a7':'color:transparent';
