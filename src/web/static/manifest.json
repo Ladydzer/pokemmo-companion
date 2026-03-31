@@ -1,0 +1,16 @@
+{
+  "name": "PokeMMO Companion",
+  "short_name": "PokeMMO",
+  "description": "Companion app pour PokeMMO - Pokedex, Combat, Shiny Tracker",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080b12",
+  "theme_color": "#00e5ff",
+  "icons": [
+    {
+      "src": "/sprite/25",
+      "sizes": "96x96",
+      "type": "image/png"
+    }
+  ]
+}

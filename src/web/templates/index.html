@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PokeMMO Companion</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#00e5ff">
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -260,13 +262,30 @@
 
 <!-- SHINY -->
 <div id="page-shiny" class="page hidden fade-in max-w-4xl">
-    <h1 class="text-3xl font-black mb-5" style="color:#ffd740">Labo Shiny</h1>
+    <h1 class="text-3xl font-black mb-5" style="color:#ffd740">✨ Labo Shiny</h1>
+    <!-- Interactive counter -->
     <div class="grid grid-cols-4 gap-4 mb-6">
-        <div class="glass-card p-5 text-center"><p class="text-[10px] font-bold tracking-widest text-gray-500 mb-1">SESSION</p><p class="text-3xl font-black text-white mono">0</p></div>
-        <div class="glass-card p-5 text-center"><p class="text-[10px] font-bold tracking-widest text-gray-500 mb-1">TOTAL</p><p class="text-3xl font-black mono" style="color:#40c4ff">0</p></div>
-        <div class="glass-card p-5 text-center"><p class="text-[10px] font-bold tracking-widest text-gray-500 mb-1">SHINIES</p><p class="text-3xl font-black mono" style="color:#ffd740">0</p></div>
-        <div class="glass-card p-5 text-center"><p class="text-[10px] font-bold tracking-widest text-gray-500 mb-1">CHANCE</p><p class="text-xl font-bold text-white mono">1/30,000</p></div>
+        <div class="glass-card p-5 text-center"><p class="text-[10px] font-bold tracking-widest text-gray-500 mb-1">SESSION</p><p id="sh-session" class="text-3xl font-black text-white mono">0</p></div>
+        <div class="glass-card p-5 text-center"><p class="text-[10px] font-bold tracking-widest text-gray-500 mb-1">TOTAL</p><p id="sh-total" class="text-3xl font-black mono" style="color:#40c4ff">0</p></div>
+        <div class="glass-card p-5 text-center"><p class="text-[10px] font-bold tracking-widest text-gray-500 mb-1">SHINIES</p><p id="sh-shinies" class="text-3xl font-black mono" style="color:#ffd740">0</p></div>
+        <div class="glass-card p-5 text-center"><p class="text-[10px] font-bold tracking-widest text-gray-500 mb-1">PROBABILITE</p><p id="sh-prob" class="text-xl font-bold mono" style="color:#69f0ae">0.00%</p></div>
     </div>
+    <!-- Actions -->
+    <div class="glass-card p-5 mb-6">
+        <div class="flex gap-3 items-center flex-wrap">
+            <button onclick="shinyAdd(1)" class="btn btn-sm btn-info">+1 Rencontre</button>
+            <button onclick="shinyAdd(5)" class="btn btn-sm btn-secondary">+5 Horde</button>
+            <button onclick="shinyFound()" class="btn btn-sm btn-warning">✨ SHINY TROUVE !</button>
+            <button onclick="shinyReset()" class="btn btn-xs btn-error btn-outline">Reset Session</button>
+            <span class="text-xs text-gray-500 ml-auto" id="sh-time">00:00:00</span>
+        </div>
+        <!-- Probability bar -->
+        <div class="mt-4">
+            <div class="flex justify-between text-xs mb-1"><span class="text-gray-500">Probabilite cumulative</span><span id="sh-prob2" style="color:#69f0ae">0.00%</span></div>
+            <div class="stat-track h-3 rounded-lg"><div id="sh-bar" class="stat-fill rounded-lg transition-all duration-500" style="width:0%;background:#69f0ae"></div></div>
+        </div>
+    </div>
+    <!-- Rates table -->
     <div class="glass-card p-6">
         <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">TAUX SHINY POKEMMO</p>
         <div class="space-y-2 text-sm">
@@ -680,6 +699,36 @@ async function checkGame(){
 }
 setInterval(checkGame,5000);
 
+// Shiny counter
+let shData=JSON.parse(localStorage.getItem('shiny_data')||'{"session":0,"total":0,"shinies":0,"start":0}');
+if(!shData.start)shData.start=Date.now();
+function shinyAdd(n){shData.session+=n;shData.total+=n;shinyUpdate();}
+function shinyFound(){shData.shinies++;shinyUpdate();showToast('SHINY TROUVE ! Felicitations !');}
+function shinyReset(){shData.session=0;shData.start=Date.now();shinyUpdate();showToast('Session reinitialisee');}
+function shinyUpdate(){
+    localStorage.setItem('shiny_data',JSON.stringify(shData));
+    const el=id=>document.getElementById(id);
+    if(el('sh-session'))el('sh-session').textContent=shData.session.toLocaleString();
+    if(el('sh-total'))el('sh-total').textContent=shData.total.toLocaleString();
+    if(el('sh-shinies'))el('sh-shinies').textContent=shData.shinies;
+    const prob=1-Math.pow(1-1/30000,shData.session);
+    const pct=(prob*100).toFixed(2);
+    if(el('sh-prob'))el('sh-prob').textContent=pct+'%';
+    if(el('sh-prob2'))el('sh-prob2').textContent=pct+'%';
+    if(el('sh-bar')){
+        el('sh-bar').style.width=Math.min(prob*100,100)+'%';
+        el('sh-bar').style.background=prob>0.5?'#ff5252':prob>0.25?'#ffd740':'#69f0ae';
+    }
+}
+// Timer
+setInterval(()=>{
+    if(!shData.start)return;
+    const d=Math.floor((Date.now()-shData.start)/1000);
+    const h=Math.floor(d/3600),m=Math.floor(d%3600/60),s=d%60;
+    const el=document.getElementById('sh-time');
+    if(el)el.textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+},1000);
+
 // Global search
 async function globalSearch(q){
     const el=document.getElementById('search-results');
@@ -755,7 +804,7 @@ async function loadOptStats(){
     }catch(e){}
 }
 
-loadDash();loadChart();rTm();loadRoutes();checkGame();loadOptStats();
+loadDash();loadChart();rTm();loadRoutes();checkGame();loadOptStats();shinyUpdate();
 </script>
 </body>
 </html>
