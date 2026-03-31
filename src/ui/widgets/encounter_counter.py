@@ -108,7 +108,7 @@ class EncounterCounterWidget(QWidget):
         layout.setSpacing(2)
 
         # Header
-        header = QLabel("Encounter Counter")
+        header = QLabel("Compteur Rencontres")
         header.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
         header.setStyleSheet("color: #FFB74D;")
         layout.addWidget(header)

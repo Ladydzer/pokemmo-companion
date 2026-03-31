@@ -99,7 +99,7 @@ class OverlayWindow(QMainWindow):
         layout.addWidget(self.grip)
 
         # Route info section
-        self.route_label = QLabel("Route: ---")
+        self.route_label = QLabel("Route : ---")
         self.route_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
         self.route_label.setStyleSheet("color: #4FC3F7; padding: 2px;")
         layout.addWidget(self.route_label)
@@ -116,12 +116,12 @@ class OverlayWindow(QMainWindow):
         layout.addWidget(sep1)
 
         # Spawns section
-        self.spawns_label = QLabel("Spawns:")
+        self.spawns_label = QLabel("Spawns :")
         self.spawns_label.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
         self.spawns_label.setStyleSheet("color: #A5D6A7; padding: 2px;")
         layout.addWidget(self.spawns_label)
 
-        self.spawns_list = QLabel("Waiting for route detection...")
+        self.spawns_list = QLabel("En attente de detection...")
         self.spawns_list.setFont(QFont("Consolas", 9))
         self.spawns_list.setStyleSheet("color: #E0E0E0; padding: 2px 4px;")
         self.spawns_list.setWordWrap(True)
@@ -176,7 +176,7 @@ class OverlayWindow(QMainWindow):
         layout.addWidget(self.debug_label)
 
         # Status bar
-        self.status_label = QLabel("PokeMMO Companion | F9: Toggle | F10: Extended | F11: Debug")
+        self.status_label = QLabel("PokeMMO Companion | F9: Afficher | F10: Extended | F11: Debug")
         self.status_label.setFont(QFont("Segoe UI", 7))
         self.status_label.setStyleSheet("color: rgba(150, 150, 150, 150); padding: 2px;")
         self.status_label.setAlignment(Qt.AlignmentFlag.AlignRight)
@@ -222,7 +222,7 @@ class OverlayWindow(QMainWindow):
                          "rate": float, "level_min": int, "level_max": int, "method": str}
         """
         if not spawns:
-            self.spawns_list.setText("No spawn data for this area")
+            self.spawns_list.setText("Aucune donnee de spawn")
             return
 
         lines = []
@@ -275,9 +275,9 @@ class OverlayWindow(QMainWindow):
         from .widgets.debug_overlay import DEFAULT_OCR_REGIONS
         if self.debug_label.isVisible():
             self.debug_label.hide()
-            self.update_status("PokeMMO Companion | F9: Toggle | F10: Extended | F11: Debug")
+            self.update_status("PokeMMO Companion | F9: Afficher | F10: Extended | F11: Debug")
         else:
-            lines = ["DEBUG MODE — OCR Regions:"]
+            lines = ["MODE DEBUG — OCR Regions:"]
             for r in DEFAULT_OCR_REGIONS:
                 lines.append(
                     f"  [{r['color']:6}] {r['name']:20} "

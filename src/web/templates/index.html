@@ -347,6 +347,8 @@ const TC={Normal:'#A8A77A',Fire:'#EE8130',Water:'#6390F0',Electric:'#F7D02C',Gra
 const SC={hp:'#78C850',attack:'#F08030',defense:'#F8D030',sp_attack:'#6890F0',sp_defense:'#78C850',speed:'#F85888'};
 const pill=t=>`<span class="type-pill" style="background:${TC[t]||'#888'}">${t}</span>`;
 const spr=n=>`https://play.pokemonshowdown.com/sprites/ani/${n.toLowerCase().replace(/[^a-z0-9]/g,'')}.gif`;
+// Fallback: add onerror to img tags that use spr()
+document.addEventListener('error',e=>{if(e.target.tagName==='IMG'&&e.target.src.includes('showdown')){const id=e.target.dataset?.id;if(id)e.target.src=`/sprite/${id}`;}},true);
 
 function go(p){
     document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));
@@ -400,7 +402,7 @@ function fDex(t){if(!t){rDex(window._pk);return;}rDex(window._pk.filter(p=>p.typ
 function rDex(list){
     const g=document.getElementById('dex-grid');g.innerHTML='';
     document.getElementById('dex-detail').classList.add('hidden');g.classList.remove('hidden');
-    list.slice(0,200).forEach(p=>{
+    list.forEach(p=>{
         g.innerHTML+=`<div class="dex-card" onclick="showP(${p.id})" style="border-bottom:3px solid ${TC[p.type1]||'#888'}">
             <img src="${spr(p.name)}" class="w-14 h-14 mx-auto sprite-hover" loading="lazy" alt="${p.name}">
             <p class="text-[11px] font-semibold text-white mt-1">${p.name}</p>
@@ -532,14 +534,6 @@ async function aTm(){
 }
 
 // Collection
-async function loadCol(){
-    window._cl=true;
-    try{const pk=await fetch('/api/pokemon/all').then(r=>r.json());if(!Array.isArray(pk))return;
-    const g=document.getElementById('col-grid');g.innerHTML='';
-    pk.forEach(p=>{g.innerHTML+=`<div class="dex-card p-1 opacity-30 hover:opacity-100 transition" style="border-bottom:2px solid ${TC[p.type1]||'#888'}"><img src="${spr(p.name)}" class="w-8 h-8 mx-auto" loading="lazy"><p class="text-[7px] text-gray-600">${p.id}</p></div>`;});
-    }catch(e){console.error(e);}
-}
-
 // Notes
 let selRoute=null;
 async function loadRoutes(){
@@ -555,7 +549,8 @@ function selectRoute(id,name){
     document.getElementById('note-title').textContent=name;
     document.getElementById('note-text').disabled=false;
     document.getElementById('save-note-btn').disabled=false;
-    document.getElementById('note-text').value='';
+    // Restore saved note
+    document.getElementById('note-text').value=localStorage.getItem('note_'+id)||'';
 }
 function saveNote(){
     if(!selRoute)return;
