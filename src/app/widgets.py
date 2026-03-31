@@ -61,14 +61,15 @@ class StatBar(QWidget):
         ratio = min(self.value / self.max_val, 1.0)
         fill_w = int(bar_w * ratio)
 
+        # Pokemon convention stat colors
+        stat_colors = {
+            "HP": "#78C850", "Atk": "#F08030", "Def": "#F8D030",
+            "SpA": "#6890F0", "SpD": "#78C850", "Spe": "#F85888",
+        }
+        color = QColor(stat_colors.get(self.label, "#42a5f5"))
+        # Dim if stat is low
         if self.value < 50:
-            color = QColor("#ef5350")
-        elif self.value < 80:
-            color = QColor("#ffb74d")
-        elif self.value < 100:
-            color = QColor("#66bb6a")
-        else:
-            color = QColor("#42a5f5")
+            color = color.darker(130)
 
         painter.fillRect(bar_x, bar_y, fill_w, bar_h, color)
 

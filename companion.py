@@ -14,8 +14,6 @@ if getattr(sys, 'frozen', False):
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtGui import QFont
 
-from src.data.database import Database
-from src.app.main_window import MainWindow
 from src.utils.config import DB_PATH
 from src.utils.logger import log
 
@@ -27,17 +25,38 @@ def main():
     app.setApplicationName("PokeMMO Companion")
     app.setFont(QFont("Segoe UI", 10))
 
+    # Show splash screen
+    from src.app.splash import SplashScreen
+    splash = SplashScreen()
+    splash.show()
+    splash.set_progress(10, "Loading database...")
+
     # Load database
     db = None
     if DB_PATH.exists():
+        from src.data.database import Database
         db = Database()
         log.info(f"Database loaded: {db.get_pokemon_count()} Pokemon")
+        splash.set_progress(40, f"Loaded {db.get_pokemon_count()} Pokemon...")
     else:
         log.warning(f"Database not found at {DB_PATH}")
+        splash.set_progress(40, "Database not found!")
 
-    # Create and show main window
+    splash.set_progress(60, "Building interface...")
+
+    # Create main window
+    from src.app.main_window import MainWindow
     window = MainWindow(db)
+
+    splash.set_progress(90, "Almost ready...")
+
+    # Show main window, close splash
     window.show()
+    splash.set_progress(100, "Welcome!")
+
+    import time
+    time.sleep(0.3)  # Brief pause so user sees "Welcome!"
+    splash.close()
 
     log.info("Companion app displayed.")
     sys.exit(app.exec())

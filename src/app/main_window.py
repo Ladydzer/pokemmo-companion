@@ -12,6 +12,7 @@ from .pages.pokedex import PokedexPage
 from .pages.battle import BattlePage
 from .pages.team_builder import TeamBuilderPage
 from .pages.shiny_lab import ShinyLabPage
+from .pages.settings import SettingsPage
 
 
 class SidebarButton(QPushButton):
@@ -88,6 +89,7 @@ class MainWindow(QMainWindow):
             ("⚔", "Battle"),
             ("👥", "Team"),
             ("✨", "Shiny Lab"),
+            ("⚙", "Settings"),
         ]
 
         for icon, label in nav_items:
@@ -126,7 +128,31 @@ class MainWindow(QMainWindow):
         self.shiny_lab = ShinyLabPage()
         self.pages.addWidget(self.shiny_lab)
 
-        main_layout.addWidget(self.pages, 1)
+        self.settings = SettingsPage()
+        self.pages.addWidget(self.settings)
+
+        # Right side: pages + status bar
+        right_side = QVBoxLayout()
+        right_side.setContentsMargins(0, 0, 0, 0)
+        right_side.setSpacing(0)
+        right_side.addWidget(self.pages, 1)
+
+        # Status bar
+        self.status_bar = QLabel(
+            f"  DB: {self.db.get_pokemon_count() if self.db else 0} Pokemon  |  "
+            f"Route: ---  |  Overlay: Disconnected"
+        )
+        self.status_bar.setFont(QFont("Segoe UI", 9))
+        self.status_bar.setFixedHeight(28)
+        self.status_bar.setStyleSheet(f"""
+            color: {COLORS['text_muted']};
+            background-color: {COLORS['bg_secondary']};
+            border-top: 1px solid {COLORS['border']};
+            padding: 0 8px;
+        """)
+        right_side.addWidget(self.status_bar)
+
+        main_layout.addLayout(right_side, 1)
 
         # Default to dashboard
         self._navigate("Dashboard")
@@ -139,6 +165,7 @@ class MainWindow(QMainWindow):
             "Battle": 2,
             "Team": 3,
             "Shiny Lab": 4,
+            "Settings": 5,
         }
         idx = page_map.get(page_name, 0)
         self.pages.setCurrentIndex(idx)
