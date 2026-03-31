@@ -198,6 +198,18 @@
             <p class="text-gray-600 text-sm italic">En attente de detection...</p>
         </div>
     </div>
+
+    <!-- Player Stats -->
+    <div class="glass-card p-6 mb-6">
+        <p class="text-xs font-bold tracking-widest text-gray-500 mb-4">STATS JOUEUR</p>
+        <div class="grid grid-cols-5 gap-4 text-center">
+            <div><p class="text-gray-500 text-[10px]">RENCONTRES</p><p id="ps-enc" class="text-xl font-black mono text-white">0</p></div>
+            <div><p class="text-gray-500 text-[10px]">SHINIES</p><p id="ps-shi" class="text-xl font-black mono" style="color:#ffd740">0</p></div>
+            <div><p class="text-gray-500 text-[10px]">COLLECTION</p><p id="ps-col" class="text-xl font-black mono" style="color:#69f0ae">0</p></div>
+            <div><p class="text-gray-500 text-[10px]">FAVORIS</p><p id="ps-fav" class="text-xl font-black mono" style="color:#ff4081">0</p></div>
+            <div><p class="text-gray-500 text-[10px]">NOTES</p><p id="ps-not" class="text-xl font-black mono" style="color:#40c4ff">0</p></div>
+        </div>
+    </div>
 </div>
 
 <!-- POKEDEX -->
@@ -480,6 +492,16 @@
             <div class="flex justify-between"><span class="text-gray-400">/</span><span class="text-gray-300">Recherche globale</span></div>
         </div>
     </div>
+    <!-- Accessibility -->
+    <div class="glass-card p-6 mb-5">
+        <p class="text-xs font-bold tracking-widest text-gray-500 mb-4">ACCESSIBILITE</p>
+        <div class="flex items-center gap-4">
+            <span class="text-sm text-gray-400">Taille du texte :</span>
+            <button onclick="setFontSize(14)" class="btn btn-xs btn-outline">A</button>
+            <button onclick="setFontSize(16)" class="btn btn-xs btn-outline">A+</button>
+            <button onclick="setFontSize(18)" class="btn btn-xs btn-outline">A++</button>
+        </div>
+    </div>
     <!-- OCR Debug -->
     <div class="glass-card p-6">
         <p class="text-xs font-bold tracking-widest text-gray-500 mb-4">OCR / DETECTION DU JEU</p>
@@ -576,6 +598,17 @@ async function loadDash(){
     // Collection count for dashboard
     const caught=JSON.parse(localStorage.getItem('caught')||'[]');
     updateColCount(caught.length);
+
+    // Player stats
+    const shD=JSON.parse(localStorage.getItem('shiny_data')||'{}');
+    const favs=JSON.parse(localStorage.getItem('favorites')||'[]');
+    const noteCount=Object.keys(localStorage).filter(k=>k.startsWith('note_')).length;
+    const el2=id=>document.getElementById(id);
+    if(el2('ps-enc'))el2('ps-enc').textContent=(shD.total||0).toLocaleString();
+    if(el2('ps-shi'))el2('ps-shi').textContent=shD.shinies||0;
+    if(el2('ps-col'))el2('ps-col').textContent=caught.length;
+    if(el2('ps-fav'))el2('ps-fav').textContent=favs.length;
+    if(el2('ps-not'))el2('ps-not').textContent=noteCount;
 }
 
 async function loadDex(){
@@ -1250,6 +1283,11 @@ function calcBreed(){
         </div>
     `;
 }
+
+// Font size
+function setFontSize(sz){document.body.style.fontSize=sz+'px';localStorage.setItem('fontSize',sz);showToast('Taille: '+sz+'px');}
+const savedFontSize=localStorage.getItem('fontSize');
+if(savedFontSize)document.body.style.fontSize=savedFontSize+'px';
 
 // Theme
 function setTheme(t){document.documentElement.setAttribute('data-theme',t);localStorage.setItem('theme',t);showToast('Theme: '+t);}
