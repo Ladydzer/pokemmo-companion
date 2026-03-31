@@ -316,6 +316,11 @@
             <div><p class="text-gray-500 text-xs">Pire (dry streak)</p><p id="sh-worst" class="text-lg font-bold mono" style="color:#ff5252">-</p></div>
         </div>
     </div>
+    <!-- Shiny hunt chart -->
+    <div class="glass-card p-5 mb-6" id="sh-chart-card" style="display:none">
+        <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">PROGRESSION DE CHASSE</p>
+        <div id="sh-chart" class="h-32"></div>
+    </div>
     <!-- Rates table -->
     <div class="glass-card p-6">
         <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">TAUX SHINY POKEMMO</p>
@@ -847,6 +852,32 @@ function shinyUpdate(){
         if(el('sh-avg'))el('sh-avg').textContent=avg.toLocaleString();
         if(el('sh-best'))el('sh-best').textContent=best.toLocaleString();
         if(el('sh-worst'))el('sh-worst').textContent=worst.toLocaleString();
+        // Chart
+        const chartEl=document.getElementById('sh-chart');
+        const chartCard=document.getElementById('sh-chart-card');
+        if(chartEl&&shData.history.length>=1){
+            chartCard.style.display='block';
+            const w=chartEl.clientWidth||400,h=120;
+            const maxE=Math.max(...encs,1);
+            const barW=Math.min(40,w/encs.length-4);
+            let svg=`<svg viewBox="0 0 ${w} ${h}" class="w-full h-full">`;
+            // Average line
+            const avgY=h-avg/maxE*(h-20)-10;
+            svg+=`<line x1="0" y1="${avgY}" x2="${w}" y2="${avgY}" stroke="rgba(0,229,255,0.3)" stroke-width="1" stroke-dasharray="4"/>`;
+            svg+=`<text x="${w-5}" y="${avgY-4}" text-anchor="end" fill="rgba(0,229,255,0.5)" font-size="9">moy: ${avg.toLocaleString()}</text>`;
+            // Bars
+            encs.forEach((e,i)=>{
+                const x=i*(barW+4)+2;
+                const barH=Math.max(4,e/maxE*(h-20));
+                const y=h-barH-10;
+                const color=e<=avg?'#69f0ae':'#ff5252';
+                svg+=`<rect x="${x}" y="${y}" width="${barW}" height="${barH}" rx="3" fill="${color}" opacity="0.7"/>`;
+                svg+=`<text x="${x+barW/2}" y="${h-2}" text-anchor="middle" fill="#888" font-size="8">${shData.history[i].name.slice(0,4)}</text>`;
+                svg+=`<text x="${x+barW/2}" y="${y-3}" text-anchor="middle" fill="${color}" font-size="8">${(e/1000).toFixed(1)}k</text>`;
+            });
+            svg+=`</svg>`;
+            chartEl.innerHTML=svg;
+        }
     }
 }
 // Timer
