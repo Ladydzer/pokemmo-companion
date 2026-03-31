@@ -90,13 +90,13 @@ async def get_pokemon_locations(pokemon_id: int):
     with _db() as conn:
         pokemon = conn.execute("SELECT name FROM pokemon WHERE id = ?", (pokemon_id,)).fetchone()
         if not pokemon:
-        return []
-    rows = conn.execute(
-        """SELECT r.name as route_name, r.region, s.method, s.rate, s.level_min, s.level_max
-           FROM spawns s JOIN routes r ON s.route_id = r.id
-           JOIN pokemon p ON s.pokemon_id = p.id
-           WHERE LOWER(p.name) = LOWER(?) ORDER BY s.rate DESC LIMIT 15""",
-        (dict(pokemon)["name"],)
+            return []
+        rows = conn.execute(
+            """SELECT r.name as route_name, r.region, s.method, s.rate, s.level_min, s.level_max
+               FROM spawns s JOIN routes r ON s.route_id = r.id
+               JOIN pokemon p ON s.pokemon_id = p.id
+               WHERE LOWER(p.name) = LOWER(?) ORDER BY s.rate DESC LIMIT 15""",
+            (dict(pokemon)["name"],)
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
