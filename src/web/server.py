@@ -428,6 +428,50 @@ async def horde_summary():
     return [dict(r) for r in rows]
 
 
+@app.get("/api/abilities")
+async def get_abilities(query: str = ""):
+    """List all abilities with pokemon counts, optionally filtered."""
+    with _db() as conn:
+        # Get all unique abilities with counts
+        rows = conn.execute("""
+            SELECT ability, is_hidden, COUNT(*) as count, GROUP_CONCAT(name, ', ') as pokemon_names
+            FROM (
+                SELECT ability1 as ability, 0 as is_hidden, name FROM pokemon WHERE ability1 IS NOT NULL
+                UNION ALL
+                SELECT ability2, 0, name FROM pokemon WHERE ability2 IS NOT NULL
+                UNION ALL
+                SELECT hidden_ability, 1, name FROM pokemon WHERE hidden_ability IS NOT NULL
+            )
+            WHERE ability IS NOT NULL AND ability != ''
+            GROUP BY ability
+            ORDER BY ability
+        """).fetchall()
+    result = [dict(r) for r in rows]
+    if query:
+        q = query.lower()
+        result = [r for r in result if q in r["ability"].lower() or q in r.get("pokemon_names", "").lower()]
+    return result
+
+
+@app.get("/api/abilities/{ability_name}")
+async def get_ability_pokemon(ability_name: str):
+    """Get all Pokemon with a specific ability."""
+    with _db() as conn:
+        rows = conn.execute("""
+            SELECT id, name, type1, type2, hp, attack, defense, sp_attack, sp_defense, speed,
+                   ability1, ability2, hidden_ability
+            FROM pokemon
+            WHERE LOWER(ability1) = LOWER(?) OR LOWER(ability2) = LOWER(?) OR LOWER(hidden_ability) = LOWER(?)
+            ORDER BY id
+        """, (ability_name, ability_name, ability_name)).fetchall()
+    result = []
+    for r in rows:
+        d = dict(r)
+        d["ability_type"] = "hidden" if d["hidden_ability"] and d["hidden_ability"].lower() == ability_name.lower() else "normal"
+        result.append(d)
+    return result
+
+
 @app.get("/api/pokemon/{pokemon_id}/moves")
 async def get_pokemon_moves(pokemon_id: int, method: str = ""):
     """Get moves a Pokemon can learn, optionally filtered by method."""

@@ -859,7 +859,7 @@ async function showP(id){
                     <img src="${spr(p.name)}" data-id="${p.id}" class="w-36 h-36 mx-auto sprite-hover">
                     <h2 class="text-2xl font-black text-white mt-3">#${String(p.id).padStart(3,'0')} ${p.name}</h2>
                     <div class="flex gap-2 justify-center mt-2">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div>
-                    <p class="text-[10px] text-gray-500 mt-2">${p.ability1||''}${p.ability2?' / '+p.ability2:''}${p.hidden_ability?' / '+p.hidden_ability+' (HA)':''}</p>
+                    <div class="flex flex-wrap gap-1 mt-2 justify-center">${p.ability1?`<button onclick="event.stopPropagation();showAbility('${p.ability1}')" class="text-[10px] px-2 py-0.5 rounded cursor-pointer hover:bg-dark-500" style="background:rgba(0,229,255,0.08);color:#00e5ff" title="Voir les Pokemon avec cette capacite">${p.ability1}</button>`:''} ${p.ability2?`<button onclick="event.stopPropagation();showAbility('${p.ability2}')" class="text-[10px] px-2 py-0.5 rounded cursor-pointer hover:bg-dark-500" style="background:rgba(0,229,255,0.08);color:#00e5ff">${p.ability2}</button>`:''} ${p.hidden_ability?`<button onclick="event.stopPropagation();showAbility('${p.hidden_ability}')" class="text-[10px] px-2 py-0.5 rounded cursor-pointer hover:bg-dark-500" style="background:rgba(213,0,249,0.1);color:#d500f9" title="Hidden Ability">${p.hidden_ability} (HA)</button>`:''}</div>
                     <div class="flex gap-2 mt-2">
                         <button onclick="event.stopPropagation();toggleFav(${p.id})" class="btn btn-xs ${isFav(p.id)?'btn-warning':'btn-ghost'}">${isFav(p.id)?'★ Favori':'☆ Favoris'}</button>
                         <button onclick="event.stopPropagation();addCompare(${p.id},'${p.name}',[${p.hp},${p.attack},${p.defense},${p.sp_attack},${p.sp_defense},${p.speed}])" class="btn btn-xs btn-info btn-outline">Comparer</button>
@@ -1766,6 +1766,34 @@ async function loadEVSpots(stat){
             </div>`;
         }).join('');
     }catch(e){el.innerHTML='<p class="text-red-400">Erreur: '+e.message+'</p>';}
+}
+
+// Ability viewer
+async function showAbility(ability){
+    try{
+        const data=await fetch(`/api/abilities/${encodeURIComponent(ability)}`).then(r=>r.json());
+        if(!data.length){showToast('Aucun Pokemon avec '+ability);return;}
+        const d=document.getElementById('dex-detail');
+        const g=document.getElementById('dex-grid');
+        g.classList.add('hidden');d.classList.remove('hidden');
+        d.innerHTML=`<button onclick="closeDex()" class="text-sm mb-4 font-medium" style="color:#00e5ff">← Retour au Pokedex</button>
+        <div class="glass-card p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <p class="text-xl font-black text-white">${ability}</p>
+                <span class="text-xs px-2 py-1 rounded" style="background:rgba(0,229,255,0.1);color:#00e5ff">${data.length} Pokemon</span>
+            </div>
+            <div class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 gap-2">
+                ${data.map(p=>{
+                    const isHA=p.ability_type==='hidden';
+                    return `<div class="dex-card ${isHA?'':'border-l-2'}" style="${isHA?'border-color:#d500f9':'border-color:#00e5ff'};border-bottom:3px solid ${TC[p.type1]||'#888'}" onclick="showP(${p.id})">
+                        <img src="${spr(p.name)}" data-id="${p.id}" class="w-12 h-12 mx-auto sprite-hover" loading="lazy">
+                        <p class="text-[10px] font-bold text-white mt-1">${p.name}</p>
+                        <p class="text-[9px] ${isHA?'':'text-gray-600'}" style="${isHA?'color:#d500f9':''}">${isHA?'HA':'Normal'}</p>
+                    </div>`;
+                }).join('')}
+            </div>
+        </div>`;
+    }catch(e){console.error(e);}
 }
 
 // Move filter for Pokedex detail
