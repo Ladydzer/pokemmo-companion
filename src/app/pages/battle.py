@@ -1,7 +1,7 @@
 """Battle Assistant page — interactive type chart with sprites and suggestions."""
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QGridLayout, QFrame, QScrollArea,
+    QGridLayout, QFrame, QScrollArea, QPushButton, QComboBox,
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
@@ -182,6 +182,71 @@ class BattlePage(QWidget):
 
         layout.addWidget(lookup_frame)
 
+        # Damage Calculator
+        dmg_frame = QFrame()
+        dmg_frame.setStyleSheet(f"""
+            QFrame {{
+                background-color: {COLORS['bg_card']};
+                border: 1px solid {COLORS['border']};
+                border-radius: 8px;
+            }}
+        """)
+        dmg_layout = QVBoxLayout(dmg_frame)
+        dmg_layout.setContentsMargins(16, 12, 16, 12)
+
+        dmg_title = QLabel("Damage Calculator")
+        dmg_title.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        dmg_title.setStyleSheet(f"color: {COLORS['accent_orange']};")
+        dmg_layout.addWidget(dmg_title)
+
+        # Attacker row
+        atk_row = QHBoxLayout()
+        atk_row.setSpacing(8)
+        atk_row.addWidget(QLabel("Your Pokemon:"))
+        self.atk_input = QLineEdit()
+        self.atk_input.setPlaceholderText("e.g. Charizard")
+        self.atk_input.setFixedWidth(150)
+        atk_row.addWidget(self.atk_input)
+
+        atk_row.addWidget(QLabel("Move power:"))
+        self.power_input = QLineEdit("90")
+        self.power_input.setFixedWidth(50)
+        atk_row.addWidget(self.power_input)
+
+        atk_row.addWidget(QLabel("Move type:"))
+        self.move_type_combo = QComboBox()
+        from ...utils.constants import TYPES as ALL_TYPES
+        self.move_type_combo.addItems(ALL_TYPES)
+        self.move_type_combo.setFixedWidth(100)
+        atk_row.addWidget(self.move_type_combo)
+
+        atk_row.addStretch()
+        dmg_layout.addLayout(atk_row)
+
+        # Calculate button + result
+        calc_row = QHBoxLayout()
+        calc_btn = QPushButton("Calculate")
+        calc_btn.setFixedWidth(100)
+        calc_btn.setStyleSheet(f"""
+            QPushButton {{
+                color: white; background: {COLORS['accent_orange']};
+                border: none; border-radius: 4px; padding: 6px 12px;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{ background: #FF9800; }}
+        """)
+        calc_btn.clicked.connect(self._calc_damage)
+        calc_row.addWidget(calc_btn)
+
+        self.dmg_result = QLabel("")
+        self.dmg_result.setFont(QFont("Consolas", 10))
+        self.dmg_result.setStyleSheet(f"color: {COLORS['text_primary']};")
+        self.dmg_result.setWordWrap(True)
+        calc_row.addWidget(self.dmg_result, 1)
+        dmg_layout.addLayout(calc_row)
+
+        layout.addWidget(dmg_frame)
+
         # Type chart in scroll area
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -256,6 +321,68 @@ class BattlePage(QWidget):
             self.immune_label.setText(f"IMMUNE TO: {', '.join(immune)}")
         else:
             self.immune_label.setText("IMMUNE TO: None")
+
+    def _calc_damage(self) -> None:
+        """Calculate damage from inputs."""
+        if not self.db:
+            return
+
+        # Get attacker
+        atk_name = self.atk_input.text().strip()
+        attacker = self.db.get_pokemon_by_name(atk_name) if atk_name else None
+        if not attacker:
+            results = self.db.search_pokemon(atk_name, limit=1) if atk_name else []
+            attacker = results[0] if results else None
+
+        # Get defender from the lookup result
+        def_name = self.search_input.text().strip()
+        defender = self.db.get_pokemon_by_name(def_name) if def_name else None
+        if not defender:
+            results = self.db.search_pokemon(def_name, limit=1) if def_name else []
+            defender = results[0] if results else None
+
+        if not attacker or not defender:
+            self.dmg_result.setText("Enter both attacker and defender Pokemon")
+            return
+
+        try:
+            power = int(self.power_input.text())
+        except ValueError:
+            power = 0
+
+        move_type = self.move_type_combo.currentText()
+
+        # Determine physical or special based on move type convention
+        # (simplified: use the higher offensive stat)
+        if attacker["attack"] >= attacker["sp_attack"]:
+            atk_stat = attacker["attack"]
+            def_stat = defender["defense"]
+        else:
+            atk_stat = attacker["sp_attack"]
+            def_stat = defender["sp_defense"]
+
+        def_types = [defender["type1"]]
+        if defender.get("type2"):
+            def_types.append(defender["type2"])
+
+        atk_types = [attacker["type1"]]
+        if attacker.get("type2"):
+            atk_types.append(attacker["type2"])
+
+        from ...tools.damage_calc import calc_damage, format_damage_result
+        result = calc_damage(
+            attacker_level=50,
+            move_power=power,
+            move_type=move_type,
+            attack_stat=atk_stat,
+            defense_stat=def_stat,
+            defender_hp=defender["hp"] + 60,  # Approximate HP at Lv50
+            defender_types=def_types,
+            attacker_types=atk_types,
+        )
+        self.dmg_result.setText(
+            f"{attacker['name']} vs {defender['name']}:\n{format_damage_result(result)}"
+        )
 
     def show_opponent(self, battle_info: dict) -> None:
         """Auto-show opponent from overlay detection."""
