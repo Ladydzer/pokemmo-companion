@@ -98,7 +98,7 @@ def calc_damage(
 def format_damage_result(result: dict) -> str:
     """Format damage result for display."""
     if result["type_mult"] == 0:
-        return "IMMUNE (0 damage)"
+        return "IMMUNE (0 degats)"
 
     lines = []
 
@@ -109,23 +109,23 @@ def format_damage_result(result: dict) -> str:
     # Effectiveness
     mult = result["type_mult"]
     if mult >= 4:
-        lines.append("SUPER EFFECTIVE (x4)")
+        lines.append("SUPER EFFICACE (x4)")
     elif mult >= 2:
-        lines.append("Super effective (x2)")
+        lines.append("Super efficace (x2)")
     elif mult <= 0.25:
-        lines.append("Not very effective (x0.25)")
+        lines.append("Peu efficace (x0.25)")
     elif mult <= 0.5:
-        lines.append("Not very effective (x0.5)")
+        lines.append("Peu efficace (x0.5)")
 
     if result["is_stab"]:
         lines.append("STAB (x1.5)")
 
     if result["ohko"]:
-        lines.append("*** OHKO POSSIBLE ***")
+        lines.append("*** KO EN 1 COUP POSSIBLE ***")
     elif result["max_pct"] >= 50:
-        lines.append("2HKO likely")
+        lines.append("KO en 2 coups probable")
     elif result["max_pct"] >= 33:
-        lines.append("3HKO likely")
+        lines.append("KO en 3 coups probable")
 
     return "\n".join(lines)
 
