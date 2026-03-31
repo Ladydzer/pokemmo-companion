@@ -428,6 +428,16 @@ async def horde_summary():
     return [dict(r) for r in rows]
 
 
+@app.get("/api/abilities/translations")
+async def get_ability_translations():
+    """Get EN->FR ability name translations."""
+    import json as _json
+    tr_path = PROJECT_ROOT / "data" / "ability_fr.json"
+    if tr_path.exists():
+        return _json.loads(tr_path.read_text(encoding="utf-8"))
+    return {}
+
+
 @app.get("/api/abilities")
 async def get_abilities(query: str = ""):
     """List all abilities with pokemon counts, optionally filtered."""
@@ -476,7 +486,7 @@ async def get_ability_pokemon(ability_name: str):
 async def get_pokemon_moves(pokemon_id: int, method: str = ""):
     """Get moves a Pokemon can learn, optionally filtered by method."""
     with _db() as conn:
-        query = """SELECT m.id, m.name, m.type, m.power, m.accuracy, m.pp, m.category,
+        query = """SELECT m.id, m.name, m.name_fr, m.type, m.power, m.accuracy, m.pp, m.category,
                    pm.method, pm.level
                    FROM pokemon_moves pm JOIN moves m ON pm.move_id = m.id
                    WHERE pm.pokemon_id = ?"""
@@ -513,7 +523,7 @@ async def get_ev_spots(stat: str, region: str = "", method: str = ""):
         if method:
             query += " AND s.method = ?"
             params.append(method)
-        query += f" ORDER BY p.{stat_col} DESC, s.rate DESC LIMIT 100"
+        query += f" ORDER BY p.{stat_col} DESC, CASE WHEN s.method='horde' THEN 0 ELSE 1 END, s.rate DESC"
         rows = conn.execute(query, params).fetchall()
     return [dict(r) for r in rows]
 

@@ -109,7 +109,7 @@
         </a>
         <a class="nav-btn" data-page="evtrain" onclick="go('evtrain')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
-            EV Train
+            Entrainement EV
         </a>
         <a class="nav-btn" data-page="collection" onclick="go('collection')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
@@ -616,7 +616,7 @@
         <button onclick="loadGuide('Unova')" class="btn btn-sm btn-warning btn-outline">Unova</button>
     </div>
     <div id="guide-content">
-        <p class="text-gray-500">Selectionne une region pour voir le guide de progression.</p>
+        <p class="text-gray-500">Chargement du guide Kanto...</p>
     </div>
 </div>
 
@@ -675,7 +675,7 @@
     <div class="glass-card p-6 mb-5">
         <p class="text-xs font-bold tracking-widest text-gray-500 mb-4">RACCOURCIS</p>
         <div class="space-y-2 text-sm">
-            <div class="flex justify-between"><span class="text-gray-400">F9</span><span class="text-gray-300">Toggle overlay</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">F9</span><span class="text-gray-300">Basculer l'overlay</span></div>
             <div class="flex justify-between"><span class="text-gray-400">F10</span><span class="text-gray-300">Mode etendu</span></div>
             <div class="flex justify-between"><span class="text-gray-400">1-9</span><span class="text-gray-300">Naviguer entre pages</span></div>
             <div class="flex justify-between"><span class="text-gray-400">/</span><span class="text-gray-300">Recherche globale</span></div>
@@ -869,7 +869,7 @@ async function showP(id){
                     <img src="${spr(p.name)}" data-id="${p.id}" class="w-36 h-36 mx-auto sprite-hover">
                     <h2 class="text-2xl font-black text-white mt-3">#${String(p.id).padStart(3,'0')} ${p.name}</h2>
                     <div class="flex gap-2 justify-center mt-2">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div>
-                    <div class="flex flex-wrap gap-1 mt-2 justify-center">${p.ability1?`<button onclick="event.stopPropagation();showAbility('${p.ability1}')" class="text-[10px] px-2 py-0.5 rounded cursor-pointer hover:bg-dark-500" style="background:rgba(0,229,255,0.08);color:#00e5ff" title="Voir les Pokemon avec cette capacite">${p.ability1}</button>`:''} ${p.ability2?`<button onclick="event.stopPropagation();showAbility('${p.ability2}')" class="text-[10px] px-2 py-0.5 rounded cursor-pointer hover:bg-dark-500" style="background:rgba(0,229,255,0.08);color:#00e5ff">${p.ability2}</button>`:''} ${p.hidden_ability?`<button onclick="event.stopPropagation();showAbility('${p.hidden_ability}')" class="text-[10px] px-2 py-0.5 rounded cursor-pointer hover:bg-dark-500" style="background:rgba(213,0,249,0.1);color:#d500f9" title="Hidden Ability">${p.hidden_ability} (HA)</button>`:''}</div>
+                    <div class="flex flex-wrap gap-1 mt-2 justify-center">${p.ability1?`<button onclick="event.stopPropagation();showAbility(${JSON.stringify(p.ability1)})" class="text-[10px] px-2 py-0.5 rounded cursor-pointer hover:bg-dark-500" style="background:rgba(0,229,255,0.08);color:#00e5ff" title="Voir les Pokemon avec cette capacite">${afr(p.ability1)}</button>`:''} ${p.ability2?`<button onclick="event.stopPropagation();showAbility(${JSON.stringify(p.ability2)})" class="text-[10px] px-2 py-0.5 rounded cursor-pointer hover:bg-dark-500" style="background:rgba(0,229,255,0.08);color:#00e5ff">${afr(p.ability2)}</button>`:''} ${p.hidden_ability?`<button onclick="event.stopPropagation();showAbility(${JSON.stringify(p.hidden_ability)})" class="text-[10px] px-2 py-0.5 rounded cursor-pointer hover:bg-dark-500" style="background:rgba(213,0,249,0.1);color:#d500f9" title="Capacite Cachee">${afr(p.hidden_ability)} (CC)</button>`:''}</div>
                     <div class="flex gap-2 mt-2">
                         <button onclick="event.stopPropagation();toggleFav(${p.id})" class="btn btn-xs ${isFav(p.id)?'btn-warning':'btn-ghost'}">${isFav(p.id)?'★ Favori':'☆ Favoris'}</button>
                         <button onclick="event.stopPropagation();addCompare(${p.id},'${p.name}',[${p.hp},${p.attack},${p.defense},${p.sp_attack},${p.sp_defense},${p.speed}])" class="btn btn-xs btn-info btn-outline">Comparer</button>
@@ -930,14 +930,16 @@ async function showP(id){
             mv.forEach(m=>{
                 const pwrTxt=m.power?m.power:'—';
                 const accTxt=m.accuracy?m.accuracy+'%':'—';
+                const moveName=m.name_fr||m.name.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+                const catFR={physical:'Phy',special:'Spe',status:'Sta'}[m.category]||m.category.slice(0,3);
                 h+=`<div class="flex items-center gap-2 p-1.5 rounded hover:bg-dark-600/30 text-xs move-row" data-method="${m.method}">
                     ${m.method==='level-up'?`<span class="w-8 text-right mono text-gray-500">Lv.${m.level}</span>`:`<span class="w-8 text-right text-gray-600">${catIcon[m.category]||''}</span>`}
                     ${pill(m.type)}
-                    <span class="font-bold text-white flex-1">${m.name.replace(/-/g,' ')}</span>
+                    <span class="font-bold text-white flex-1">${moveName}</span>
                     <span class="w-8 text-right mono ${m.category==='physical'?'text-orange-400':m.category==='special'?'text-blue-400':'text-gray-500'}">${pwrTxt}</span>
                     <span class="w-10 text-right mono text-gray-500">${accTxt}</span>
                     <span class="w-6 text-right mono text-gray-600">${m.pp}</span>
-                    <span class="text-[9px] w-12 text-center text-gray-600">${m.category.slice(0,3)}</span>
+                    <span class="text-[9px] w-12 text-center text-gray-600">${catFR}</span>
                 </div>`;
             });
             h+=`</div>`;
@@ -1517,7 +1519,7 @@ function calcBreed(){
             <div class="glass-card p-3"><p class="text-[10px] text-gray-500">COUT</p><p class="text-lg font-black mono" style="color:#ffd740">${c.min}k - ${c.max}k</p><p class="text-[9px] text-gray-500">PokéYen</p></div>
         </div>
         <div class="text-sm space-y-1">
-            <p class="text-gray-400">Items : <span class="text-white font-medium">${items}</span></p>
+            <p class="text-gray-400">Objets : <span class="text-white font-medium">${items}</span></p>
             <p class="text-gray-400">Difficulte : <span class="${ivs>=5?'text-red-400':ivs>=3?'text-yellow-400':'text-green-400'} font-medium">${ivs>=5?'Tres difficile':ivs>=3?'Intermediaire':'Facile'}</span></p>
             ${ivs>=5?'<p class="text-xs text-gray-500 mt-2">💡 Conseil : acheter un 5IV sur le GTL est souvent moins cher que de partir de zero.</p>':''}
         </div>
@@ -1778,6 +1780,11 @@ async function loadEVSpots(stat){
     }catch(e){el.innerHTML='<p class="text-red-400">Erreur: '+e.message+'</p>';}
 }
 
+// Ability FR translations
+let AFR={};
+async function loadAbilityFR(){try{AFR=await fetch('/api/abilities/translations').then(r=>r.json());}catch(e){}}
+const afr=a=>AFR[a]||a; // Translate ability EN->FR
+
 // Ability viewer
 async function showAbility(ability){
     try{
@@ -1789,7 +1796,8 @@ async function showAbility(ability){
         d.innerHTML=`<button onclick="closeDex()" class="text-sm mb-4 font-medium" style="color:#00e5ff">← Retour au Pokedex</button>
         <div class="glass-card p-6">
             <div class="flex items-center gap-3 mb-4">
-                <p class="text-xl font-black text-white">${ability}</p>
+                <p class="text-xl font-black text-white">${afr(ability)}</p>
+                <span class="text-xs text-gray-500">${ability}</span>
                 <span class="text-xs px-2 py-1 rounded" style="background:rgba(0,229,255,0.1);color:#00e5ff">${data.length} Pokemon</span>
             </div>
             <div class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 gap-2">
@@ -1851,7 +1859,7 @@ function filterMoves(method){
     });
 }
 
-loadDash();loadChart();rTm();loadRoutes();checkGame();loadOptStats();shinyUpdate();calcBreed();renderNatures(NATURES);loadHordeSummary();loadHordes();calcSS();updateEVTracker();
+loadAbilityFR();loadDash();loadChart();rTm();loadRoutes();checkGame();loadOptStats();shinyUpdate();calcBreed();renderNatures(NATURES);loadHordeSummary();loadHordes();calcSS();updateEVTracker();loadGuide('Kanto');
 </script>
 </body>
 </html>
