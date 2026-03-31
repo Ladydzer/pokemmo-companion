@@ -51,12 +51,14 @@ async def get_stats():
     }
 
 
-@app.get("/api/pokemon/{pokemon_id}")
-async def get_pokemon(pokemon_id: int):
+@app.get("/api/pokemon/all")
+async def get_all_pokemon():
     conn = _db()
-    row = conn.execute("SELECT * FROM pokemon WHERE id = ?", (pokemon_id,)).fetchone()
+    rows = conn.execute(
+        "SELECT id, name, type1, type2 FROM pokemon ORDER BY id"
+    ).fetchall()
     conn.close()
-    return dict(row) if row else {"error": "Not found"}
+    return [dict(r) for r in rows]
 
 
 @app.get("/api/pokemon/search/{query}")
@@ -70,14 +72,12 @@ async def search_pokemon(query: str):
     return [dict(r) for r in rows]
 
 
-@app.get("/api/pokemon/all")
-async def get_all_pokemon():
+@app.get("/api/pokemon/{pokemon_id}")
+async def get_pokemon(pokemon_id: int):
     conn = _db()
-    rows = conn.execute(
-        "SELECT id, name, type1, type2 FROM pokemon ORDER BY id"
-    ).fetchall()
+    row = conn.execute("SELECT * FROM pokemon WHERE id = ?", (pokemon_id,)).fetchone()
     conn.close()
-    return [dict(r) for r in rows]
+    return dict(row) if row else {"error": "Not found"}
 
 
 @app.get("/api/pokemon/{pokemon_id}/locations")
