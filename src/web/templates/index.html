@@ -8,400 +8,445 @@
     <script>
         tailwind.config = {
             darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        'poke-dark': '#0f0f1a',
-                        'poke-card': '#1a1a2e',
-                        'poke-hover': '#252545',
-                        'poke-border': '#2d2d5e',
-                    }
-                }
-            }
+            theme: { extend: { colors: {
+                'poke': { 'bg':'#080810','card':'#12122a','card2':'#181838','hover':'#1e1e48','border':'#2a2a5a','glow':'#4FC3F7' }
+            }}}
         }
     </script>
     <style>
-        body { background: #0a0a14; font-family: 'Segoe UI', system-ui, sans-serif; }
-        .type-badge { display: inline-block; padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; color: white; }
-        .card { background: #1a1a2e; border: 1px solid #2d2d5e; border-radius: 16px; transition: all 0.2s ease; }
-        .card:hover { border-color: #4FC3F7; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(79, 195, 247, 0.15); }
-        .accent-left { border-left: 4px solid; }
-        .glow { box-shadow: 0 0 20px rgba(79, 195, 247, 0.1); }
-        .sprite-hover { transition: transform 0.2s; }
-        .sprite-hover:hover { transform: scale(1.15); }
-        .fade-in { animation: fadeIn 0.5s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .nav-item { transition: all 0.15s ease; }
-        .nav-item:hover { background: #252545; }
-        .nav-item.active { background: #1e3a5f; border-left: 3px solid #4FC3F7; }
-        .progress-bar { height: 8px; border-radius: 4px; overflow: hidden; background: #1a1a2e; }
-        .progress-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #0f0f1a; }
-        ::-webkit-scrollbar-thumb { background: #2d2d5e; border-radius: 3px; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        * { font-family: 'Inter', system-ui, sans-serif; }
+        body { background: linear-gradient(135deg, #080810 0%, #0d0d20 50%, #080810 100%); }
+
+        /* Cards */
+        .glass { background: rgba(18,18,42,0.8); backdrop-filter: blur(12px); border: 1px solid rgba(42,42,90,0.6); border-radius: 16px; }
+        .glass:hover { border-color: rgba(79,195,247,0.4); box-shadow: 0 8px 32px rgba(79,195,247,0.08); }
+        .card-accent { border-left: 4px solid; transition: all 0.25s ease; }
+        .card-accent:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+
+        /* Animations */
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        .slide-up { animation: slideUp 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+        @keyframes slideUp { from { opacity:0; transform:translateY(20px) } to { opacity:1; transform:translateY(0) } }
+        .hover-lift { transition: transform 0.2s, box-shadow 0.2s; }
+        .hover-lift:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
+        .sprite-pop { transition: transform 0.15s; }
+        .sprite-pop:hover { transform: scale(1.2); }
+
+        /* Type badges */
+        .type-pill { display:inline-flex; align-items:center; padding:3px 12px; border-radius:20px; font-size:11px; font-weight:700; color:white; letter-spacing:0.5px; text-transform:uppercase; }
+
+        /* Progress bars */
+        .bar-track { height:6px; border-radius:3px; background:rgba(42,42,90,0.5); overflow:hidden; }
+        .bar-fill { height:100%; border-radius:3px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
+
+        /* Stat bars */
+        .stat-bar { height:10px; border-radius:5px; background:rgba(42,42,90,0.5); overflow:hidden; position:relative; }
+        .stat-fill { height:100%; border-radius:5px; transition: width 0.6s ease; }
+
+        /* Sidebar */
+        .sidebar { background: linear-gradient(180deg, #0e0e22 0%, #0a0a18 100%); }
+        .nav-link { display:flex; align-items:center; gap:10px; padding:12px 20px; color:#888; font-size:13px; font-weight:500; transition:all 0.15s; border-left:3px solid transparent; }
+        .nav-link:hover { color:#ccc; background:rgba(79,195,247,0.05); }
+        .nav-link.active { color:#4FC3F7; background:rgba(79,195,247,0.1); border-left-color:#4FC3F7; font-weight:600; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width:5px; }
+        ::-webkit-scrollbar-track { background:transparent; }
+        ::-webkit-scrollbar-thumb { background:rgba(79,195,247,0.2); border-radius:3px; }
+        ::-webkit-scrollbar-thumb:hover { background:rgba(79,195,247,0.4); }
+
+        /* Spawn row */
+        .spawn-row { display:flex; align-items:center; gap:12px; padding:8px 12px; border-radius:10px; transition:background 0.15s; }
+        .spawn-row:hover { background:rgba(79,195,247,0.06); }
+
+        /* Pokemon grid card */
+        .poke-card { background:rgba(18,18,42,0.6); border:1px solid rgba(42,42,90,0.4); border-radius:12px; padding:8px; text-align:center; cursor:pointer; transition:all 0.2s; }
+        .poke-card:hover { border-color:rgba(79,195,247,0.5); background:rgba(24,24,56,0.9); transform:translateY(-4px); box-shadow:0 8px 24px rgba(0,0,0,0.3); }
+
+        /* Glow effects */
+        .glow-blue { box-shadow: 0 0 30px rgba(79,195,247,0.1), inset 0 1px 0 rgba(255,255,255,0.05); }
+        .glow-yellow { box-shadow: 0 0 30px rgba(255,213,79,0.1); }
+        .text-glow { text-shadow: 0 0 20px currentColor; }
     </style>
 </head>
-<body class="text-gray-200 min-h-screen flex">
+<body class="text-gray-300 min-h-screen flex">
 
 <!-- Sidebar -->
-<aside class="w-56 bg-poke-card border-r border-poke-border flex flex-col min-h-screen fixed left-0 top-0">
-    <div class="p-5 border-b border-poke-border">
-        <h1 class="text-2xl font-bold text-cyan-400">PokeMMO</h1>
-        <p class="text-sm text-gray-500">Companion</p>
+<aside class="sidebar w-52 min-h-screen fixed left-0 top-0 border-r border-poke-border flex flex-col z-50">
+    <div class="px-5 py-6">
+        <h1 class="text-xl font-extrabold text-cyan-400 text-glow">PokeMMO</h1>
+        <p class="text-xs text-gray-600 font-medium tracking-wider mt-0.5">COMPANION</p>
     </div>
-    <nav class="flex-1 py-2" id="nav">
-        <a href="#" class="nav-item active block px-5 py-3 text-sm font-medium" data-page="dashboard" onclick="navigate('dashboard')">
-            <span class="mr-2">🏠</span> Accueil
-        </a>
-        <a href="#" class="nav-item block px-5 py-3 text-sm font-medium text-gray-400" data-page="pokedex" onclick="navigate('pokedex')">
-            <span class="mr-2">📖</span> Pokedex
-        </a>
-        <a href="#" class="nav-item block px-5 py-3 text-sm font-medium text-gray-400" data-page="battle" onclick="navigate('battle')">
-            <span class="mr-2">⚔️</span> Combat
-        </a>
-        <a href="#" class="nav-item block px-5 py-3 text-sm font-medium text-gray-400" data-page="team" onclick="navigate('team')">
-            <span class="mr-2">👥</span> Equipe
-        </a>
-        <a href="#" class="nav-item block px-5 py-3 text-sm font-medium text-gray-400" data-page="shiny" onclick="navigate('shiny')">
-            <span class="mr-2">✨</span> Shiny
-        </a>
-        <a href="#" class="nav-item block px-5 py-3 text-sm font-medium text-gray-400" data-page="collection" onclick="navigate('collection')">
-            <span class="mr-2">📋</span> Collection
-        </a>
+    <nav class="flex-1 mt-2" id="nav">
+        <a class="nav-link active" data-page="dashboard" onclick="navigate('dashboard')">🏠 <span>Accueil</span></a>
+        <a class="nav-link" data-page="pokedex" onclick="navigate('pokedex')">📖 <span>Pokedex</span></a>
+        <a class="nav-link" data-page="battle" onclick="navigate('battle')">⚔️ <span>Combat</span></a>
+        <a class="nav-link" data-page="team" onclick="navigate('team')">👥 <span>Equipe</span></a>
+        <a class="nav-link" data-page="shiny" onclick="navigate('shiny')">✨ <span>Shiny</span></a>
+        <a class="nav-link" data-page="collection" onclick="navigate('collection')">📋 <span>Collection</span></a>
+        <a class="nav-link" data-page="notes" onclick="navigate('notes')">📝 <span>Notes</span></a>
     </nav>
-    <div class="p-3 border-t border-poke-border">
-        <p class="text-xs text-gray-600">v0.3.0</p>
+    <div class="px-5 py-4 border-t border-poke-border">
+        <div id="game-status" class="flex items-center gap-2 text-xs">
+            <div class="w-2 h-2 rounded-full bg-red-500"></div>
+            <span class="text-gray-600">Jeu non detecte</span>
+        </div>
+        <p class="text-[10px] text-gray-700 mt-2">v0.3.0</p>
     </div>
 </aside>
 
-<!-- Main content -->
-<main class="flex-1 ml-56 p-8 overflow-y-auto min-h-screen">
+<!-- Main -->
+<main class="flex-1 ml-52 p-8 overflow-y-auto min-h-screen">
 
-    <!-- Dashboard page -->
-    <div id="page-dashboard" class="page fade-in">
-        <h2 class="text-3xl font-bold text-white mb-6">Tableau de Bord</h2>
+<!-- ===== DASHBOARD ===== -->
+<div id="page-dashboard" class="page fade-in max-w-5xl">
+    <h2 class="text-3xl font-extrabold text-white mb-8">Tableau de Bord</h2>
 
-        <!-- Hero: Pokemon du Jour -->
-        <div id="hero-card" class="card glow p-6 mb-6 flex items-center gap-6">
-            <img id="hero-sprite" src="" class="w-32 h-32 sprite-hover" alt="">
-            <div class="flex-1">
-                <p class="text-sm text-yellow-400 font-bold mb-1">⭐ Pokemon du Jour</p>
-                <h3 id="hero-name" class="text-2xl font-bold text-white mb-2"></h3>
-                <div id="hero-types" class="flex gap-2 mb-2"></div>
-                <p id="hero-stats" class="text-sm text-gray-400"></p>
-                <p id="hero-location" class="text-sm text-green-400 mt-1"></p>
-            </div>
+    <!-- Hero Pokemon -->
+    <div id="hero" class="glass glow-yellow p-6 mb-8 flex items-center gap-8 slide-up" style="border-color:rgba(255,213,79,0.3)">
+        <div class="relative">
+            <img id="hero-sprite" src="" class="w-36 h-36 sprite-pop drop-shadow-2xl" alt="">
+            <div class="absolute -bottom-1 -right-1 bg-yellow-500 text-black text-[10px] font-bold px-2 py-0.5 rounded-full">⭐ DU JOUR</div>
         </div>
-
-        <!-- Stats row -->
-        <div class="grid grid-cols-3 gap-4 mb-6">
-            <!-- Position -->
-            <div class="card accent-left p-5" style="border-left-color: #4FC3F7;">
-                <p class="text-xs text-cyan-400 font-bold mb-1">POSITION ACTUELLE</p>
-                <p id="current-route" class="text-xl font-bold text-white">Non connecte</p>
-                <p id="current-region" class="text-sm text-gray-500"></p>
-            </div>
-            <!-- Encounters -->
-            <div class="card accent-left p-5" style="border-left-color: #FFB74D;">
-                <p class="text-xs text-orange-400 font-bold mb-1">RENCONTRES</p>
-                <p id="encounter-count" class="text-3xl font-bold text-orange-400">0</p>
-                <p id="shiny-prob" class="text-sm text-yellow-400">Shiny: 0.00%</p>
-            </div>
-            <!-- Collection -->
-            <div class="card accent-left p-5" style="border-left-color: #66BB6A;">
-                <p class="text-xs text-green-400 font-bold mb-1">COLLECTION</p>
-                <p id="collection-count" class="text-xl font-bold text-green-400">0 / 649</p>
-                <div class="progress-bar mt-2">
-                    <div id="collection-bar" class="progress-fill bg-green-500" style="width: 0%"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Spawns -->
-        <div class="card accent-left p-5 mb-6" style="border-left-color: #66BB6A;">
-            <p class="text-xs text-green-400 font-bold mb-3">POKEMON DE LA ZONE</p>
-            <div id="spawns-list" class="space-y-2">
-                <p class="text-gray-500 text-sm">En attente de detection de route...</p>
-            </div>
-        </div>
-
-        <!-- Objective -->
-        <div class="card accent-left p-5" style="border-left-color: #CE93D8;">
-            <p class="text-xs text-purple-400 font-bold mb-1">OBJECTIF DU JOUR</p>
-            <p id="objective" class="text-base text-green-400"></p>
-        </div>
-
-        <!-- DB Stats -->
-        <div class="mt-6 flex gap-3">
-            <div class="card px-4 py-2 text-xs text-gray-500">
-                <span id="stat-pokemon">0</span> Pokemon
-            </div>
-            <div class="card px-4 py-2 text-xs text-gray-500">
-                <span id="stat-routes">0</span> Routes
-            </div>
-            <div class="card px-4 py-2 text-xs text-gray-500">
-                <span id="stat-spawns">0</span> Spawns
-            </div>
-            <div class="card px-4 py-2 text-xs text-gray-500">
-                <span id="stat-sprites">0</span> Sprites
-            </div>
+        <div class="flex-1">
+            <h3 id="hero-name" class="text-2xl font-bold text-white"></h3>
+            <div id="hero-types" class="flex gap-2 mt-2"></div>
+            <p id="hero-stats" class="text-sm text-gray-400 mt-3 font-mono"></p>
+            <p id="hero-location" class="text-sm text-emerald-400 mt-1 font-medium"></p>
         </div>
     </div>
 
-    <!-- Pokedex page -->
-    <div id="page-pokedex" class="page hidden fade-in">
-        <h2 class="text-3xl font-bold text-white mb-4">Pokedex</h2>
-        <input type="text" id="pokedex-search" placeholder="Chercher un Pokemon..."
-               class="w-full bg-poke-card border border-poke-border rounded-xl px-4 py-3 text-white mb-4 focus:border-cyan-400 focus:outline-none transition">
-        <!-- Type filters -->
-        <div id="type-filters" class="flex flex-wrap gap-1 mb-4"></div>
-        <!-- Grid -->
-        <div id="pokedex-grid" class="grid grid-cols-8 gap-2"></div>
-        <!-- Detail (hidden by default) -->
-        <div id="pokemon-detail" class="hidden fade-in"></div>
-    </div>
-
-    <!-- Battle page -->
-    <div id="page-battle" class="page hidden fade-in">
-        <h2 class="text-3xl font-bold text-white mb-4">Assistant Combat</h2>
-        <div class="card p-5 mb-4">
-            <p class="text-xs text-red-400 font-bold mb-2">RECHERCHE RAPIDE</p>
-            <input type="text" id="battle-search" placeholder="Nom du Pokemon adverse..."
-                   class="w-full bg-poke-dark border border-poke-border rounded-lg px-4 py-2 text-white focus:border-red-400 focus:outline-none">
-            <div id="battle-result" class="mt-4 hidden"></div>
+    <!-- Stats grid -->
+    <div class="grid grid-cols-4 gap-4 mb-8">
+        <div class="glass card-accent hover-lift p-5" style="border-left-color:#4FC3F7">
+            <p class="text-[10px] font-bold text-cyan-400 tracking-widest mb-1">POSITION</p>
+            <p id="current-route" class="text-lg font-bold text-white">Non connecte</p>
+            <p id="current-region" class="text-xs text-gray-500 mt-1"></p>
+        </div>
+        <div class="glass card-accent hover-lift p-5" style="border-left-color:#FFB74D">
+            <p class="text-[10px] font-bold text-orange-400 tracking-widest mb-1">RENCONTRES</p>
+            <p class="text-3xl font-extrabold text-orange-400 text-glow">0</p>
+        </div>
+        <div class="glass card-accent hover-lift p-5" style="border-left-color:#CE93D8">
+            <p class="text-[10px] font-bold text-purple-400 tracking-widest mb-1">SHINY</p>
+            <p class="text-lg font-bold text-purple-300">0.00%</p>
+            <p class="text-xs text-gray-500">1/30,000</p>
+        </div>
+        <div class="glass card-accent hover-lift p-5" style="border-left-color:#66BB6A">
+            <p class="text-[10px] font-bold text-green-400 tracking-widest mb-1">COLLECTION</p>
+            <p class="text-lg font-bold text-green-400">0 / 649</p>
+            <div class="bar-track mt-2"><div class="bar-fill bg-green-500" style="width:0%"></div></div>
         </div>
     </div>
 
-    <!-- Other pages (placeholder) -->
-    <div id="page-team" class="page hidden fade-in">
-        <h2 class="text-3xl font-bold text-white mb-4">Constructeur d'Equipe</h2>
-        <p class="text-gray-500">En cours de migration vers la nouvelle interface...</p>
+    <!-- Spawns -->
+    <div class="glass card-accent p-6 mb-6" style="border-left-color:#66BB6A">
+        <p class="text-[10px] font-bold text-green-400 tracking-widest mb-4">POKEMON DE LA ZONE</p>
+        <div id="spawns-list">
+            <p class="text-gray-600 text-sm italic">En attente de detection de route...</p>
+        </div>
     </div>
-    <div id="page-shiny" class="page hidden fade-in">
-        <h2 class="text-3xl font-bold text-white mb-4">Labo Shiny</h2>
-        <p class="text-gray-500">En cours de migration vers la nouvelle interface...</p>
+
+    <!-- Objective -->
+    <div class="glass card-accent p-5" style="border-left-color:#CE93D8">
+        <p class="text-[10px] font-bold text-purple-400 tracking-widest mb-2">OBJECTIF DU JOUR</p>
+        <p id="objective" class="text-base text-emerald-400 font-medium"></p>
     </div>
-    <div id="page-collection" class="page hidden fade-in">
-        <h2 class="text-3xl font-bold text-white mb-4">Collection</h2>
-        <p class="text-gray-500">En cours de migration vers la nouvelle interface...</p>
+
+    <!-- Mini stats -->
+    <div class="flex gap-3 mt-6">
+        <div class="glass px-4 py-2 text-xs text-gray-500"><span id="s-poke" class="text-cyan-400 font-bold">0</span> Pokemon</div>
+        <div class="glass px-4 py-2 text-xs text-gray-500"><span id="s-routes" class="text-cyan-400 font-bold">0</span> Routes</div>
+        <div class="glass px-4 py-2 text-xs text-gray-500"><span id="s-spawns" class="text-cyan-400 font-bold">0</span> Spawns</div>
+        <div class="glass px-4 py-2 text-xs text-gray-500"><span id="s-sprites" class="text-cyan-400 font-bold">0</span> Sprites</div>
     </div>
+</div>
+
+<!-- ===== POKEDEX ===== -->
+<div id="page-pokedex" class="page hidden fade-in max-w-6xl">
+    <h2 class="text-3xl font-extrabold text-white mb-6">Pokedex</h2>
+    <input type="text" id="dex-search" placeholder="Chercher un Pokemon par nom, numero ou type..."
+           class="w-full bg-poke-card border border-poke-border rounded-2xl px-5 py-3 text-white text-sm focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400/30 transition mb-4">
+    <div id="type-filters" class="flex flex-wrap gap-1.5 mb-5"></div>
+    <div id="dex-grid" class="grid grid-cols-8 gap-3"></div>
+    <div id="dex-detail" class="hidden fade-in"></div>
+</div>
+
+<!-- ===== COMBAT ===== -->
+<div id="page-battle" class="page hidden fade-in max-w-4xl">
+    <h2 class="text-3xl font-extrabold text-white mb-6">Assistant Combat</h2>
+    <div class="glass p-6 mb-6">
+        <p class="text-[10px] font-bold text-red-400 tracking-widest mb-3">RECHERCHE POKEMON</p>
+        <input type="text" id="battle-input" placeholder="Tape le nom du Pokemon adverse..."
+               class="w-full bg-poke-bg border border-poke-border rounded-xl px-4 py-3 text-white text-sm focus:border-red-400 focus:outline-none transition">
+        <div id="battle-result" class="mt-4 hidden"></div>
+    </div>
+    <div class="glass p-6">
+        <p class="text-[10px] font-bold text-cyan-400 tracking-widest mb-3">TABLE DES TYPES</p>
+        <p class="text-xs text-gray-500">La table complete des types sera ajoutee prochainement.</p>
+    </div>
+</div>
+
+<!-- ===== EQUIPE ===== -->
+<div id="page-team" class="page hidden fade-in max-w-5xl">
+    <h2 class="text-3xl font-extrabold text-white mb-6">Constructeur d'Equipe</h2>
+    <div class="glass p-6 mb-6">
+        <input type="text" id="team-input" placeholder="Ajoute un Pokemon a ton equipe..."
+               class="w-full bg-poke-bg border border-poke-border rounded-xl px-4 py-3 text-white text-sm focus:border-cyan-400 focus:outline-none transition mb-4">
+        <div id="team-slots" class="grid grid-cols-6 gap-4"></div>
+    </div>
+    <div id="team-analysis" class="glass p-6">
+        <p class="text-[10px] font-bold text-cyan-400 tracking-widest mb-3">ANALYSE DE COUVERTURE</p>
+        <p class="text-sm text-gray-500">Ajoute des Pokemon pour voir l'analyse...</p>
+    </div>
+</div>
+
+<!-- ===== SHINY ===== -->
+<div id="page-shiny" class="page hidden fade-in max-w-4xl">
+    <h2 class="text-3xl font-extrabold text-yellow-400 text-glow mb-6">✨ Labo Shiny</h2>
+    <div class="grid grid-cols-4 gap-4 mb-6">
+        <div class="glass p-5 text-center hover-lift">
+            <p class="text-[10px] font-bold text-orange-400 tracking-widest">SESSION</p>
+            <p class="text-3xl font-extrabold text-orange-400 mt-2">0</p>
+        </div>
+        <div class="glass p-5 text-center hover-lift">
+            <p class="text-[10px] font-bold text-cyan-400 tracking-widest">TOTAL</p>
+            <p class="text-3xl font-extrabold text-cyan-400 mt-2">0</p>
+        </div>
+        <div class="glass p-5 text-center hover-lift">
+            <p class="text-[10px] font-bold text-yellow-400 tracking-widest">SHINIES</p>
+            <p class="text-3xl font-extrabold text-yellow-400 mt-2">0</p>
+        </div>
+        <div class="glass p-5 text-center hover-lift">
+            <p class="text-[10px] font-bold text-purple-400 tracking-widest">PROBABILITE</p>
+            <p class="text-xl font-bold text-purple-300 mt-2">0.00%</p>
+        </div>
+    </div>
+    <div class="glass p-6">
+        <p class="text-[10px] font-bold text-yellow-400 tracking-widest mb-3">TAUX POKEMMO</p>
+        <div class="grid grid-cols-2 gap-4 text-sm">
+            <div class="flex justify-between"><span class="text-gray-400">Base</span><span class="text-white font-mono">1/30,000</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Donator</span><span class="text-white font-mono">1/27,000</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Shiny Charm</span><span class="text-white font-mono">1/27,000</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Donator + Charm</span><span class="text-white font-mono">1/24,000</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== COLLECTION ===== -->
+<div id="page-collection" class="page hidden fade-in max-w-6xl">
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-3xl font-extrabold text-white">Collection</h2>
+        <p class="text-xl font-bold text-green-400">0 / 649</p>
+    </div>
+    <div class="bar-track h-4 mb-6 rounded-lg"><div class="bar-fill bg-gradient-to-r from-green-500 to-emerald-400 rounded-lg" style="width:0%"></div></div>
+    <div id="collection-grid" class="grid grid-cols-12 gap-1.5"></div>
+</div>
+
+<!-- ===== NOTES ===== -->
+<div id="page-notes" class="page hidden fade-in max-w-4xl">
+    <h2 class="text-3xl font-extrabold text-white mb-6">Notes de Route</h2>
+    <div class="glass p-6">
+        <p class="text-sm text-gray-500">Selectionne une route pour ecrire tes notes...</p>
+        <p class="text-xs text-gray-600 mt-2">Cette page sera enrichie avec la liste des routes et un editeur de notes.</p>
+    </div>
+</div>
+
 </main>
 
 <script>
-const TYPE_COLORS = {
-    Normal:'#A8A77A', Fire:'#EE8130', Water:'#6390F0', Electric:'#F7D02C',
-    Grass:'#7AC74C', Ice:'#96D9D6', Fighting:'#C22E28', Poison:'#A33EA1',
-    Ground:'#E2BF65', Flying:'#A98FF3', Psychic:'#F95587', Bug:'#A6B91A',
-    Rock:'#B6A136', Ghost:'#735797', Dragon:'#6F35FC', Dark:'#705746', Steel:'#B7B7CE'
+const TC = {
+    Normal:'#A8A77A',Fire:'#EE8130',Water:'#6390F0',Electric:'#F7D02C',Grass:'#7AC74C',
+    Ice:'#96D9D6',Fighting:'#C22E28',Poison:'#A33EA1',Ground:'#E2BF65',Flying:'#A98FF3',
+    Psychic:'#F95587',Bug:'#A6B91A',Rock:'#B6A136',Ghost:'#735797',Dragon:'#6F35FC',
+    Dark:'#705746',Steel:'#B7B7CE'
+};
+const STAT_COLORS = {hp:'#78C850',attack:'#F08030',defense:'#F8D030',sp_attack:'#6890F0',sp_defense:'#78C850',speed:'#F85888'};
+
+const pill = t => `<span class="type-pill" style="background:${TC[t]||'#888'}">${t}</span>`;
+const statBar = (label,val,key) => {
+    const c = STAT_COLORS[key]||'#4FC3F7';
+    return `<div class="flex items-center gap-2 mb-1.5">
+        <span class="w-7 text-[10px] text-gray-500 font-bold">${label}</span>
+        <span class="w-7 text-xs text-right font-mono text-gray-300">${val}</span>
+        <div class="flex-1 stat-bar"><div class="stat-fill" style="width:${val/255*100}%;background:${c}"></div></div>
+    </div>`;
 };
 
-function typeBadge(type) {
-    const color = TYPE_COLORS[type] || '#888';
-    return `<span class="type-badge" style="background:${color}">${type}</span>`;
-}
-
+// Navigation
 function navigate(page) {
     document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
-    document.getElementById(`page-${page}`).classList.remove('hidden');
-    document.querySelectorAll('.nav-item').forEach(n => {
-        n.classList.remove('active');
-        n.classList.add('text-gray-400');
-    });
-    const activeNav = document.querySelector(`[data-page="${page}"]`);
-    if (activeNav) { activeNav.classList.add('active'); activeNav.classList.remove('text-gray-400'); }
-
-    if (page === 'pokedex' && !window._pokedexLoaded) loadPokedex();
+    const el = document.getElementById('page-'+page);
+    if (el) { el.classList.remove('hidden'); el.classList.add('fade-in'); }
+    document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+    document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
+    if (page === 'pokedex' && !window._dexLoaded) loadPokedex();
+    if (page === 'collection' && !window._colLoaded) loadCollection();
 }
 
-// === Dashboard ===
+// Dashboard
 async function loadDashboard() {
-    // Stats
-    const stats = await fetch('/api/stats').then(r => r.json());
-    document.getElementById('stat-pokemon').textContent = stats.pokemon;
-    document.getElementById('stat-routes').textContent = stats.routes;
-    document.getElementById('stat-spawns').textContent = stats.spawns;
-    document.getElementById('stat-sprites').textContent = stats.sprites;
+    const stats = await fetch('/api/stats').then(r=>r.json());
+    document.getElementById('s-poke').textContent = stats.pokemon;
+    document.getElementById('s-routes').textContent = stats.routes;
+    document.getElementById('s-spawns').textContent = stats.spawns;
+    document.getElementById('s-sprites').textContent = stats.sprites;
 
-    // Spotlight
-    const spot = await fetch('/api/spotlight').then(r => r.json());
+    const spot = await fetch('/api/spotlight').then(r=>r.json());
     if (spot.id) {
-        document.getElementById('hero-sprite').src = `/sprite/${spot.id}`;
-        document.getElementById('hero-name').textContent = `#${spot.id} ${spot.name}`;
-        const bst = spot.hp + spot.attack + spot.defense + spot.sp_attack + spot.sp_defense + spot.speed;
-        document.getElementById('hero-stats').textContent = `BST: ${bst} | HP:${spot.hp} Atk:${spot.attack} Def:${spot.defense} SpA:${spot.sp_attack} SpD:${spot.sp_defense} Spe:${spot.speed}`;
-        let types = typeBadge(spot.type1);
-        if (spot.type2) types += ' ' + typeBadge(spot.type2);
-        document.getElementById('hero-types').innerHTML = types;
-        if (spot.location) {
-            document.getElementById('hero-location').textContent = `Trouve: ${spot.location.route_name} (${spot.location.region})`;
-        }
-        // Set hero card border to type color
-        document.getElementById('hero-card').style.borderColor = TYPE_COLORS[spot.type1] || '#4FC3F7';
+        document.getElementById('hero-sprite').src = `https://play.pokemonshowdown.com/sprites/ani/${spot.name.toLowerCase()}.gif`;
+        document.getElementById('hero-name').textContent = `#${String(spot.id).padStart(3,'0')} ${spot.name}`;
+        const bst = spot.hp+spot.attack+spot.defense+spot.sp_attack+spot.sp_defense+spot.speed;
+        document.getElementById('hero-stats').textContent = `BST ${bst} — HP:${spot.hp} Atk:${spot.attack} Def:${spot.defense} SpA:${spot.sp_attack} SpD:${spot.sp_defense} Spe:${spot.speed}`;
+        document.getElementById('hero-types').innerHTML = pill(spot.type1) + (spot.type2?' '+pill(spot.type2):'');
+        if (spot.location) document.getElementById('hero-location').textContent = `📍 ${spot.location.route_name} (${spot.location.region})`;
+        document.getElementById('hero').style.borderColor = (TC[spot.type1]||'#4FC3F7')+'60';
     }
 
-    // Objectives
-    const objectives = [
-        "Explore une nouvelle route !",
-        "Attrape 10 Pokemon qui manquent a ta collection",
-        "Defie un champion d'arene",
-        "Fais 100 rencontres pour ton shiny hunt",
-        "Entraine les EVs de ton Pokemon competitif",
-    ];
-    document.getElementById('objective').textContent = objectives[Math.floor(Math.random() * objectives.length)];
+    const objs = ["Explore une nouvelle route !","Attrape 10 Pokemon manquants","Defie un champion d'arene","Fais 100 rencontres shiny","Entraine les EVs de ton meilleur Pokemon"];
+    document.getElementById('objective').textContent = objs[Math.floor(Math.random()*objs.length)];
 }
 
-// === Pokedex ===
+// Pokedex
 async function loadPokedex() {
-    window._pokedexLoaded = true;
-    const pokemon = await fetch('/api/pokemon/all').then(r => r.json());
-    window._allPokemon = pokemon;
+    window._dexLoaded = true;
+    const pokemon = await fetch('/api/pokemon/all').then(r=>r.json());
+    window._allPoke = pokemon;
 
-    // Type filters
-    const types = Object.keys(TYPE_COLORS);
-    const filterDiv = document.getElementById('type-filters');
-    filterDiv.innerHTML = `<button onclick="filterPokedex('')" class="type-badge bg-cyan-600 cursor-pointer hover:opacity-80">Tous</button> `;
-    types.forEach(t => {
-        filterDiv.innerHTML += `<button onclick="filterPokedex('${t}')" class="type-badge cursor-pointer hover:opacity-80" style="background:${TYPE_COLORS[t]}">${t.slice(0,3)}</button> `;
+    const fd = document.getElementById('type-filters');
+    fd.innerHTML = `<button onclick="filterDex('')" class="type-pill bg-cyan-600 cursor-pointer hover:opacity-80 text-[10px]">TOUS</button>`;
+    Object.keys(TC).forEach(t => {
+        fd.innerHTML += ` <button onclick="filterDex('${t}')" class="type-pill cursor-pointer hover:opacity-80 text-[10px]" style="background:${TC[t]}">${t.slice(0,3).toUpperCase()}</button>`;
     });
 
-    renderPokedexGrid(pokemon);
-
-    // Search
-    document.getElementById('pokedex-search').addEventListener('input', (e) => {
+    renderDex(pokemon);
+    document.getElementById('dex-search').addEventListener('input', e => {
         const q = e.target.value.toLowerCase();
-        if (q.length < 2) { renderPokedexGrid(window._allPokemon); return; }
-        const filtered = window._allPokemon.filter(p =>
-            p.name.toLowerCase().includes(q) || String(p.id).includes(q) ||
-            p.type1.toLowerCase().includes(q) || (p.type2 || '').toLowerCase().includes(q)
-        );
-        renderPokedexGrid(filtered);
+        if (q.length < 2) { renderDex(window._allPoke); return; }
+        renderDex(window._allPoke.filter(p => p.name.toLowerCase().includes(q) || String(p.id).includes(q) || p.type1.toLowerCase().includes(q) || (p.type2||'').toLowerCase().includes(q)));
     });
 }
 
-function filterPokedex(type) {
-    if (!type) { renderPokedexGrid(window._allPokemon); return; }
-    const filtered = window._allPokemon.filter(p => p.type1 === type || p.type2 === type);
-    renderPokedexGrid(filtered);
+function filterDex(type) {
+    if (!type) { renderDex(window._allPoke); return; }
+    renderDex(window._allPoke.filter(p => p.type1===type || p.type2===type));
 }
 
-function renderPokedexGrid(pokemon) {
-    const grid = document.getElementById('pokedex-grid');
-    grid.innerHTML = '';
-    pokemon.slice(0, 200).forEach(p => {
-        const typeColor = TYPE_COLORS[p.type1] || '#888';
-        grid.innerHTML += `
-            <div class="card p-2 text-center cursor-pointer hover:border-cyan-400 sprite-hover" onclick="showPokemonDetail(${p.id})"
-                 style="border-bottom: 3px solid ${typeColor}">
-                <img src="/sprite/${p.id}" class="w-12 h-12 mx-auto" alt="${p.name}" loading="lazy">
-                <p class="text-xs font-bold mt-1 text-gray-300">${p.name}</p>
-                <p class="text-[10px] text-gray-500">#${p.id}</p>
-            </div>
-        `;
+function renderDex(list) {
+    const g = document.getElementById('dex-grid');
+    g.innerHTML = '';
+    document.getElementById('dex-detail').classList.add('hidden');
+    g.classList.remove('hidden');
+    list.slice(0,200).forEach(p => {
+        g.innerHTML += `<div class="poke-card" onclick="showDetail(${p.id})" style="border-bottom:3px solid ${TC[p.type1]||'#888'}">
+            <img src="https://play.pokemonshowdown.com/sprites/ani/${p.name.toLowerCase()}.gif" class="w-14 h-14 mx-auto sprite-pop" loading="lazy" alt="${p.name}">
+            <p class="text-[11px] font-semibold text-gray-200 mt-1">${p.name}</p>
+            <p class="text-[9px] text-gray-500">#${String(p.id).padStart(3,'0')}</p>
+        </div>`;
     });
 }
 
-async function showPokemonDetail(id) {
-    const pokemon = await fetch(`/api/pokemon/${id}`).then(r => r.json());
-    const locs = await fetch(`/api/pokemon/${id}/locations`).then(r => r.json());
-    const evos = await fetch(`/api/pokemon/${id}/evolutions`).then(r => r.json());
-    const bst = pokemon.hp + pokemon.attack + pokemon.defense + pokemon.sp_attack + pokemon.sp_defense + pokemon.speed;
+async function showDetail(id) {
+    const [p, locs, evos] = await Promise.all([
+        fetch(`/api/pokemon/${id}`).then(r=>r.json()),
+        fetch(`/api/pokemon/${id}/locations`).then(r=>r.json()),
+        fetch(`/api/pokemon/${id}/evolutions`).then(r=>r.json()),
+    ]);
+    const bst = p.hp+p.attack+p.defense+p.sp_attack+p.sp_defense+p.speed;
 
-    let types = typeBadge(pokemon.type1);
-    if (pokemon.type2) types += ' ' + typeBadge(pokemon.type2);
+    const evoHtml = evos.length > 1 ? evos.map((e,i) => {
+        const hl = e.id===id ? 'ring-2 ring-cyan-400 ring-offset-2 ring-offset-poke-bg' : '';
+        const arr = i>0 ? `<div class="text-gray-500 text-xs px-1">${e.condition||'→'}</div>` : '';
+        return `${arr}<div class="text-center ${hl} rounded-xl p-2"><img src="https://play.pokemonshowdown.com/sprites/ani/${e.name.toLowerCase()}.gif" class="w-14 h-14 mx-auto sprite-pop"><p class="text-xs mt-1 font-medium">${e.name}</p></div>`;
+    }).join('') : '';
 
-    const statBar = (label, val, color) =>
-        `<div class="flex items-center gap-2 mb-1">
-            <span class="w-8 text-xs text-gray-400">${label}</span>
-            <span class="w-8 text-xs text-right">${val}</span>
-            <div class="flex-1 progress-bar"><div class="progress-fill" style="width:${val/255*100}%; background:${color}"></div></div>
-        </div>`;
+    const locsHtml = locs.slice(0,8).map(l => `
+        <div class="spawn-row">
+            <span class="flex-1 text-sm">${l.route_name}</span>
+            <span class="text-xs text-gray-500">${l.region}</span>
+            <span class="text-xs text-green-400 font-mono w-10 text-right">${l.rate.toFixed(0)}%</span>
+            <span class="text-xs text-gray-500 w-20 text-right">Lv.${l.level_min}-${l.level_max}</span>
+        </div>
+    `).join('');
 
-    const evoChain = evos.map((e, i) => {
-        const highlight = e.id === id ? 'ring-2 ring-cyan-400' : '';
-        const arrow = i > 0 ? `<span class="text-gray-500 text-xs mx-1">${e.condition || '→'}</span>` : '';
-        return `${arrow}<div class="text-center ${highlight} rounded-lg p-1">
-            <img src="/sprite/${e.id}" class="w-12 h-12 mx-auto sprite-hover">
-            <p class="text-xs">${e.name}</p>
-        </div>`;
-    }).join('');
-
-    let locsHtml = locs.slice(0, 6).map(l =>
-        `<div class="flex justify-between text-sm py-1 border-b border-poke-border">
-            <span class="text-gray-300">${l.route_name}</span>
-            <span class="text-gray-500">${l.region}</span>
-            <span class="text-green-400">${l.rate.toFixed(0)}%</span>
-            <span class="text-gray-500">Lv.${l.level_min}-${l.level_max}</span>
-        </div>`
-    ).join('');
-
-    document.getElementById('pokedex-grid').classList.add('hidden');
-    const detail = document.getElementById('pokemon-detail');
-    detail.classList.remove('hidden');
-    detail.innerHTML = `
-        <button onclick="closeDetail()" class="text-cyan-400 hover:text-white mb-4 text-sm">← Retour au Pokedex</button>
-        <div class="card p-6 glow" style="border-color: ${TYPE_COLORS[pokemon.type1]}">
-            <div class="flex gap-8">
+    document.getElementById('dex-grid').classList.add('hidden');
+    const d = document.getElementById('dex-detail');
+    d.classList.remove('hidden');
+    d.innerHTML = `
+        <button onclick="closeDex()" class="text-cyan-400 hover:text-white text-sm mb-4 font-medium">← Retour au Pokedex</button>
+        <div class="glass glow-blue p-8" style="border-color:${TC[p.type1]||'#4FC3F7'}40">
+            <div class="flex gap-10">
                 <div class="text-center">
-                    <img src="/sprite/${id}" class="w-32 h-32 mx-auto sprite-hover">
-                    <h3 class="text-2xl font-bold text-white mt-2">#${pokemon.id} ${pokemon.name}</h3>
-                    <div class="flex gap-2 justify-center mt-2">${types}</div>
+                    <img src="https://play.pokemonshowdown.com/sprites/ani/${p.name.toLowerCase()}.gif" class="w-40 h-40 mx-auto drop-shadow-2xl sprite-pop">
+                    <h3 class="text-2xl font-extrabold text-white mt-3">#${String(p.id).padStart(3,'0')} ${p.name}</h3>
+                    <div class="flex gap-2 justify-center mt-3">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div>
+                    <p class="text-xs text-gray-500 mt-2">${p.ability1||''}${p.ability2?' / '+p.ability2:''}${p.hidden_ability?' / '+p.hidden_ability+' (HA)':''}</p>
                 </div>
                 <div class="flex-1">
-                    <p class="text-sm text-gray-400 mb-2 font-bold">STATS (BST: ${bst})</p>
-                    ${statBar('HP', pokemon.hp, '#78C850')}
-                    ${statBar('Atk', pokemon.attack, '#F08030')}
-                    ${statBar('Def', pokemon.defense, '#F8D030')}
-                    ${statBar('SpA', pokemon.sp_attack, '#6890F0')}
-                    ${statBar('SpD', pokemon.sp_defense, '#78C850')}
-                    ${statBar('Spe', pokemon.speed, '#F85888')}
+                    <p class="text-xs font-bold text-cyan-400 tracking-widest mb-3">STATS DE BASE <span class="text-gray-500 font-normal">(BST: ${bst})</span></p>
+                    ${statBar('HP',p.hp,'hp')}
+                    ${statBar('Atk',p.attack,'attack')}
+                    ${statBar('Def',p.defense,'defense')}
+                    ${statBar('SpA',p.sp_attack,'sp_attack')}
+                    ${statBar('SpD',p.sp_defense,'sp_defense')}
+                    ${statBar('Spe',p.speed,'speed')}
                 </div>
             </div>
-            ${evos.length > 1 ? `<div class="mt-4 pt-4 border-t border-poke-border">
-                <p class="text-sm text-cyan-400 font-bold mb-2">CHAINE D'EVOLUTION</p>
-                <div class="flex items-center gap-1">${evoChain}</div>
+            ${evoHtml ? `<div class="mt-6 pt-6 border-t border-poke-border">
+                <p class="text-xs font-bold text-cyan-400 tracking-widest mb-3">CHAINE D'EVOLUTION</p>
+                <div class="flex items-center gap-1 flex-wrap">${evoHtml}</div>
             </div>` : ''}
-            ${locs.length > 0 ? `<div class="mt-4 pt-4 border-t border-poke-border">
-                <p class="text-sm text-green-400 font-bold mb-2">LOCALISATIONS</p>
+            ${locsHtml ? `<div class="mt-6 pt-6 border-t border-poke-border">
+                <p class="text-xs font-bold text-green-400 tracking-widest mb-3">LOCALISATIONS POKEMMO</p>
                 ${locsHtml}
             </div>` : ''}
         </div>
     `;
 }
 
-function closeDetail() {
-    document.getElementById('pokemon-detail').classList.add('hidden');
-    document.getElementById('pokedex-grid').classList.remove('hidden');
+function closeDex() {
+    document.getElementById('dex-detail').classList.add('hidden');
+    document.getElementById('dex-grid').classList.remove('hidden');
 }
 
-// === Battle ===
+// Battle search
 document.addEventListener('DOMContentLoaded', () => {
-    const battleSearch = document.getElementById('battle-search');
-    if (battleSearch) {
-        battleSearch.addEventListener('input', async (e) => {
-            const q = e.target.value.trim();
-            if (q.length < 3) { document.getElementById('battle-result').classList.add('hidden'); return; }
-            const results = await fetch(`/api/pokemon/search/${q}`).then(r => r.json());
-            if (results.length === 0) return;
-            const p = results[0];
-            const bst = p.hp + p.attack + p.defense + p.sp_attack + p.sp_defense + p.speed;
-            let types = [p.type1]; if (p.type2) types.push(p.type2);
-            // Simple type effectiveness
-            const weakTo = [], resistsTo = [], immuneTo = [];
-            // (simplified — full chart would be fetched from API)
-            document.getElementById('battle-result').classList.remove('hidden');
-            document.getElementById('battle-result').innerHTML = `
-                <div class="flex items-center gap-4 mt-3">
-                    <img src="/sprite/${p.id}" class="w-20 h-20">
-                    <div>
-                        <h4 class="text-xl font-bold text-white">#${p.id} ${p.name}</h4>
-                        <div class="flex gap-2 mt-1">${typeBadge(p.type1)}${p.type2 ? ' '+typeBadge(p.type2) : ''}</div>
-                        <p class="text-sm text-gray-400 mt-1">BST: ${bst} | HP:${p.hp} Atk:${p.attack} Def:${p.defense}</p>
-                    </div>
+    document.getElementById('battle-input')?.addEventListener('input', async e => {
+        const q = e.target.value.trim();
+        if (q.length < 3) { document.getElementById('battle-result').classList.add('hidden'); return; }
+        const res = await fetch(`/api/pokemon/search/${q}`).then(r=>r.json());
+        if (!res.length) return;
+        const p = res[0];
+        const bst = p.hp+p.attack+p.defense+p.sp_attack+p.sp_defense+p.speed;
+        document.getElementById('battle-result').classList.remove('hidden');
+        document.getElementById('battle-result').innerHTML = `
+            <div class="flex items-center gap-6 mt-2 p-4 glass" style="border-color:${TC[p.type1]||'#888'}40">
+                <img src="https://play.pokemonshowdown.com/sprites/ani/${p.name.toLowerCase()}.gif" class="w-24 h-24 sprite-pop">
+                <div>
+                    <h4 class="text-xl font-bold text-white">#${String(p.id).padStart(3,'0')} ${p.name}</h4>
+                    <div class="flex gap-2 mt-1">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div>
+                    <p class="text-xs text-gray-400 mt-2 font-mono">BST ${bst} — HP:${p.hp} Atk:${p.attack} Def:${p.defense} SpA:${p.sp_attack} SpD:${p.sp_defense} Spe:${p.speed}</p>
                 </div>
-            `;
-        });
-    }
+            </div>
+        `;
+    });
 });
+
+// Collection
+async function loadCollection() {
+    window._colLoaded = true;
+    const pokemon = await fetch('/api/pokemon/all').then(r=>r.json());
+    const g = document.getElementById('collection-grid');
+    g.innerHTML = '';
+    pokemon.forEach(p => {
+        g.innerHTML += `<div class="poke-card opacity-40 hover:opacity-100 p-1" style="border-bottom:2px solid ${TC[p.type1]||'#888'}">
+            <img src="https://play.pokemonshowdown.com/sprites/ani/${p.name.toLowerCase()}.gif" class="w-8 h-8 mx-auto" loading="lazy">
+            <p class="text-[8px] text-gray-500">${p.id}</p>
+        </div>`;
+    });
+}
 
 // Init
 loadDashboard();
