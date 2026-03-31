@@ -135,7 +135,7 @@ class CollectionPage(QWidget):
 
         # Title
         title_row = QHBoxLayout()
-        title = QLabel("Collection Tracker")
+        title = QLabel("Suivi de Collection")
         title.setFont(QFont("Segoe UI", 20, QFont.Weight.Bold))
         title.setStyleSheet(f"color: {COLORS['text_primary']};")
         title_row.addWidget(title)
@@ -228,7 +228,7 @@ class CollectionPage(QWidget):
         layout.addLayout(region_row)
 
         # Hint
-        hint = QLabel("Click a Pokemon to mark as caught/uncaught")
+        hint = QLabel("Clique sur un Pokemon pour le marquer capture/non capture")
         hint.setFont(QFont("Segoe UI", 9))
         hint.setStyleSheet(f"color: {COLORS['text_muted']};")
         layout.addWidget(hint)

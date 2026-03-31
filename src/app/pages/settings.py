@@ -56,7 +56,7 @@ class SettingsPage(QWidget):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(16)
 
-        title = QLabel("Settings")
+        title = QLabel("Options")
         title.setFont(QFont("Segoe UI", 20, QFont.Weight.Bold))
         title.setStyleSheet(f"color: {COLORS['text_primary']};")
         layout.addWidget(title)
@@ -83,7 +83,7 @@ class SettingsPage(QWidget):
                 border-radius: 8px;
             }}
         """)
-        overlay_section.add_row("Overlay Opacity", self.opacity_slider)
+        overlay_section.add_row("Opacite Overlay", self.opacity_slider)
 
         # Toggle hotkey
         self.hotkey_input = QLineEdit(self.config.overlay.toggle_hotkey)
@@ -95,19 +95,19 @@ class SettingsPage(QWidget):
             border-radius: 4px;
             padding: 4px 8px;
         """)
-        overlay_section.add_row("Toggle Hotkey", self.hotkey_input)
+        overlay_section.add_row("Raccourci Affichage", self.hotkey_input)
 
         # Capture FPS
         self.fps_combo = QComboBox()
         self.fps_combo.addItems(["1", "2", "3", "5"])
         self.fps_combo.setCurrentText(str(self.config.capture.target_fps))
         self.fps_combo.setFixedWidth(80)
-        overlay_section.add_row("Detection FPS", self.fps_combo)
+        overlay_section.add_row("FPS Detection", self.fps_combo)
 
         layout.addWidget(overlay_section)
 
         # OCR settings
-        ocr_section = SettingsSection("OCR (Text Reading)")
+        ocr_section = SettingsSection("OCR (Lecture Texte)")
 
         self.tesseract_input = QLineEdit(self.config.ocr.tesseract_path)
         self.tesseract_input.setFixedWidth(350)
@@ -118,7 +118,7 @@ class SettingsPage(QWidget):
             border-radius: 4px;
             padding: 4px 8px;
         """)
-        ocr_section.add_row("Tesseract Path", self.tesseract_input)
+        ocr_section.add_row("Chemin Tesseract", self.tesseract_input)
 
         self.game_title_input = QLineEdit(self.config.capture.game_window_title)
         self.game_title_input.setFixedWidth(200)
@@ -129,16 +129,16 @@ class SettingsPage(QWidget):
             border-radius: 4px;
             padding: 4px 8px;
         """)
-        ocr_section.add_row("Game Window Title", self.game_title_input)
+        ocr_section.add_row("Titre Fenetre Jeu", self.game_title_input)
 
         layout.addWidget(ocr_section)
 
         # Shiny hunting settings
-        shiny_section = SettingsSection("Shiny Hunting")
+        shiny_section = SettingsSection("Chasse au Shiny")
 
         self.donator_check = QCheckBox("Donator Status (1/27,000)")
         self.donator_check.setStyleSheet(f"color: {COLORS['text_primary']};")
-        shiny_section.add_row("Rate Modifiers", self.donator_check)
+        shiny_section.add_row("Modificateurs de Taux", self.donator_check)
 
         self.charm_check = QCheckBox("Shiny Charm (1/27,000)")
         self.charm_check.setStyleSheet(f"color: {COLORS['text_primary']};")
@@ -147,7 +147,7 @@ class SettingsPage(QWidget):
         layout.addWidget(shiny_section)
 
         # Save button
-        save_btn = QPushButton("Save Settings")
+        save_btn = QPushButton("Sauvegarder")
         save_btn.setFixedWidth(150)
         save_btn.setStyleSheet(f"""
             QPushButton {{
@@ -165,7 +165,7 @@ class SettingsPage(QWidget):
         layout.addWidget(save_btn)
 
         # About section
-        about_section = SettingsSection("About")
+        about_section = SettingsSection("A Propos")
         about_text = QLabel(
             "PokeMMO Companion v0.2.0\n\n"
             "Real-time overlay and desktop companion for PokeMMO.\n"
@@ -195,4 +195,4 @@ class SettingsPage(QWidget):
 
         # Visual feedback
         from PyQt6.QtWidgets import QMessageBox
-        QMessageBox.information(self, "Settings", "Settings saved! Restart the app to apply changes.")
+        QMessageBox.information(self, "Options", "Settings saved! Restart the app to apply changes.")

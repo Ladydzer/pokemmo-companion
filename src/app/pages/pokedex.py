@@ -73,7 +73,7 @@ class PokemonDetail(QWidget):
         stats_col = QVBoxLayout()
         stats_col.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        stats_title = QLabel("Base Stats")
+        stats_title = QLabel("Stats de Base")
         stats_title.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
         stats_title.setStyleSheet(f"color: {COLORS['accent_blue']};")
         stats_col.addWidget(stats_title)
@@ -105,7 +105,7 @@ class PokemonDetail(QWidget):
         loc_layout = QVBoxLayout(loc_frame)
         loc_layout.setContentsMargins(12, 8, 12, 8)
 
-        loc_title = QLabel("Locations in PokeMMO")
+        loc_title = QLabel("Localisations PokeMMO")
         loc_title.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
         loc_title.setStyleSheet(f"color: {COLORS['accent_green']};")
         loc_layout.addWidget(loc_title)
@@ -130,7 +130,7 @@ class PokemonDetail(QWidget):
         evo_layout = QVBoxLayout(evo_frame)
         evo_layout.setContentsMargins(12, 8, 12, 8)
 
-        evo_title = QLabel("Evolution Chain")
+        evo_title = QLabel("Chaine d Evolution")
         evo_title.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
         evo_title.setStyleSheet(f"color: {COLORS['accent_blue']};")
         evo_layout.addWidget(evo_title)
@@ -154,7 +154,7 @@ class PokemonDetail(QWidget):
         nature_layout = QVBoxLayout(nature_frame)
         nature_layout.setContentsMargins(12, 8, 12, 8)
 
-        nature_title = QLabel("Recommended Natures")
+        nature_title = QLabel("Natures Recommandees")
         nature_title.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
         nature_title.setStyleSheet(f"color: {COLORS['accent_purple']};")
         nature_layout.addWidget(nature_title)
@@ -179,7 +179,7 @@ class PokemonDetail(QWidget):
         moves_layout = QVBoxLayout(moves_frame)
         moves_layout.setContentsMargins(12, 8, 12, 8)
 
-        moves_title = QLabel("Recommended Moveset (PvE)")
+        moves_title = QLabel("Moveset Recommande (PvE)")
         moves_title.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
         moves_title.setStyleSheet(f"color: {COLORS['accent_orange']};")
         moves_layout.addWidget(moves_title)
@@ -369,7 +369,7 @@ class PokedexPage(QWidget):
 
         # Search bar
         self.search = QLineEdit()
-        self.search.setPlaceholderText("Search Pokemon by name, number, or type...")
+        self.search.setPlaceholderText("Chercher un Pokemon par nom, numero ou type...")
         self.search.setFont(QFont("Segoe UI", 12))
         self.search.textChanged.connect(self._filter_grid)
         grid_layout.addWidget(self.search)

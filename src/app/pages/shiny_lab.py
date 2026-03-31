@@ -70,12 +70,12 @@ class ShinyLabPage(QWidget):
         layout.setSpacing(16)
 
         # Title
-        title = QLabel("Shiny Lab")
+        title = QLabel("Labo Shiny")
         title.setFont(QFont("Segoe UI", 20, QFont.Weight.Bold))
         title.setStyleSheet(f"color: {COLORS['accent_yellow']};")
         layout.addWidget(title)
 
-        subtitle = QLabel("Track your shiny hunting progress")
+        subtitle = QLabel("Suis ta progression de chasse au shiny")
         subtitle.setFont(QFont("Segoe UI", 11))
         subtitle.setStyleSheet(f"color: {COLORS['text_secondary']};")
         layout.addWidget(subtitle)
@@ -84,13 +84,13 @@ class ShinyLabPage(QWidget):
         stats_row = QHBoxLayout()
         stats_row.setSpacing(12)
 
-        self.encounters_card = StatCard("Session Encounters", "0", COLORS["accent_orange"])
+        self.encounters_card = StatCard("Rencontres Session", "0", COLORS["accent_orange"])
         stats_row.addWidget(self.encounters_card)
 
-        self.total_card = StatCard("Total Encounters", "0", COLORS["accent_blue"])
+        self.total_card = StatCard("Total Rencontres", "0", COLORS["accent_blue"])
         stats_row.addWidget(self.total_card)
 
-        self.shinies_card = StatCard("Shinies Found", "0", COLORS["accent_yellow"])
+        self.shinies_card = StatCard("Shinies Trouves", "0", COLORS["accent_yellow"])
         stats_row.addWidget(self.shinies_card)
 
         self.hordes_card = StatCard("Hordes", "0", COLORS["accent_purple"])
@@ -110,7 +110,7 @@ class ShinyLabPage(QWidget):
         prob_layout = QVBoxLayout(prob_frame)
         prob_layout.setContentsMargins(20, 16, 20, 16)
 
-        prob_title = QLabel("Shiny Probability (Session)")
+        prob_title = QLabel("Probabilite Shiny (Session)")
         prob_title.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
         prob_title.setStyleSheet(f"color: {COLORS['accent_yellow']};")
         prob_layout.addWidget(prob_title)
@@ -148,7 +148,7 @@ class ShinyLabPage(QWidget):
         session_layout = QVBoxLayout(session_frame)
         session_layout.setContentsMargins(20, 16, 20, 16)
 
-        session_title = QLabel("Current Session")
+        session_title = QLabel("Session en Cours")
         session_title.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
         session_title.setStyleSheet(f"color: {COLORS['accent_blue']};")
         session_layout.addWidget(session_title)
@@ -177,7 +177,7 @@ class ShinyLabPage(QWidget):
         btn_row = QHBoxLayout()
         btn_row.setSpacing(8)
 
-        reset_btn = QPushButton("Reset Session")
+        reset_btn = QPushButton("Reinitialiser")
         reset_btn.setStyleSheet(f"""
             QPushButton {{
                 color: {COLORS['accent_red']};
@@ -192,7 +192,7 @@ class ShinyLabPage(QWidget):
         reset_btn.clicked.connect(self._reset_session)
         btn_row.addWidget(reset_btn)
 
-        shiny_btn = QPushButton("SHINY FOUND!")
+        shiny_btn = QPushButton("SHINY TROUVE !")
         shiny_btn.setStyleSheet(f"""
             QPushButton {{
                 color: #000;
@@ -225,7 +225,7 @@ class ShinyLabPage(QWidget):
         rate_layout = QVBoxLayout(rate_frame)
         rate_layout.setContentsMargins(20, 16, 20, 16)
 
-        rate_title = QLabel("PokeMMO Shiny Rates")
+        rate_title = QLabel("Taux Shiny PokeMMO")
         rate_title.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
         rate_title.setStyleSheet(f"color: {COLORS['text_secondary']};")
         rate_layout.addWidget(rate_title)

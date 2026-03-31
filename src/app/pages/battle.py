@@ -100,7 +100,7 @@ class BattlePage(QWidget):
         layout.setSpacing(16)
 
         # Title
-        title = QLabel("Battle Assistant")
+        title = QLabel("Assistant Combat")
         title.setFont(QFont("Segoe UI", 20, QFont.Weight.Bold))
         title.setStyleSheet(f"color: {COLORS['text_primary']};")
         layout.addWidget(title)
@@ -117,7 +117,7 @@ class BattlePage(QWidget):
         lookup_layout = QVBoxLayout(lookup_frame)
         lookup_layout.setContentsMargins(16, 12, 16, 12)
 
-        lookup_title = QLabel("Quick Type Lookup")
+        lookup_title = QLabel("Recherche Rapide")
         lookup_title.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
         lookup_title.setStyleSheet(f"color: {COLORS['accent_red']};")
         lookup_layout.addWidget(lookup_title)
@@ -125,7 +125,7 @@ class BattlePage(QWidget):
         # Search
         search_row = QHBoxLayout()
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Enter Pokemon name (e.g., Geodude)")
+        self.search_input.setPlaceholderText("Nom du Pokemon (ex: Geodude)")
         self.search_input.setFont(QFont("Segoe UI", 12))
         self.search_input.returnPressed.connect(self._lookup)
         self.search_input.textChanged.connect(self._on_search_change)
@@ -194,7 +194,7 @@ class BattlePage(QWidget):
         dmg_layout = QVBoxLayout(dmg_frame)
         dmg_layout.setContentsMargins(16, 12, 16, 12)
 
-        dmg_title = QLabel("Damage Calculator")
+        dmg_title = QLabel("Calculateur de Degats")
         dmg_title.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
         dmg_title.setStyleSheet(f"color: {COLORS['accent_orange']};")
         dmg_layout.addWidget(dmg_title)
@@ -202,18 +202,18 @@ class BattlePage(QWidget):
         # Attacker row
         atk_row = QHBoxLayout()
         atk_row.setSpacing(8)
-        atk_row.addWidget(QLabel("Your Pokemon:"))
+        atk_row.addWidget(QLabel("Ton Pokemon :"))
         self.atk_input = QLineEdit()
         self.atk_input.setPlaceholderText("e.g. Charizard")
         self.atk_input.setFixedWidth(150)
         atk_row.addWidget(self.atk_input)
 
-        atk_row.addWidget(QLabel("Move power:"))
+        atk_row.addWidget(QLabel("Puissance :"))
         self.power_input = QLineEdit("90")
         self.power_input.setFixedWidth(50)
         atk_row.addWidget(self.power_input)
 
-        atk_row.addWidget(QLabel("Move type:"))
+        atk_row.addWidget(QLabel("Type :"))
         self.move_type_combo = QComboBox()
         from ...utils.constants import TYPES as ALL_TYPES
         self.move_type_combo.addItems(ALL_TYPES)

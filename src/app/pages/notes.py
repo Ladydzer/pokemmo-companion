@@ -44,14 +44,14 @@ class NotesPage(QWidget):
         left = QVBoxLayout()
         left.setSpacing(8)
 
-        title = QLabel("Route Notes")
+        title = QLabel("Notes de Route")
         title.setFont(QFont("Segoe UI", 20, QFont.Weight.Bold))
         title.setStyleSheet(f"color: {COLORS['text_primary']};")
         left.addWidget(title)
 
         # Region filter
         self.region_combo = QComboBox()
-        self.region_combo.addItems(["All Regions"] + REGIONS)
+        self.region_combo.addItems(["Toutes les Regions"] + REGIONS)
         self.region_combo.currentTextChanged.connect(self._filter_routes)
         left.addWidget(self.region_combo)
 
@@ -88,7 +88,7 @@ class NotesPage(QWidget):
         right = QVBoxLayout()
         right.setSpacing(8)
 
-        self.route_title = QLabel("Select a route")
+        self.route_title = QLabel("Selectionne une route")
         self.route_title.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
         self.route_title.setStyleSheet(f"color: {COLORS['accent_blue']};")
         right.addWidget(self.route_title)
@@ -110,7 +110,7 @@ class NotesPage(QWidget):
         note_layout = QVBoxLayout(note_frame)
         note_layout.setContentsMargins(12, 8, 12, 8)
 
-        note_header = QLabel("Your Notes")
+        note_header = QLabel("Tes Notes")
         note_header.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
         note_header.setStyleSheet(f"color: {COLORS['accent_orange']};")
         note_layout.addWidget(note_header)
@@ -137,7 +137,7 @@ class NotesPage(QWidget):
         note_layout.addWidget(self.note_editor)
 
         # Save button
-        save_btn = QPushButton("Save Note")
+        save_btn = QPushButton("Sauvegarder")
         save_btn.setStyleSheet(f"""
             QPushButton {{
                 color: white;
@@ -178,7 +178,7 @@ class NotesPage(QWidget):
             return
 
         with self.db.connect() as conn:
-            if region == "All Regions":
+            if region == "Toutes les Regions":
                 rows = conn.execute(
                     "SELECT id, name, region, area_type FROM routes ORDER BY region, name"
                 ).fetchall()

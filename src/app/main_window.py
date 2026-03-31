@@ -86,14 +86,14 @@ class MainWindow(QMainWindow):
         # Navigation buttons
         self._nav_buttons: list[SidebarButton] = []
         nav_items = [
-            ("🏠", "Dashboard"),
+            ("🏠", "Accueil"),
             ("📖", "Pokedex"),
-            ("⚔", "Battle"),
-            ("👥", "Team"),
-            ("✨", "Shiny Lab"),
+            ("⚔", "Combat"),
+            ("👥", "Equipe"),
+            ("✨", "Shiny"),
             ("📋", "Collection"),
             ("📝", "Notes"),
-            ("⚙", "Settings"),
+            ("⚙", "Options"),
         ]
 
         for icon, label in nav_items:
@@ -149,8 +149,8 @@ class MainWindow(QMainWindow):
 
         # Status bar
         self.status_bar = QLabel(
-            f"  DB: {self.db.get_pokemon_count() if self.db else 0} Pokemon  |  "
-            f"Route: ---  |  Overlay: Disconnected"
+            f"  BD: {self.db.get_pokemon_count() if self.db else 0} Pokemon  |  "
+            f"Route: ---  |  Overlay: Deconnecte"
         )
         self.status_bar.setFont(QFont("Segoe UI", 9))
         self.status_bar.setFixedHeight(28)
@@ -185,14 +185,14 @@ class MainWindow(QMainWindow):
     def _navigate(self, page_name: str) -> None:
         """Navigate to a page."""
         page_map = {
-            "Dashboard": 0,
+            "Accueil": 0, "Dashboard": 0,
             "Pokedex": 1,
-            "Battle": 2,
-            "Team": 3,
-            "Shiny Lab": 4,
+            "Combat": 2, "Battle": 2,
+            "Equipe": 3, "Team": 3,
+            "Shiny": 4, "Shiny Lab": 4,
             "Collection": 5,
             "Notes": 6,
-            "Settings": 7,
+            "Options": 7, "Settings": 7,
         }
         idx = page_map.get(page_name, 0)
         self.pages.setCurrentIndex(idx)

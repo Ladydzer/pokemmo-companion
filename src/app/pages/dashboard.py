@@ -55,7 +55,7 @@ class DashboardPage(QWidget):
         layout.setSpacing(16)
 
         # Title
-        title = QLabel("Dashboard")
+        title = QLabel("Tableau de Bord")
         title.setFont(QFont("Segoe UI", 20, QFont.Weight.Bold))
         title.setStyleSheet(f"color: {COLORS['text_primary']};")
         layout.addWidget(title)
@@ -65,8 +65,8 @@ class DashboardPage(QWidget):
         top_row.setSpacing(16)
 
         # Current location card
-        self.location_card = DashboardCard("Current Location")
-        self.route_label = QLabel("Not connected to game")
+        self.location_card = DashboardCard("Position Actuelle")
+        self.route_label = QLabel("Non connecte au jeu")
         self.route_label.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
         self.route_label.setStyleSheet(f"color: {COLORS['text_primary']};")
         self.location_card.add_widget(self.route_label)
@@ -76,7 +76,7 @@ class DashboardPage(QWidget):
         top_row.addWidget(self.location_card)
 
         # Encounter stats card
-        self.encounter_card = DashboardCard("Encounters")
+        self.encounter_card = DashboardCard("Rencontres")
         self.encounter_label = QLabel("0 encounters")
         self.encounter_label.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
         self.encounter_label.setStyleSheet(f"color: {COLORS['accent_orange']};")
@@ -87,7 +87,7 @@ class DashboardPage(QWidget):
         top_row.addWidget(self.encounter_card)
 
         # DB stats card
-        self.db_card = DashboardCard("Database")
+        self.db_card = DashboardCard("Base de Donnees")
         if self.db:
             db_text = (f"Pokemon: {self.db.get_pokemon_count()}\n"
                        f"Routes: {self.db.get_route_count()}\n"
@@ -108,8 +108,8 @@ class DashboardPage(QWidget):
         mid_row.setSpacing(16)
 
         # Spawns card
-        self.spawns_card = DashboardCard("Route Spawns")
-        self.spawns_label = QLabel("Waiting for route detection...")
+        self.spawns_card = DashboardCard("Pokemon de la Zone")
+        self.spawns_label = QLabel("En attente de detection de route...")
         self.spawns_label.setFont(QFont("Consolas", 10))
         self.spawns_label.setStyleSheet(f"color: {COLORS['text_secondary']};")
         self.spawns_label.setWordWrap(True)
@@ -117,14 +117,14 @@ class DashboardPage(QWidget):
         mid_row.addWidget(self.spawns_card, 2)
 
         # Pokemon spotlight card
-        self.spotlight_card = DashboardCard("Pokemon Spotlight")
+        self.spotlight_card = DashboardCard("Pokemon du Jour")
         self._setup_spotlight()
         mid_row.addWidget(self.spotlight_card, 1)
 
         layout.addLayout(mid_row)
 
         # Objective of the Day
-        objective_card = DashboardCard("Objective of the Day")
+        objective_card = DashboardCard("Objectif du Jour")
         self.objective_label = QLabel(self._generate_objective())
         self.objective_label.setFont(QFont("Segoe UI", 11))
         self.objective_label.setStyleSheet(f"color: {COLORS['accent_green']};")
@@ -190,31 +190,30 @@ class DashboardPage(QWidget):
         """Generate a daily objective based on available data."""
         import random
         objectives = [
-            "Explore a new route you haven't visited yet!",
-            "Try catching 10 Pokemon you don't have in your collection",
-            "Challenge a gym leader in a region you're progressing through",
-            "Do 100 encounters toward your shiny hunt target",
-            "Build a balanced team with good type coverage",
-            "Farm some EVs for your competitive Pokemon",
-            "Try Sweet Scent horde encounters for efficient shiny hunting",
-            "Check the Pokedex for Pokemon you're missing in Kanto",
-            "Visit the Breeding Center and plan your next 5IV breed",
-            "Explore Johto if you haven't started that region yet",
-            "Complete your collection for one route — catch everything!",
-            "Train your team to level 50+ for the Elite Four challenge",
+            "Explore une nouvelle route que tu n'as pas encore visitee !",
+            "Essaie d'attraper 10 Pokemon qui manquent a ta collection",
+            "Defie un champion d'arene dans ta region en cours",
+            "Fais 100 rencontres pour ton shiny hunt",
+            "Construis une equipe equilibree avec une bonne couverture de types",
+            "Entraine les EVs de ton Pokemon competitif",
+            "Essaie les hordes avec Sweet Scent pour chasser les shinies",
+            "Verifie le Pokedex pour les Pokemon qui te manquent a Kanto",
+            "Planifie ton prochain breed 5IV au Centre d'Elevage",
+            "Explore Johto si tu n'as pas encore commence cette region",
+            "Complete ta collection sur une route — attrape tout !",
+            "Entraine ton equipe au niveau 50+ pour le Conseil des 4",
         ]
 
         if self.db:
-            # Add context-aware objectives
             from ..pages.collection import CollectionData
             collection = CollectionData()
             caught = collection.count
             if caught < 50:
-                return f"You've caught {caught}/649 Pokemon. Try to reach 50 today!"
+                return f"Tu as attrape {caught}/649 Pokemon. Essaie d'atteindre 50 aujourd'hui !"
             elif caught < 150:
-                return f"Collection: {caught}/649. Complete the Kanto Pokedex (151)!"
+                return f"Collection : {caught}/649. Complete le Pokedex Kanto (151) !"
             elif caught < 300:
-                return f"Collection: {caught}/649. You're making great progress. Explore Hoenn for new catches!"
+                return f"Collection : {caught}/649. Super progression ! Explore Hoenn pour de nouvelles captures !"
 
         return random.choice(objectives)
 

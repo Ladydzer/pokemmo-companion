@@ -125,7 +125,7 @@ class TeamBuilderPage(QWidget):
         layout.setSpacing(16)
 
         # Title
-        title = QLabel("Team Builder")
+        title = QLabel("Constructeur d Equipe")
         title.setFont(QFont("Segoe UI", 20, QFont.Weight.Bold))
         title.setStyleSheet(f"color: {COLORS['text_primary']};")
         layout.addWidget(title)
@@ -133,12 +133,12 @@ class TeamBuilderPage(QWidget):
         # Search + add
         search_row = QHBoxLayout()
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Type a Pokemon name and press Enter to add...")
+        self.search_input.setPlaceholderText("Tape un nom de Pokemon et appuie Entree...")
         self.search_input.setFont(QFont("Segoe UI", 12))
         self.search_input.returnPressed.connect(self._add_pokemon)
         search_row.addWidget(self.search_input)
 
-        clear_btn = QPushButton("Clear All")
+        clear_btn = QPushButton("Tout Effacer")
         clear_btn.setStyleSheet(f"""
             QPushButton {{
                 color: {COLORS['accent_red']};
@@ -175,12 +175,12 @@ class TeamBuilderPage(QWidget):
         coverage_layout = QVBoxLayout(coverage_frame)
         coverage_layout.setContentsMargins(16, 12, 16, 12)
 
-        cov_title = QLabel("Type Coverage Analysis")
+        cov_title = QLabel("Analyse de Couverture")
         cov_title.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
         cov_title.setStyleSheet(f"color: {COLORS['accent_blue']};")
         coverage_layout.addWidget(cov_title)
 
-        self.coverage_label = QLabel("Add Pokemon to see type coverage")
+        self.coverage_label = QLabel("Ajoute des Pokemon pour voir la couverture")
         self.coverage_label.setFont(QFont("Consolas", 10))
         self.coverage_label.setStyleSheet(f"color: {COLORS['text_secondary']};")
         self.coverage_label.setWordWrap(True)
@@ -224,7 +224,7 @@ class TeamBuilderPage(QWidget):
         """Clear all team slots."""
         for slot in self.slots:
             slot.clear()
-        self.coverage_label.setText("Add Pokemon to see type coverage")
+        self.coverage_label.setText("Ajoute des Pokemon pour voir la couverture")
         self.weakness_label.setText("")
 
     def _update_coverage(self) -> None:
