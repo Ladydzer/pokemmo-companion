@@ -377,6 +377,22 @@ async def ocr_capture():
     }
 
 
+@app.post("/api/sound/{sound_type}")
+async def play_sound(sound_type: str):
+    """Play a notification sound (shiny, encounter, notification)."""
+    from ..utils.sound import play_shiny_alert, play_encounter_beep, play_notification
+    sounds = {
+        "shiny": play_shiny_alert,
+        "encounter": play_encounter_beep,
+        "notification": play_notification,
+    }
+    fn = sounds.get(sound_type)
+    if fn:
+        fn()
+        return {"status": "playing", "sound": sound_type}
+    return {"status": "unknown sound"}
+
+
 @app.get("/sprite/{pokemon_id}")
 async def get_sprite(pokemon_id: int):
     sprite_path = SPRITES_DIR / f"{pokemon_id}.png"

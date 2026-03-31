@@ -954,6 +954,7 @@ function confirmShiny(){
     shinyUpdate();
     document.getElementById('shiny-modal').close();
     showToast(`SHINY ${name.toUpperCase()} TROUVE apres ${encounters.toLocaleString()} rencontres !`);
+    fetch('/api/sound/shiny',{method:'POST'}).catch(()=>{});
 }
 function shinyReset(){shData.session=0;shData.lastShinyAt=0;shData.start=Date.now();shinyUpdate();showToast('Session reinitialisee');}
 function deleteShiny(idx){shData.history.splice(idx,1);shData.shinies=shData.history.length;shinyUpdate();showToast('Shiny supprime');}
