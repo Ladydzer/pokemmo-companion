@@ -6,3 +6,4 @@ Pillow>=10.0
 numpy>=1.24
 keyboard>=0.13.5
 requests>=2.31
+pyqtdarktheme>=2.1

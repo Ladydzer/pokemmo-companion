@@ -43,6 +43,16 @@ def get_window_rect(hwnd: int) -> tuple[int, int, int, int] | None:
     return None
 
 
+def get_window_title(hwnd: int) -> str:
+    """Read the window title text. May contain game location info."""
+    length = user32.GetWindowTextLengthW(hwnd)
+    if length > 0:
+        buf = ctypes.create_unicode_buffer(length + 1)
+        user32.GetWindowTextW(hwnd, buf, length + 1)
+        return buf.value
+    return ""
+
+
 def get_window_size(hwnd: int) -> tuple[int, int] | None:
     """Get window width and height."""
     rect = get_window_rect(hwnd)

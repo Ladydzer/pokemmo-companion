@@ -25,6 +25,14 @@ def main():
     app.setApplicationName("PokeMMO Companion")
     app.setFont(QFont("Segoe UI", 10))
 
+    # Apply professional dark theme
+    try:
+        import qdarktheme
+        app.setStyleSheet(qdarktheme.load_stylesheet("dark"))
+        log.info("Dark theme applied (pyqtdarktheme)")
+    except Exception:
+        log.info("pyqtdarktheme not available, using built-in theme")
+
     # Show splash screen
     from src.app.splash import SplashScreen
     splash = SplashScreen()

@@ -104,9 +104,15 @@ class GameEngine(QObject):
         if new_state != old_state:
             self.state_changed.emit(new_state, old_state)
 
-        # Route detection (overworld)
+        # Route detection (overworld) — try window title first, then OCR
         if new_state == GameState.OVERWORLD:
-            route_name = self.route_detector.detect_route(frame)
+            # Method 1: Window title (instant, most reliable)
+            route_name = self.route_detector.detect_from_window_title(
+                self.capture.hwnd
+            )
+            # Method 2: OCR fallback
+            if not route_name:
+                route_name = self.route_detector.detect_route(frame)
             if route_name:
                 region = self.route_detector.current_region
                 spawns = []
