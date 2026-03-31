@@ -92,6 +92,10 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
             Shiny
         </a>
+        <a class="nav-btn" data-page="guide" onclick="go('guide')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Guide
+        </a>
         <a class="nav-btn" data-page="collection" onclick="go('collection')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
             Collection
@@ -106,7 +110,7 @@
         </a>
     </nav>
     <div class="px-3 mt-4 pt-4 border-t border-gray-800">
-        <div class="flex items-center gap-2 text-xs"><div class="w-2 h-2 rounded-full bg-red-500"></div><span class="text-gray-600">Hors ligne</span></div>
+        <div class="flex items-center gap-2 text-xs"><div id="game-status-dot" class="w-2 h-2 rounded-full bg-red-500"></div><span id="game-status-text" class="text-gray-600">Hors ligne</span></div>
         <p class="text-[9px] text-gray-700 mt-2">v0.3.0</p>
     </div>
 </aside>
@@ -270,10 +274,25 @@
 <div id="page-collection" class="page hidden fade-in max-w-6xl">
     <div class="flex items-center justify-between mb-4">
         <h1 class="text-3xl font-black text-white">Collection</h1>
-        <span class="text-lg font-bold" style="color:#69f0ae">0 / 649</span>
+        <span id="col-header-count" class="text-lg font-bold" style="color:#69f0ae">0 / 649</span>
     </div>
-    <div class="stat-track h-3 rounded-lg mb-6"><div class="stat-fill rounded-lg bg-neon-green" style="width:0%"></div></div>
+    <div class="stat-track h-3 rounded-lg mb-6"><div id="col-progress-bar" class="stat-fill rounded-lg bg-neon-green" style="width:0%"></div></div>
     <div id="col-grid" class="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-14 gap-1"></div>
+</div>
+
+<!-- GUIDE -->
+<div id="page-guide" class="page hidden fade-in max-w-4xl">
+    <h1 class="text-3xl font-black text-white mb-5">Guide de Progression</h1>
+    <div class="flex gap-2 mb-5">
+        <button onclick="loadGuide('Kanto')" class="px-4 py-2 rounded-lg text-sm font-bold" style="background:rgba(0,229,255,0.1);color:#00e5ff;border:1px solid rgba(0,229,255,0.3)">Kanto</button>
+        <button onclick="loadGuide('Johto')" class="px-4 py-2 rounded-lg text-sm font-bold" style="background:rgba(105,240,174,0.1);color:#69f0ae;border:1px solid rgba(105,240,174,0.3)">Johto</button>
+        <button onclick="loadGuide('Hoenn')" class="px-4 py-2 rounded-lg text-sm font-bold" style="background:rgba(255,64,129,0.1);color:#ff4081;border:1px solid rgba(255,64,129,0.3)">Hoenn</button>
+        <button onclick="loadGuide('Sinnoh')" class="px-4 py-2 rounded-lg text-sm font-bold" style="background:rgba(213,0,249,0.1);color:#d500f9;border:1px solid rgba(213,0,249,0.3)">Sinnoh</button>
+        <button onclick="loadGuide('Unova')" class="px-4 py-2 rounded-lg text-sm font-bold" style="background:rgba(255,215,64,0.1);color:#ffd740;border:1px solid rgba(255,215,64,0.3)">Unova</button>
+    </div>
+    <div id="guide-content">
+        <p class="text-gray-500">Selectionne une region pour voir le guide de progression.</p>
+    </div>
 </div>
 
 <!-- NOTES -->
@@ -571,10 +590,54 @@ function toggleCatch(id){
     updateColCount(caught.length);
 }
 function updateColCount(n){
-    document.querySelectorAll('[data-col-count]').forEach(el=>el.textContent=n+' / 649');
+    const hdr=document.getElementById('col-header-count');
+    if(hdr) hdr.textContent=n+' / 649';
+    const bar=document.getElementById('col-progress-bar');
+    if(bar) bar.style.width=(n/649*100)+'%';
+    // Also update dashboard collection card
+    const dc=document.getElementById('col-count');
+    if(dc) dc.textContent=n;
+    const db=document.getElementById('col-bar');
+    if(db) db.style.width=(n/649*100)+'%';
+    const dp=document.getElementById('col-pct');
+    if(dp) dp.textContent=Math.round(n/649*100)+'%';
 }
 
-loadDash();loadChart();rTm();loadRoutes();
+// Guide
+async function loadGuide(region){
+    try{const steps=await fetch(`/api/progression/${region}`).then(r=>r.json());
+    const el=document.getElementById('guide-content');
+    if(!Array.isArray(steps)||!steps.length){el.innerHTML='<p class="text-gray-500">Aucune donnee pour cette region.</p>';return;}
+    el.innerHTML=steps.map((s,i)=>`
+        <div class="glass-card p-4 mb-3 flex items-start gap-4">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm" style="background:rgba(0,229,255,0.15);color:#00e5ff">${s.step}</div>
+            <div class="flex-1">
+                <p class="font-bold text-white">${s.title}</p>
+                <p class="text-sm text-gray-400 mt-1">${s.description||''}</p>
+                <div class="flex gap-4 mt-2 text-xs">
+                    ${s.location?`<span class="text-gray-500">📍 ${s.location}</span>`:''}
+                    ${s.recommended_level?`<span style="color:#69f0ae">Niv. ${s.recommended_level}+</span>`:''}
+                    ${s.badge_number!=null?`<span style="color:#ffd740">Badge ${s.badge_number}</span>`:''}
+                </div>
+            </div>
+        </div>
+    `).join('');
+    }catch(e){console.error(e);}
+}
+
+// Game status check
+async function checkGame(){
+    try{const r=await fetch('/api/game-status').then(r=>r.json());
+    const el=document.getElementById('game-status-dot');
+    const txt=document.getElementById('game-status-text');
+    if(el&&txt){
+        if(r.connected){el.className='w-2 h-2 rounded-full bg-neon-green';txt.textContent='PokeMMO detecte';}
+        else{el.className='w-2 h-2 rounded-full bg-red-500';txt.textContent='Hors ligne';}
+    }}catch(e){}
+}
+setInterval(checkGame,5000);
+
+loadDash();loadChart();rTm();loadRoutes();checkGame();
 </script>
 </body>
 </html>

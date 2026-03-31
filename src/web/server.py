@@ -263,6 +263,26 @@ async def import_showdown(body: dict):
     return team
 
 
+@app.get("/api/progression/{region}")
+async def get_progression(region: str):
+    """Get walkthrough steps for a region."""
+    conn = _db()
+    rows = conn.execute(
+        "SELECT * FROM progression WHERE LOWER(region) = LOWER(?) ORDER BY step",
+        (region,)
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+@app.get("/api/game-status")
+async def game_status():
+    """Check if PokeMMO is running."""
+    from ..capture.screen_capture import find_window
+    hwnd = find_window("PokeMMO")
+    return {"connected": hwnd is not None and hwnd != 0}
+
+
 @app.get("/sprite/{pokemon_id}")
 async def get_sprite(pokemon_id: int):
     sprite_path = SPRITES_DIR / f"{pokemon_id}.png"
