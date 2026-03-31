@@ -2144,20 +2144,36 @@ async function ocrTestRegion(idx){
     }catch(e){listEl.innerHTML=`<p class="text-red-400">Erreur: ${e.message}</p>`;}
 }
 
-function ocrShowCombatPreview(p){
+async function ocrShowCombatPreview(p){
     const el=document.getElementById('combat-ocr-preview');
     const bst=p.hp+p.attack+p.defense+p.sp_attack+p.sp_defense+p.speed;
     // Calculate weaknesses from type chart
-    el.innerHTML=`<div class="flex items-center gap-4">
-        <img src="${spr(p.name)}" data-id="${p.id}" class="w-16 h-16 sprite-hover">
-        <div class="flex-1">
-            <p class="font-bold text-white text-lg">${p.name} <span class="text-xs text-gray-500">#${p.id} BST:${bst}</span></p>
-            <div class="flex gap-1 mt-1">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div>
-            <p class="text-xs text-gray-400 mt-2">L'overlay afficherait ces infos en temps reel pendant le combat</p>
-        </div>
-    </div>
-    <p class="text-xs mt-3 p-2 rounded" style="background:rgba(0,229,255,0.05);color:#00e5ff">
-    Conseil : Utilise la page "Assistant de Combat" pour voir les faiblesses detaillees de ce Pokemon</p>`;
+    try{
+        const chartData=await fetch('/api/type-chart').then(r=>r.json());
+        const ts=chartData.types,ch=chartData.chart;
+        const defTypes=[p.type1];if(p.type2)defTypes.push(p.type2);
+        const weak4x=[],weak2x=[],resist05=[],immune=[];
+        ts.forEach(atk=>{
+            let m=1;defTypes.forEach(dt=>{m*=(ch[atk+'_'+dt]||1);});
+            if(m>=4)weak4x.push(atk);else if(m>=2)weak2x.push(atk);
+            else if(m===0)immune.push(atk);else if(m<=0.5)resist05.push(atk);
+        });
+        let h=`<div class="flex items-center gap-4 mb-3">
+            <img src="${spr(p.name)}" data-id="${p.id}" class="w-16 h-16 sprite-hover">
+            <div class="flex-1">
+                <p class="font-bold text-white text-lg">${p.name} <span class="text-xs text-gray-500">#${p.id} BST:${bst}</span></p>
+                <div class="flex gap-1 mt-1">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div>
+                <p class="text-xs text-gray-400 mt-1">${p.attack>=p.sp_attack?'Physique (Atk:'+p.attack+')':'Special (SpA:'+p.sp_attack+')'} | Spe:${p.speed}</p>
+            </div>
+        </div>`;
+        if(weak4x.length) h+=`<div class="mb-1"><span class="text-xs font-bold" style="color:#ff5252">x4 :</span> ${weak4x.map(t=>pill(t)).join(' ')}</div>`;
+        if(weak2x.length) h+=`<div class="mb-1"><span class="text-xs font-bold" style="color:#ff8a80">x2 :</span> ${weak2x.map(t=>pill(t)).join(' ')}</div>`;
+        if(immune.length) h+=`<div class="mb-1"><span class="text-xs font-bold" style="color:#40c4ff">x0 :</span> ${immune.map(t=>pill(t)).join(' ')}</div>`;
+        if(resist05.length) h+=`<div class="mb-1"><span class="text-xs font-bold" style="color:#69f0ae">x0.5 :</span> ${resist05.map(t=>pill(t)).join(' ')}</div>`;
+        h+=`<p class="text-[10px] mt-2 p-2 rounded" style="background:rgba(0,229,255,0.05);color:#00e5ff">
+        Voici ce que l'overlay afficherait en temps reel quand l'OCR detecte cet adversaire en combat.</p>`;
+        el.innerHTML=h;
+    }catch(e){el.innerHTML=`<p class="text-red-400">Erreur calcul faiblesses</p>`;}
 }
 
 loadAbilityFR();ocrLoadRegions();loadDash();loadChart();rTm();loadRoutes();checkGame();loadOptStats();shinyUpdate();calcBreed();renderNatures(NATURES);loadHordeSummary();loadHordes();calcSS();loadEVTracker();loadGuide('Kanto');dashLoadRoute();
