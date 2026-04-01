@@ -680,7 +680,8 @@
                 <p class="text-[10px] text-gray-600">Upload un screenshot de PokeMMO, ajuste les zones de capture, teste l'OCR en live</p>
             </div>
             <div class="flex gap-2">
-                <label class="btn btn-sm btn-info cursor-pointer"><input type="file" accept="image/*" onchange="ocrUpload(event)" class="hidden">Charger Screenshot</label>
+                <button onclick="ocrCaptureGame()" class="btn btn-sm btn-warning">Capturer depuis PokeMMO</button>
+                <label class="btn btn-sm btn-info cursor-pointer"><input type="file" accept="image/*" onchange="ocrUpload(event)" class="hidden">Charger fichier</label>
                 <button onclick="ocrSaveRegions()" class="btn btn-sm btn-success">Sauvegarder</button>
             </div>
         </div>
@@ -2008,6 +2009,33 @@ async function ocrLoadRegions(){
         {id:'player_hp',label:'HP Joueur',x:55,y:75,w:20,h:3,color:'#69f0ae'},
         {id:'opponent_hp',label:'HP Adversaire',x:55,y:12,w:20,h:3,color:'#ff6e40'},
     ];ocrRenderRegions();}
+}
+
+async function ocrCaptureGame(){
+    showToast('Capture en cours...');
+    try{
+        const r=await fetch('/api/ocr/capture-game').then(r=>r.json());
+        if(!r.available){showToast(r.error||'Erreur capture');return;}
+        const img=new Image();
+        img.onload=function(){
+            ocrImage=r.image;
+            const canvas=document.getElementById('ocr-canvas');
+            const ctx=canvas.getContext('2d');
+            const wrap=document.getElementById('ocr-canvas-wrap');
+            const maxW=wrap.clientWidth;
+            const scale=maxW/img.width;
+            canvas.width=maxW;canvas.height=img.height*scale;
+            ctx.drawImage(img,0,0,canvas.width,canvas.height);
+            canvas.style.display='block';
+            document.getElementById('ocr-placeholder').style.display='none';
+            document.getElementById('ocr-regions-overlay').style.display='block';
+            ocrDrawRegions();
+            const testAllBtn=document.getElementById('ocr-test-all-btn');
+            if(testAllBtn)testAllBtn.disabled=false;
+            showToast(`PokeMMO capture : ${r.width}x${r.height}`);
+        };
+        img.src=r.image;
+    }catch(e){showToast('Erreur: '+e.message);}
 }
 
 function ocrUpload(ev){

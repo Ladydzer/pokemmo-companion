@@ -617,6 +617,48 @@ async def get_ev_spots(stat: str, region: str = "", method: str = ""):
     return [dict(r) for r in rows]
 
 
+@app.get("/api/ocr/capture-game")
+async def capture_game_screenshot():
+    """Capture the PokeMMO game window via PrintWindow and return as base64.
+
+    Used by Studio OCR for live calibration — captures the real game content.
+    """
+    import base64
+    try:
+        from ..capture.screen_capture import find_window, capture_window_by_hwnd
+        import cv2
+        import numpy as np
+
+        hwnd = find_window("PokeMMO")
+        if not hwnd:
+            return {"error": "PokeMMO non detecte. Le jeu est-il ouvert ?", "available": False}
+
+        frame = capture_window_by_hwnd(hwnd)
+        if frame is None:
+            return {"error": "Capture echouee. Installez: py -m pip install pywin32", "available": False}
+
+        # Crop window borders (8px)
+        h, w = frame.shape[:2]
+        border = 8
+        if h > border * 2 and w > border * 2:
+            frame = frame[border:h-border, border:w-border]
+
+        # Encode as JPEG base64
+        _, buf = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+        img_b64 = base64.b64encode(buf).decode()
+
+        return {
+            "available": True,
+            "image": f"data:image/jpeg;base64,{img_b64}",
+            "width": frame.shape[1],
+            "height": frame.shape[0],
+        }
+    except ImportError:
+        return {"error": "pywin32 ou OpenCV non installe", "available": False}
+    except Exception as e:
+        return {"error": str(e)[:100], "available": False}
+
+
 @app.post("/api/ocr/regions")
 async def save_ocr_regions(body: dict):
     """Save OCR region config to a JSON file for the overlay to use."""
