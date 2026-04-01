@@ -1,3 +1,4 @@
+pywin32>=306
 bettercam>=1.0
 pytesseract>=0.3.10
 opencv-python>=4.8

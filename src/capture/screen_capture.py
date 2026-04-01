@@ -117,8 +117,62 @@ def get_window_size(hwnd: int) -> tuple[int, int] | None:
     return None
 
 
+def capture_window_by_hwnd(hwnd: int) -> np.ndarray | None:
+    """Capture a specific window by its HWND using PrintWindow API.
+
+    Works even if the window is partially covered by other windows.
+    Returns BGR numpy array or None.
+    """
+    try:
+        import win32gui
+        import win32ui
+        import win32con
+
+        left, top, right, bottom = win32gui.GetWindowRect(hwnd)
+        w = right - left
+        h = bottom - top
+        if w <= 0 or h <= 0:
+            return None
+
+        # Get device contexts
+        hwnd_dc = win32gui.GetWindowDC(hwnd)
+        mfc_dc = win32ui.CreateDCFromHandle(hwnd_dc)
+        save_dc = mfc_dc.CreateCompatibleDC()
+
+        # Create bitmap
+        bitmap = win32ui.CreateBitmap()
+        bitmap.CreateCompatibleBitmap(mfc_dc, w, h)
+        save_dc.SelectObject(bitmap)
+
+        # PrintWindow captures the window content even if covered
+        result = ctypes.windll.user32.PrintWindow(hwnd, save_dc.GetSafeHdc(), 3)  # PW_RENDERFULLCONTENT=3
+
+        if result:
+            bmpinfo = bitmap.GetInfo()
+            bmpstr = bitmap.GetBitmapBits(True)
+            frame = np.frombuffer(bmpstr, dtype=np.uint8).reshape(
+                bmpinfo['bmHeight'], bmpinfo['bmWidth'], 4
+            )
+            frame = frame[:, :, :3]  # BGRA -> BGR (drop alpha)
+        else:
+            frame = None
+
+        # Cleanup
+        win32gui.DeleteObject(bitmap.GetHandle())
+        save_dc.DeleteDC()
+        mfc_dc.DeleteDC()
+        win32gui.ReleaseDC(hwnd, hwnd_dc)
+
+        return frame
+    except ImportError:
+        return None
+    except Exception as e:
+        log.warning(f"PrintWindow capture failed: {e}")
+        return None
+
+
 class ScreenCapture:
-    """Captures the PokeMMO game window using BetterCam."""
+    """Captures the PokeMMO game window using PrintWindow (preferred) or BetterCam."""
 
     def __init__(self, window_title: str = "PokeMMO"):
         self.window_title = window_title
@@ -126,6 +180,7 @@ class ScreenCapture:
         self.hwnd: int | None = None
         self.window_rect: tuple[int, int, int, int] | None = None
         self._last_frame: np.ndarray | None = None
+        self._use_printwindow = False
 
     def initialize(self) -> bool:
         """Initialize the capture engine. Returns True if game window found."""
@@ -157,34 +212,34 @@ class ScreenCapture:
         h = bottom - top
         log.info(f"Game window found: {w}x{h} at {self.window_rect} (screen: {screen_w}x{screen_h})")
 
-        # Try capture engines in order: BetterCam > MSS > PIL
+        # Try PrintWindow first (captures by HWND, works even if covered)
+        test_frame = capture_window_by_hwnd(self.hwnd)
+        if test_frame is not None:
+            self._use_printwindow = True
+            self.camera = "printwindow"
+            log.info(f"Capture engine: PrintWindow (HWND, {test_frame.shape[1]}x{test_frame.shape[0]})")
+            return True
+
+        log.info("PrintWindow unavailable, trying BetterCam...")
+
+        # Fallback: BetterCam > MSS > PIL
         try:
             import bettercam
             self.camera = bettercam.create(output_color="BGR")
             log.info("Capture engine: BetterCam")
             return True
         except ImportError:
-            log.info("BetterCam not installed, trying MSS...")
+            log.info("BetterCam not installed, trying PIL...")
         except Exception as e:
-            log.warning(f"BetterCam failed: {e}, trying MSS...")
-
-        try:
-            import mss
-            self.camera = mss.mss()
-            log.info("Capture engine: MSS")
-            return True
-        except ImportError:
-            log.info("MSS not installed, trying PIL...")
-        except Exception as e:
-            log.warning(f"MSS failed: {e}, trying PIL...")
+            log.warning(f"BetterCam failed: {e}, trying PIL...")
 
         try:
             from PIL import ImageGrab
-            self.camera = "pil"  # Marker for PIL mode
+            self.camera = "pil"
             log.info("Capture engine: PIL (basic)")
             return True
         except ImportError:
-            log.error("No capture engine available! Install: pip install mss or pip install Pillow")
+            log.error("No capture engine available! Install: pip install pywin32 or pip install Pillow")
             return False
 
     def refresh_window(self) -> bool:
@@ -202,7 +257,10 @@ class ScreenCapture:
                 return self._last_frame
 
         try:
-            if self.camera == "pil":
+            if self.camera == "printwindow":
+                # PrintWindow: captures by HWND, works even if window is covered
+                frame = capture_window_by_hwnd(self.hwnd)
+            elif self.camera == "pil":
                 # PIL fallback
                 from PIL import ImageGrab
                 screenshot = ImageGrab.grab(bbox=self.window_rect)
