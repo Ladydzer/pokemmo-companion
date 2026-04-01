@@ -65,6 +65,41 @@ async def get_all_pokemon():
     return [dict(r) for r in rows]
 
 
+_CONDITION_FR = {
+    "Level": "Niveau", "Trade": "Echange", "Friendship": "Bonheur",
+    "Water Stone": "Pierre Eau", "Fire Stone": "Pierre Feu",
+    "Thunder Stone": "Pierre Foudre", "Leaf Stone": "Pierre Plante",
+    "Moon Stone": "Pierre Lune", "Sun Stone": "Pierre Soleil",
+    "Shiny Stone": "Pierre Eclat", "Dusk Stone": "Pierre Nuit",
+    "Dawn Stone": "Pierre Aube", "Oval Stone": "Pierre Ovale",
+    "King's Rock": "Roche Royale", "Metal Coat": "Peau Metal",
+    "Dragon Scale": "Ecaille Draco", "Upgrade": "Ameliorator",
+    "Dubious Disc": "CD Douteux", "Protector": "Protecteur",
+    "Electirizer": "Electriseur", "Magmarizer": "Magmariseur",
+    "Reaper Cloth": "Tissu Fauche", "Deep Sea Tooth": "Dent Ocean",
+    "Deep Sea Scale": "Ecaille Ocean", "Prism Scale": "Bel Ecaille",
+    "Use item": "Utiliser objet", "Happiness": "Bonheur",
+    "at night": "la nuit", "during the day": "le jour",
+    "male": "male", "female": "femelle",
+    "with high Beauty": "avec haute Beaute",
+    "in a Magnetic Field area": "dans une zone magnetique",
+    "near a Mossy Rock": "pres Roche Mousse",
+    "near an Icy Rock": "pres Roche Glacee",
+    "knowing": "en connaissant", "with": "avec",
+    "holding": "en tenant",
+}
+
+def _condition_fr(cond: str | None) -> str:
+    """Translate evolution condition to French."""
+    if not cond:
+        return ""
+    result = cond
+    # Sort by length descending to replace longer phrases first
+    for en, fr in sorted(_CONDITION_FR.items(), key=lambda x: -len(x[0])):
+        result = result.replace(en, fr)
+    return result
+
+
 def _strip_accents(s: str) -> str:
     """Remove accents for accent-insensitive search."""
     import unicodedata
@@ -132,12 +167,12 @@ async def get_evolutions(pokemon_id: int):
         # Walk forward
         chain = []
         current = base_id
-        p = conn.execute("SELECT id, name, type1, type2 FROM pokemon WHERE id = ?", (current,)).fetchone()
+        p = conn.execute("SELECT id, name, name_fr, type1, type2 FROM pokemon WHERE id = ?", (current,)).fetchone()
         if p:
             chain.append({**dict(p), "condition": ""})
         while True:
             rows = conn.execute(
-                """SELECT e.to_pokemon_id, e.condition, p.name, p.type1, p.type2
+                """SELECT e.to_pokemon_id, e.condition, p.name, p.name_fr, p.type1, p.type2
                    FROM evolutions e JOIN pokemon p ON e.to_pokemon_id = p.id
                    WHERE e.from_pokemon_id = ?""", (current,)
             ).fetchall()
@@ -146,7 +181,9 @@ async def get_evolutions(pokemon_id: int):
             for row in rows:
                 r = dict(row)
                 chain.append({"id": r["to_pokemon_id"], "name": r["name"],
-                              "type1": r["type1"], "type2": r["type2"], "condition": r["condition"]})
+                              "name_fr": r["name_fr"],
+                              "type1": r["type1"], "type2": r["type2"],
+                              "condition": _condition_fr(r["condition"])})
             current = dict(rows[0])["to_pokemon_id"]
     return chain
 

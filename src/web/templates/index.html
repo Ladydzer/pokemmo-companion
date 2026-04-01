@@ -501,7 +501,7 @@
 
 <!-- EV TRAINING -->
 <div id="page-evtrain" class="page hidden fade-in max-w-5xl">
-    <h1 class="text-3xl font-black text-white mb-2">EV Training</h1>
+    <h1 class="text-3xl font-black text-white mb-2">Entrainement EV</h1>
     <p class="text-sm text-gray-500 mb-5">Trouve les meilleurs spots pour entrainer les EVs de ton equipe. Les hordes sont 5x plus efficaces.</p>
 
     <!-- EV Tracker -->
@@ -562,7 +562,7 @@
 
     <!-- Power Items reference -->
     <div class="glass-card p-6">
-        <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">ITEMS EV TRAINING</p>
+        <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">OBJETS ENTRAINEMENT EV</p>
         <div class="grid grid-cols-2 gap-3 text-sm">
             <div class="space-y-2">
                 <p class="text-xs font-bold text-gray-400 mb-1">POWER ITEMS (+8 EVs/combat)</p>
@@ -909,7 +909,7 @@ async function showP(id){
         const[p,locs,evos]=await Promise.all([fetch(`/api/pokemon/${id}`).then(r=>r.json()),fetch(`/api/pokemon/${id}/locations`).then(r=>r.json()),fetch(`/api/pokemon/${id}/evolutions`).then(r=>r.json())]);
         const bst=p.hp+p.attack+p.defense+p.sp_attack+p.sp_defense+p.speed;
         const sb=(l,v,k)=>`<div class="flex items-center gap-2 mb-1.5"><span class="w-8 text-[10px] text-gray-500">${l}</span><span class="w-7 text-xs text-right mono text-gray-300">${v}</span><div class="flex-1 stat-track"><div class="stat-fill" style="width:${v/255*100}%;background:${SC[k]}"></div></div></div>`;
-        const evoH=evos.length>1?evos.map((e,i)=>{const hl=e.id===id?'ring-2 ring-cyan-400':'';const ar=i>0?`<span class="text-gray-600 text-xs mx-1">${e.condition||'→'}</span>`:'';return`${ar}<div class="text-center ${hl} rounded-xl p-2"><img src="${spr(e.name)}" data-id="${e.id}" class="w-12 h-12 mx-auto sprite-hover"><p class="text-[10px] mt-1">${e.name}</p></div>`;}).join(''):'';
+        const evoH=evos.length>1?evos.map((e,i)=>{const hl=e.id===id?'ring-2 ring-cyan-400':'';const ar=i>0?`<span class="text-gray-600 text-xs mx-1">${e.condition||'→'}</span>`:'';return`${ar}<div class="text-center ${hl} rounded-xl p-2"><img src="${spr(e.name)}" data-id="${e.id}" class="w-12 h-12 mx-auto sprite-hover"><p class="text-[10px] mt-1">${e.name_fr||e.name}</p></div>`;}).join(''):'';
         const locH=(Array.isArray(locs)?locs:[]).slice(0,8).map(l=>`<div class="spawn-row"><span class="flex-1 text-sm">${l.route_name}</span><span class="text-xs text-gray-500">${l.region}</span><span class="text-xs mono w-10 text-right" style="color:#69f0ae">${l.rate.toFixed(0)}%</span><span class="text-xs text-gray-500 w-20 text-right">Lv.${l.level_min}-${l.level_max}</span></div>`).join('');
         document.getElementById('dex-grid').classList.add('hidden');
         const d=document.getElementById('dex-detail');d.classList.remove('hidden');

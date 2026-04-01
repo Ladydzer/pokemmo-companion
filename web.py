@@ -43,7 +43,7 @@ def main():
     # Start server
     import uvicorn
     log.info(f"Serveur web sur http://localhost:{PORT}")
-    uvicorn.run("src.web.server:app", host="127.0.0.1", port=PORT, log_level="warning")
+    uvicorn.run("src.web.server:app", host="0.0.0.0", port=PORT, log_level="warning")
 
 
 if __name__ == "__main__":
