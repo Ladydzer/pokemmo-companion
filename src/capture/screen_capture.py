@@ -139,27 +139,38 @@ class ScreenCapture:
             log.warning("Could not get window rect")
             return False
 
+        w = self.window_rect[2] - self.window_rect[0]
+        h = self.window_rect[3] - self.window_rect[1]
+        log.info(f"Game window found: {w}x{h} at {self.window_rect}")
+
+        # Try capture engines in order: BetterCam > MSS > PIL
         try:
             import bettercam
             self.camera = bettercam.create(output_color="BGR")
-            log.info(f"BetterCam initialized. Window: {self.window_rect}")
+            log.info("Capture engine: BetterCam")
             return True
         except ImportError:
-            log.warning("BetterCam not installed, using fallback capture")
-            return self._init_fallback()
+            log.info("BetterCam not installed, trying MSS...")
         except Exception as e:
-            log.warning(f"BetterCam init failed: {e}, using fallback")
-            return self._init_fallback()
+            log.warning(f"BetterCam failed: {e}, trying MSS...")
 
-    def _init_fallback(self) -> bool:
-        """Initialize fallback capture using MSS."""
         try:
             import mss
             self.camera = mss.mss()
-            log.info("Using MSS fallback capture")
+            log.info("Capture engine: MSS")
             return True
         except ImportError:
-            log.error("Neither BetterCam nor MSS available")
+            log.info("MSS not installed, trying PIL...")
+        except Exception as e:
+            log.warning(f"MSS failed: {e}, trying PIL...")
+
+        try:
+            from PIL import ImageGrab
+            self.camera = "pil"  # Marker for PIL mode
+            log.info("Capture engine: PIL (basic)")
+            return True
+        except ImportError:
+            log.error("No capture engine available! Install: pip install mss or pip install Pillow")
             return False
 
     def refresh_window(self) -> bool:
@@ -177,7 +188,12 @@ class ScreenCapture:
                 return self._last_frame
 
         try:
-            if hasattr(self.camera, 'grab'):
+            if self.camera == "pil":
+                # PIL fallback
+                from PIL import ImageGrab
+                screenshot = ImageGrab.grab(bbox=self.window_rect)
+                frame = np.array(screenshot)[:, :, ::-1]  # RGB -> BGR
+            elif hasattr(self.camera, 'grab'):
                 # BetterCam
                 frame = self.camera.grab(region=self.window_rect)
             else:
