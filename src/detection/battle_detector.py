@@ -68,12 +68,19 @@ class BattleDetector:
 
         # Read opponent name
         name = read_pokemon_name(name_region)
-        if not name or len(name) < 2:
+        if not name or len(name) < 3:
             # Try inverted
             processed = preprocess_light_text(name_region)
             name = read_pokemon_name(processed)
 
-        if not name or len(name) < 2:
+        if not name or len(name) < 3:
+            return self._last_battle_info
+
+        # Filter garbage OCR results (special chars, too short, our own app)
+        import re as _re
+        if _re.search(r'[#~—_\[\]={}|]', name) or len(name.strip()) < 4:
+            return self._last_battle_info
+        if any(x in name.lower() for x in ["companion", "overlay", "pokemmo"]):
             return self._last_battle_info
 
         # Read opponent level
@@ -98,7 +105,7 @@ class BattleDetector:
             if not pokemon_data:
                 # Fuzzy match against FR names (PokeMMO shows FR names)
                 all_fr = self.db.get_all_pokemon_names_fr() if hasattr(self.db, 'get_all_pokemon_names_fr') else []
-                matched_fr = fuzzy_match_name(name, all_fr, cutoff=0.6) if all_fr else None
+                matched_fr = fuzzy_match_name(name, all_fr, cutoff=0.7) if all_fr and len(name) >= 4 else None
                 if matched_fr:
                     pokemon_data = self.db.get_pokemon_by_name_fr(matched_fr)
                     log.info(f"Fuzzy matched FR '{name}' -> '{matched_fr}'")

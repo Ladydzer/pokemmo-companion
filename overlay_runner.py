@@ -129,6 +129,10 @@ def detection_loop(overlay, qt_update_fn):
             frame_count += 1
             if frame_count <= 3:
                 print(f"[THREAD] Frame {frame_count}: {frame.shape}", flush=True)
+            # Skip first 2 frames (may capture our own window during startup)
+            if frame_count <= 2:
+                time.sleep(0.5)
+                continue
 
             # Always try both route and battle detection
             # (state machine is unreliable without calibration)

@@ -25,16 +25,19 @@ class RouteDetector:
         self.current_region: str = ""
         self.last_change: float = 0.0
         self._consecutive_reads: dict[str, int] = {}
-        self._min_consecutive = 2  # Require 2 consistent reads before updating
+        self._min_consecutive = 3  # Require 3 consistent reads before updating
+        self._last_change_time: float = 0.0
+        self._change_cooldown: float = 3.0  # Minimum seconds between route changes
+        self._ignore_patterns = ["companion", "pokemmo companion", "overlay", "runner"]
 
         # ROI (Region of Interest) ratios relative to game window
-        # Calibrated from real PokeMMO screenshot: route name is in a small
-        # dark banner at the top-left of the game window
+        # Calibrated from ladyd_'s PokeMMO screenshot (1920x1040)
+        # Route name: small text top-left, ~"Route Victoire Ch. 2"
         self._route_roi = {
-            "x_ratio": 0.01,
-            "y_ratio": 0.01,
-            "w_ratio": 0.18,
-            "h_ratio": 0.04,
+            "x_ratio": 0.005,
+            "y_ratio": 0.005,
+            "w_ratio": 0.12,
+            "h_ratio": 0.03,
         }
 
     def set_roi(self, x_ratio: float, y_ratio: float,
@@ -133,12 +136,24 @@ class RouteDetector:
 
         return None
 
-    def _process_route_change(self, text: str) -> str:
+    def _process_route_change(self, text: str) -> str | None:
         """Process a confirmed route change."""
+        # Ignore our own app window text
+        text_lower = text.lower()
+        for pattern in self._ignore_patterns:
+            if pattern in text_lower:
+                return None
+
+        # Cooldown between changes to avoid flipflop
+        now = time.time()
+        if now - self._last_change_time < self._change_cooldown:
+            return None
+
         old_route = self.current_route
         self.current_route = text
         self.current_region = self._infer_region(text)
-        self.last_change = time.time()
+        self.last_change = now
+        self._last_change_time = now
         log.info(f"Route changed: '{old_route}' -> '{text}' (region: {self.current_region})")
         return text
 
