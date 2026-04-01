@@ -742,6 +742,86 @@ async def detect_icons(body: dict):
         return {"error": str(e)[:100]}
 
 
+# === Overlay control ===
+
+import subprocess
+import signal
+
+_overlay_process = None
+
+@app.post("/api/overlay/start")
+async def start_overlay():
+    """Launch the PyQt6 overlay as a subprocess."""
+    global _overlay_process
+    if _overlay_process and _overlay_process.poll() is None:
+        return {"status": "already_running", "pid": _overlay_process.pid}
+
+    # Check dependencies
+    try:
+        import importlib
+        for mod in ["PyQt6", "cv2", "numpy"]:
+            importlib.import_module(mod)
+    except ImportError as e:
+        missing = str(e).split("'")[1] if "'" in str(e) else str(e)
+        return {
+            "status": "missing_deps",
+            "message": f"Module '{missing}' manquant. Installez : py -m pip install -r requirements.txt",
+        }
+
+    # Check Tesseract
+    import shutil
+    tesseract_paths = [
+        shutil.which("tesseract"),
+        r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+        r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+    ]
+    tesseract_ok = any(p and Path(p).exists() for p in tesseract_paths if p)
+    if not tesseract_ok:
+        return {
+            "status": "missing_tesseract",
+            "message": "Tesseract OCR non installe. Telecharger: https://github.com/UB-Mannheim/tesseract/wiki",
+        }
+
+    # Launch overlay subprocess
+    import sys
+    overlay_script = PROJECT_ROOT / "overlay_runner.py"
+    try:
+        _overlay_process = subprocess.Popen(
+            [sys.executable, str(overlay_script)],
+            cwd=str(PROJECT_ROOT),
+        )
+        return {"status": "started", "pid": _overlay_process.pid}
+    except Exception as e:
+        return {"status": "error", "message": str(e)[:100]}
+
+
+@app.post("/api/overlay/stop")
+async def stop_overlay():
+    """Stop the overlay subprocess."""
+    global _overlay_process
+    if not _overlay_process or _overlay_process.poll() is not None:
+        _overlay_process = None
+        return {"status": "not_running"}
+
+    _overlay_process.terminate()
+    try:
+        _overlay_process.wait(timeout=3)
+    except subprocess.TimeoutExpired:
+        _overlay_process.kill()
+    _overlay_process = None
+    return {"status": "stopped"}
+
+
+@app.get("/api/overlay/status")
+async def overlay_status():
+    """Check overlay status."""
+    global _overlay_process
+    if _overlay_process and _overlay_process.poll() is None:
+        return {"running": True, "pid": _overlay_process.pid}
+    _overlay_process = None
+    return {"running": False}
+
+
 @app.get("/sprite/{pokemon_id}")
 async def get_sprite(pokemon_id: int):
     sprite_path = SPRITES_DIR / f"{pokemon_id}.png"

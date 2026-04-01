@@ -26,7 +26,7 @@ PORT = 8080
 def start_web_server():
     """Start FastAPI server in a background thread."""
     import uvicorn
-    uvicorn.run("src.web.server:app", host="127.0.0.1", port=PORT, log_level="warning")
+    uvicorn.run("src.web.server:app", host="0.0.0.0", port=PORT, log_level="warning")
 
 
 def open_browser():
@@ -39,9 +39,9 @@ def open_browser():
     ]
     for edge in edge_paths:
         if os.path.exists(edge):
-            os.system(f'"{edge}" --app=http://localhost:{PORT}')
+            os.system(f'"{edge}" --app=http://127.0.0.1:{PORT}')
             return
-    webbrowser.open(f"http://localhost:{PORT}")
+    webbrowser.open(f"http://127.0.0.1:{PORT}")
 
 
 def start_overlay():
@@ -95,14 +95,14 @@ def main():
     # Start web server in background
     server_thread = threading.Thread(target=start_web_server, daemon=True)
     server_thread.start()
-    log.info(f"Serveur web demarre sur http://localhost:{PORT}")
+    log.info(f"Serveur web demarre sur http://127.0.0.1:{PORT}")
 
     # Open browser in background
     browser_thread = threading.Thread(target=open_browser, daemon=True)
     browser_thread.start()
 
     # Start overlay in main thread (Qt requires it)
-    log.info("Interface web: http://localhost:{PORT}")
+    log.info("Interface web: http://127.0.0.1:{PORT}")
     log.info("Overlay: F9 pour afficher/masquer")
     start_overlay()
 

@@ -123,8 +123,10 @@
         </a>
     </nav>
     <div class="px-3 mt-4 pt-4 border-t border-gray-800">
-        <button onclick="toggleOverlay()" class="btn btn-xs btn-outline w-full mb-2" style="border-color:#ff4081;color:#ff4081">Mode Overlay</button>
+        <button onclick="toggleOverlay()" class="btn btn-xs btn-outline w-full mb-2" style="border-color:#ff4081;color:#ff4081">Recherche Rapide (F9)</button>
+        <button onclick="toggleRealOverlay()" id="btn-overlay" class="btn btn-xs btn-outline w-full mb-2" style="border-color:#d500f9;color:#d500f9">Lancer Overlay OCR</button>
         <div class="flex items-center gap-2 text-xs"><div id="game-status-dot" class="w-2 h-2 rounded-full bg-red-500"></div><span id="game-status-text" class="text-gray-600">Hors ligne</span></div>
+        <div class="flex items-center gap-2 text-xs mt-1"><div id="overlay-status-dot" class="w-2 h-2 rounded-full bg-gray-700"></div><span id="overlay-status-text" class="text-gray-700 text-[9px]">Overlay inactif</span></div>
         <p class="text-[9px] text-gray-700 mt-2">v0.5.0</p>
     </div>
 </aside>
@@ -2303,6 +2305,49 @@ document.addEventListener('keydown',e=>{
         },200);
     });
 })();
+
+// === Real Overlay (PyQt6 OCR) ===
+async function toggleRealOverlay(){
+    const btn=document.getElementById('btn-overlay');
+    const dot=document.getElementById('overlay-status-dot');
+    const txt=document.getElementById('overlay-status-text');
+    // Check current status
+    const st=await fetch('/api/overlay/status').then(r=>r.json()).catch(()=>({running:false}));
+    if(st.running){
+        // Stop
+        const r=await fetch('/api/overlay/stop',{method:'POST'}).then(r=>r.json());
+        btn.textContent='Lancer Overlay OCR';btn.style.borderColor='#d500f9';btn.style.color='#d500f9';
+        dot.style.background='#666';txt.textContent='Overlay inactif';
+        showToast('Overlay arrete');
+    }else{
+        // Start
+        btn.textContent='Demarrage...';btn.disabled=true;
+        const r=await fetch('/api/overlay/start',{method:'POST'}).then(r=>r.json());
+        btn.disabled=false;
+        if(r.status==='started'||r.status==='already_running'){
+            btn.textContent='Arreter Overlay';btn.style.borderColor='#ff5252';btn.style.color='#ff5252';
+            dot.style.background='#69f0ae';txt.textContent='Overlay actif (F9/F10)';
+            showToast('Overlay lance ! F9=toggle, F10=etendu');
+        }else{
+            btn.textContent='Lancer Overlay OCR';
+            showToast(r.message||'Erreur overlay');
+        }
+    }
+}
+// Poll overlay status every 10s
+setInterval(async()=>{
+    const st=await fetch('/api/overlay/status').then(r=>r.json()).catch(()=>({running:false}));
+    const dot=document.getElementById('overlay-status-dot');
+    const txt=document.getElementById('overlay-status-text');
+    const btn=document.getElementById('btn-overlay');
+    if(st.running){
+        dot.style.background='#69f0ae';txt.textContent='Overlay actif';
+        btn.textContent='Arreter Overlay';btn.style.borderColor='#ff5252';btn.style.color='#ff5252';
+    }else{
+        dot.style.background='#666';txt.textContent='Overlay inactif';
+        btn.textContent='Lancer Overlay OCR';btn.style.borderColor='#d500f9';btn.style.color='#d500f9';
+    }
+},10000);
 
 // Only load visible page (dashboard) at startup — others load on navigation
 loadAbilityFR();loadDash();loadChart();checkGame();dashLoadRoute();
