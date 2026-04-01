@@ -139,15 +139,23 @@ class ScreenCapture:
             log.warning("Could not get window rect")
             return False
 
-        # Clamp negative coordinates (maximized windows have -8,-8 borders on Windows)
+        # Clamp to screen bounds (maximized windows have -8,-8 borders on Windows)
+        # BetterCam requires region within screen resolution
         left, top, right, bottom = self.window_rect
+        try:
+            screen_w = user32.GetSystemMetrics(0)  # SM_CXSCREEN
+            screen_h = user32.GetSystemMetrics(1)  # SM_CYSCREEN
+        except Exception:
+            screen_w, screen_h = 1920, 1080
         left = max(0, left)
         top = max(0, top)
+        right = min(right, screen_w)
+        bottom = min(bottom, screen_h)
         self.window_rect = (left, top, right, bottom)
 
         w = right - left
         h = bottom - top
-        log.info(f"Game window found: {w}x{h} at {self.window_rect}")
+        log.info(f"Game window found: {w}x{h} at {self.window_rect} (screen: {screen_w}x{screen_h})")
 
         # Try capture engines in order: BetterCam > MSS > PIL
         try:
