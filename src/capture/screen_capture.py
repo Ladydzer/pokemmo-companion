@@ -14,38 +14,59 @@ def find_window(title: str = "PokeMMO") -> int | None:
     """Find the PokeMMO game window handle.
 
     Excludes our own overlay/companion windows to avoid self-detection.
+    Logs all candidate windows for debugging.
     """
     # Words that indicate it's OUR window, not the game
     _exclude = ["companion", "overlay", "runner"]
 
+    # First try exact match
     hwnd = user32.FindWindowW(None, title)
     if hwnd != 0:
-        # Verify it's not our own window
         wt = get_window_title(hwnd).lower()
         if not any(ex in wt for ex in _exclude):
+            log.info(f"Found game window (exact): '{get_window_title(hwnd)}'")
             return hwnd
 
-    # Try partial match using global list
+    # Try partial match — enumerate ALL windows
     _found_windows = []
+    _all_pokemmo = []  # For debug logging
 
     def _enum_callback(h, _lparam):
+        if not user32.IsWindowVisible(h):
+            return True
         length = user32.GetWindowTextLengthW(h)
         if length > 0:
             buf = ctypes.create_unicode_buffer(length + 1)
             user32.GetWindowTextW(h, buf, length + 1)
             wt = buf.value.lower()
+            if "poke" in wt or "mmo" in wt:
+                _all_pokemmo.append(buf.value)
             if title.lower() in wt and not any(ex in wt for ex in _exclude):
                 _found_windows.append((h, buf.value))
         return True
 
     WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.wintypes.HWND, ctypes.wintypes.LPARAM)
     user32.EnumWindows(WNDENUMPROC(_enum_callback), 0)
+
     if _found_windows:
-        log.info(f"Found game window: '{_found_windows[0][1]}'")
-        hwnd = _found_windows[0][0]
-    else:
-        return None
-    return hwnd
+        # Prefer the largest window (the game, not a launcher/splash)
+        best = _found_windows[0]
+        if len(_found_windows) > 1:
+            best_size = 0
+            for h, name in _found_windows:
+                rect = get_window_rect(h)
+                if rect:
+                    size = (rect[2] - rect[0]) * (rect[3] - rect[1])
+                    if size > best_size:
+                        best_size = size
+                        best = (h, name)
+        log.info(f"Found game window: '{best[1]}' (from {len(_found_windows)} candidates)")
+        return best[0]
+
+    # Log what we DID find for debugging
+    if _all_pokemmo:
+        log.warning(f"No game window matched. Similar windows found: {_all_pokemmo}")
+    return None
 
 
 def get_window_rect(hwnd: int) -> tuple[int, int, int, int] | None:
