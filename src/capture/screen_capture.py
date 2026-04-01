@@ -10,14 +10,33 @@ from ..utils.logger import log
 user32 = ctypes.windll.user32
 
 
+def _normalize_title(text: str) -> str:
+    """Normalize window title for matching — handles Cyrillic lookalikes.
+
+    PokeMMO uses a Cyrillic М (U+041C) instead of Latin M in its window title.
+    This makes "PokeMMO" != "PokeMМO" even though they look identical.
+    """
+    import unicodedata
+    # Replace common Cyrillic lookalikes with Latin equivalents
+    cyrillic_to_latin = {
+        '\u0410': 'A', '\u0412': 'B', '\u0421': 'C', '\u0415': 'E',
+        '\u041D': 'H', '\u041A': 'K', '\u041C': 'M', '\u041E': 'O',
+        '\u0420': 'P', '\u0422': 'T', '\u0425': 'X',
+        '\u0430': 'a', '\u0432': 'b', '\u0441': 'c', '\u0435': 'e',
+        '\u043D': 'h', '\u043A': 'k', '\u043C': 'm', '\u043E': 'o',
+        '\u0440': 'p', '\u0442': 't', '\u0445': 'x',
+    }
+    return ''.join(cyrillic_to_latin.get(c, c) for c in text)
+
+
 def find_window(title: str = "PokeMMO") -> int | None:
     """Find the PokeMMO game window handle.
 
+    Handles Cyrillic М in PokeMMO's window title (PokeMМO vs PokeMMO).
     Excludes our own overlay/companion windows to avoid self-detection.
-    Logs all candidate windows for debugging.
     """
-    # Words that indicate it's OUR window, not the game
     _exclude = ["companion", "overlay", "runner"]
+    title_norm = _normalize_title(title).lower()
 
     # First try exact match
     hwnd = user32.FindWindowW(None, title)
@@ -27,9 +46,17 @@ def find_window(title: str = "PokeMMO") -> int | None:
             log.info(f"Found game window (exact): '{get_window_title(hwnd)}'")
             return hwnd
 
-    # Try partial match — enumerate ALL windows
+    # Also try with Cyrillic М variant
+    title_cyrillic = title.replace("M", "\u041C")  # Replace second M with Cyrillic
+    hwnd2 = user32.FindWindowW(None, title_cyrillic)
+    if hwnd2 != 0:
+        wt = get_window_title(hwnd2).lower()
+        if not any(ex in wt for ex in _exclude):
+            log.info(f"Found game window (Cyrillic): '{get_window_title(hwnd2)}'")
+            return hwnd2
+
+    # Enumerate all windows with normalized title matching
     _found_windows = []
-    _all_pokemmo = []  # For debug logging
 
     def _enum_callback(h, _lparam):
         if not user32.IsWindowVisible(h):
@@ -38,10 +65,8 @@ def find_window(title: str = "PokeMMO") -> int | None:
         if length > 0:
             buf = ctypes.create_unicode_buffer(length + 1)
             user32.GetWindowTextW(h, buf, length + 1)
-            wt = buf.value.lower()
-            if "poke" in wt or "mmo" in wt:
-                _all_pokemmo.append(buf.value)
-            if title.lower() in wt and not any(ex in wt for ex in _exclude):
+            wt_norm = _normalize_title(buf.value).lower()
+            if title_norm in wt_norm and not any(ex in wt_norm for ex in _exclude):
                 _found_windows.append((h, buf.value))
         return True
 
@@ -49,7 +74,7 @@ def find_window(title: str = "PokeMMO") -> int | None:
     user32.EnumWindows(WNDENUMPROC(_enum_callback), 0)
 
     if _found_windows:
-        # Prefer the largest window (the game, not a launcher/splash)
+        # Prefer the largest window (the game, not a launcher)
         best = _found_windows[0]
         if len(_found_windows) > 1:
             best_size = 0
@@ -63,9 +88,6 @@ def find_window(title: str = "PokeMMO") -> int | None:
         log.info(f"Found game window: '{best[1]}' (from {len(_found_windows)} candidates)")
         return best[0]
 
-    # Log what we DID find for debugging
-    if _all_pokemmo:
-        log.warning(f"No game window matched. Similar windows found: {_all_pokemmo}")
     return None
 
 
