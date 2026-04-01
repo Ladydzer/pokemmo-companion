@@ -11,27 +11,40 @@ user32 = ctypes.windll.user32
 
 
 def find_window(title: str = "PokeMMO") -> int | None:
-    """Find the PokeMMO game window handle."""
+    """Find the PokeMMO game window handle.
+
+    Excludes our own overlay/companion windows to avoid self-detection.
+    """
+    # Words that indicate it's OUR window, not the game
+    _exclude = ["companion", "overlay", "runner"]
+
     hwnd = user32.FindWindowW(None, title)
-    if hwnd == 0:
-        # Try partial match using global list (avoids ctypes.py_object issues in PyInstaller)
-        _found_windows = []
+    if hwnd != 0:
+        # Verify it's not our own window
+        wt = get_window_title(hwnd).lower()
+        if not any(ex in wt for ex in _exclude):
+            return hwnd
 
-        def _enum_callback(h, _lparam):
-            length = user32.GetWindowTextLengthW(h)
-            if length > 0:
-                buf = ctypes.create_unicode_buffer(length + 1)
-                user32.GetWindowTextW(h, buf, length + 1)
-                if title.lower() in buf.value.lower():
-                    _found_windows.append(h)
-            return True
+    # Try partial match using global list
+    _found_windows = []
 
-        WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.wintypes.HWND, ctypes.wintypes.LPARAM)
-        user32.EnumWindows(WNDENUMPROC(_enum_callback), 0)
-        if _found_windows:
-            hwnd = _found_windows[0]
-        else:
-            return None
+    def _enum_callback(h, _lparam):
+        length = user32.GetWindowTextLengthW(h)
+        if length > 0:
+            buf = ctypes.create_unicode_buffer(length + 1)
+            user32.GetWindowTextW(h, buf, length + 1)
+            wt = buf.value.lower()
+            if title.lower() in wt and not any(ex in wt for ex in _exclude):
+                _found_windows.append((h, buf.value))
+        return True
+
+    WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.wintypes.HWND, ctypes.wintypes.LPARAM)
+    user32.EnumWindows(WNDENUMPROC(_enum_callback), 0)
+    if _found_windows:
+        log.info(f"Found game window: '{_found_windows[0][1]}'")
+        hwnd = _found_windows[0][0]
+    else:
+        return None
     return hwnd
 
 
