@@ -33,16 +33,16 @@ def main():
         ]
         for edge in edge_paths:
             if os.path.exists(edge):
-                os.system(f'"{edge}" --app=http://localhost:{PORT}')
+                os.system(f'"{edge}" --app=http://127.0.0.1:{PORT}')
                 return
         # Fallback to default browser
-        webbrowser.open(f"http://localhost:{PORT}")
+        webbrowser.open(f"http://127.0.0.1:{PORT}")
 
     threading.Thread(target=open_browser, daemon=True).start()
 
-    # Start server
+    # Start server — bind to 0.0.0.0 to avoid IPv6 resolution delay
     import uvicorn
-    log.info(f"Serveur web sur http://localhost:{PORT}")
+    log.info(f"Serveur web sur http://127.0.0.1:{PORT}")
     uvicorn.run("src.web.server:app", host="0.0.0.0", port=PORT, log_level="warning")
 
 

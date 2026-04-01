@@ -123,6 +123,7 @@
         </a>
     </nav>
     <div class="px-3 mt-4 pt-4 border-t border-gray-800">
+        <button onclick="toggleOverlay()" class="btn btn-xs btn-outline w-full mb-2" style="border-color:#ff4081;color:#ff4081">Mode Overlay</button>
         <div class="flex items-center gap-2 text-xs"><div id="game-status-dot" class="w-2 h-2 rounded-full bg-red-500"></div><span id="game-status-text" class="text-gray-600">Hors ligne</span></div>
         <p class="text-[9px] text-gray-700 mt-2">v0.5.0</p>
     </div>
@@ -752,6 +753,20 @@
     <form method="dialog" class="modal-backdrop"><button>close</button></form>
 </dialog>
 
+<!-- OVERLAY MODE (hidden by default, replaces everything) -->
+<div id="overlay-mode" class="hidden fixed inset-0 z-50" style="background:#080b12">
+    <div class="p-3 h-full flex flex-col">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-bold" style="color:#ff4081">OVERLAY MODE</h2>
+            <button onclick="toggleOverlay()" class="btn btn-xs btn-ghost text-gray-500">Quitter</button>
+        </div>
+        <div class="flex gap-2 mb-3">
+            <input type="text" id="ov-search" placeholder="Nom du Pokemon adverse..." class="input input-sm input-bordered flex-1 text-sm" style="background:#131a24" autofocus>
+        </div>
+        <div id="ov-result" class="flex-1 overflow-y-auto"></div>
+    </div>
+</div>
+
 </main>
 
 <script>
@@ -1053,6 +1068,7 @@ async function calcDmg(){
 
 async function loadChart(){
     try{const d=await fetch('/api/type-chart').then(r=>r.json());const ts=d.types,ch=d.chart;
+    window._typeChart=ch;
     let h='<table style="border-collapse:separate;border-spacing:2px"><tr><td class="p-1" style="min-width:60px"></td>';
     ts.forEach(t=>h+=`<td class="p-1 text-center" style="min-width:32px"><div class="type-pill" style="background:${TC[t]};font-size:8px;padding:2px 4px;display:block">${tfr(t).slice(0,3)}</div></td>`);
     h+='</tr>';
@@ -2203,6 +2219,83 @@ async function ocrShowCombatPreview(p){
         el.innerHTML=h;
     }catch(e){el.innerHTML=`<p class="text-red-400">Erreur calcul faiblesses</p>`;}
 }
+
+// === OVERLAY MODE ===
+function toggleOverlay(){
+    const ov=document.getElementById('overlay-mode');
+    const sidebar=document.querySelector('aside');
+    const main=document.querySelector('main');
+    if(ov.classList.contains('hidden')){
+        ov.classList.remove('hidden');
+        sidebar.classList.add('hidden');
+        main.style.display='none';
+        document.getElementById('ov-search').focus();
+    }else{
+        ov.classList.add('hidden');
+        sidebar.classList.remove('hidden');
+        main.style.display='';
+    }
+}
+document.addEventListener('keydown',e=>{
+    if(e.key==='F9'){e.preventDefault();toggleOverlay();}
+});
+// Overlay search
+(function(){
+    const input=document.getElementById('ov-search');
+    const result=document.getElementById('ov-result');
+    if(!input)return;
+    let debounce;
+    input.addEventListener('input',()=>{
+        clearTimeout(debounce);
+        debounce=setTimeout(async()=>{
+            const q=input.value.trim();
+            if(q.length<2){result.innerHTML='<p class="text-gray-600 text-sm">Tape le nom du Pokemon adverse...</p>';return;}
+            try{
+                const pks=await fetch('/api/pokemon/search/'+encodeURIComponent(q)).then(r=>r.json());
+                if(!pks.length){result.innerHTML='<p class="text-gray-500 text-sm">Aucun resultat</p>';return;}
+                const p=pks[0];
+                const det=await fetch('/api/pokemon/'+p.id).then(r=>r.json());
+                const types=[det.type1];if(det.type2)types.push(det.type2);
+                // Build weakness analysis
+                const wk=await fetch('/api/type-effectiveness/'+types.join('/')).then(r=>r.json()).catch(()=>null);
+                let h=`<div class="flex items-center gap-4 mb-4">
+                    <img src="${spr(det.name)}" class="w-20 h-20">
+                    <div>
+                        <p class="text-xl font-black text-white">${det.name_fr||det.name}</p>
+                        <p class="text-xs text-gray-500">#${String(det.id).padStart(3,'0')} ${det.name_fr?det.name:''}</p>
+                        <div class="flex gap-1 mt-1">${pill(det.type1)}${det.type2?' '+pill(det.type2):''}</div>
+                        <p class="text-xs text-gray-400 mt-1">BST ${det.hp+det.attack+det.defense+det.sp_attack+det.sp_defense+det.speed} | PV ${det.hp} | VIT ${det.speed}</p>
+                    </div>
+                </div>`;
+                // Calculate weaknesses from type chart
+                const eff={};
+                const allTypes=Object.keys(TC);
+                allTypes.forEach(atk=>{
+                    let mult=1;
+                    types.forEach(def=>{
+                        const key=atk+'_'+def;
+                        if(typeof window._typeChart==='object'&&window._typeChart[key]!==undefined)mult*=window._typeChart[key];
+                    });
+                    if(mult!==1)eff[atk]=mult;
+                });
+                const x4=Object.entries(eff).filter(([,v])=>v>=4).map(([t])=>t);
+                const x2=Object.entries(eff).filter(([,v])=>v===2).map(([t])=>t);
+                const r05=Object.entries(eff).filter(([,v])=>v===0.5).map(([t])=>t);
+                const r025=Object.entries(eff).filter(([,v])=>v<=0.25&&v>0).map(([t])=>t);
+                const imm=Object.entries(eff).filter(([,v])=>v===0).map(([t])=>t);
+                if(x4.length)h+=`<div class="mb-2"><p class="text-xs font-bold mb-1" style="color:#ff5252">TRES FAIBLE x4</p><div class="flex flex-wrap gap-1">${x4.map(t=>pill(t)).join(' ')}</div></div>`;
+                if(x2.length)h+=`<div class="mb-2"><p class="text-xs font-bold mb-1" style="color:#ff8a80">FAIBLE x2</p><div class="flex flex-wrap gap-1">${x2.map(t=>pill(t)).join(' ')}</div></div>`;
+                if(imm.length)h+=`<div class="mb-2"><p class="text-xs font-bold mb-1" style="color:#40c4ff">IMMUNITE x0</p><div class="flex flex-wrap gap-1">${imm.map(t=>pill(t)).join(' ')}</div></div>`;
+                if(r025.length)h+=`<div class="mb-2"><p class="text-xs font-bold mb-1" style="color:#69f0ae">RESISTE x0.25</p><div class="flex flex-wrap gap-1">${r025.map(t=>pill(t)).join(' ')}</div></div>`;
+                if(r05.length)h+=`<div class="mb-2"><p class="text-xs font-bold mb-1" style="color:#b9f6ca">RESISTE x0.5</p><div class="flex flex-wrap gap-1">${r05.map(t=>pill(t)).join(' ')}</div></div>`;
+                // Quick action line
+                const atk=[...x4,...x2];
+                if(atk.length)h+=`<div class="mt-3 p-2 rounded text-sm" style="background:rgba(255,64,129,0.1);border:1px solid rgba(255,64,129,0.2)"><span style="color:#ff4081" class="font-bold">Attaque avec :</span> <span class="text-white">${atk.map(t=>tfr(t)).join(', ')}</span></div>`;
+                result.innerHTML=h;
+            }catch(e){result.innerHTML='<p class="text-red-400 text-sm">Erreur</p>';}
+        },200);
+    });
+})();
 
 // Only load visible page (dashboard) at startup — others load on navigation
 loadAbilityFR();loadDash();loadChart();checkGame();dashLoadRoute();
