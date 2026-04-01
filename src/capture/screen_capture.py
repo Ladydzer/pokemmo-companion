@@ -229,7 +229,19 @@ class ScreenCapture:
                 self._last_frame = frame
             return frame
         except Exception as e:
-            log.debug(f"Capture failed: {e}")
+            log.warning(f"Capture failed: {e}")
+            # Last resort: PIL
+            try:
+                from PIL import ImageGrab
+                screenshot = ImageGrab.grab(bbox=self.window_rect)
+                frame = np.array(screenshot)[:, :, ::-1]
+                self._last_frame = frame
+                if not hasattr(self, '_pil_warned'):
+                    self._pil_warned = True
+                    log.warning("Capture exception — bascule sur PIL")
+                return frame
+            except Exception:
+                pass
             return self._last_frame
 
     def capture_region(self, x: int, y: int, w: int, h: int) -> np.ndarray | None:
