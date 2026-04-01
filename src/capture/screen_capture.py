@@ -203,11 +203,21 @@ class ScreenCapture:
                 # BetterCam — try with region first, fallback to full screen + crop
                 frame = self.camera.grab(region=self.window_rect)
                 if frame is None:
-                    # Some BetterCam versions need grab() without region
                     frame = self.camera.grab()
                     if frame is not None and self.window_rect:
                         left, top, right, bottom = self.window_rect
                         frame = frame[top:bottom, left:right]
+                # If BetterCam still fails, use PIL
+                if frame is None:
+                    try:
+                        from PIL import ImageGrab
+                        screenshot = ImageGrab.grab(bbox=self.window_rect)
+                        frame = np.array(screenshot)[:, :, ::-1]  # RGB -> BGR
+                        if not hasattr(self, '_pil_warned'):
+                            self._pil_warned = True
+                            log.warning("BetterCam echoue — bascule sur PIL (plus lent mais fonctionne)")
+                    except ImportError:
+                        pass
             else:
                 # MSS fallback
                 left, top, right, bottom = self.window_rect
