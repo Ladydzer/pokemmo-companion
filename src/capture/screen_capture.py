@@ -200,8 +200,14 @@ class ScreenCapture:
                 screenshot = ImageGrab.grab(bbox=self.window_rect)
                 frame = np.array(screenshot)[:, :, ::-1]  # RGB -> BGR
             elif hasattr(self.camera, 'grab'):
-                # BetterCam
+                # BetterCam — try with region first, fallback to full screen + crop
                 frame = self.camera.grab(region=self.window_rect)
+                if frame is None:
+                    # Some BetterCam versions need grab() without region
+                    frame = self.camera.grab()
+                    if frame is not None and self.window_rect:
+                        left, top, right, bottom = self.window_rect
+                        frame = frame[top:bottom, left:right]
             else:
                 # MSS fallback
                 left, top, right, bottom = self.window_rect
