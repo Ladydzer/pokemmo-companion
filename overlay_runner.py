@@ -105,61 +105,73 @@ def detection_loop(overlay, qt_update_fn):
     log.info("Pipeline OCR demarre — detection en cours...")
     qt_update_fn(lambda: overlay.update_status("Detection active"))
 
+    frame_count = 0
     while True:
         try:
             frame = cap.capture_full()
             if frame is None:
+                log.debug("Frame capture returned None")
                 time.sleep(1)
                 continue
 
-            # Detect game state
-            game_state = state_det.detect_state(frame)
+            frame_count += 1
+            if frame_count == 1:
+                log.info(f"Premiere frame capturee: {frame.shape} ({frame.shape[1]}x{frame.shape[0]})")
 
-            if game_state == GameState.BATTLE:
-                if not in_battle:
-                    in_battle = True
-                    log.info("Combat detecte !")
+            # Always try both route and battle detection
+            # (state machine is unreliable without calibration)
 
-                # Detect opponent
-                battle_info = battle_det.detect_opponent(frame)
-                if battle_info and battle_info.get("name"):
-                    opponent = battle_info["name"]
-                    if opponent != last_opponent:
-                        last_opponent = opponent
-                        log.info(f"Adversaire: {opponent} ({'/'.join(battle_info.get('types', []))})")
-                        # Thread-safe Qt update
-                        info = dict(battle_info)  # Copy for closure
-                        qt_update_fn(lambda: overlay.show_battle(info))
-                        # Increment encounter counter
-                        qt_update_fn(lambda: overlay.increment_encounter())
+            # Detect route
+            route_name = route_det.detect_route(frame)
+            if frame_count <= 3:
+                # Log first few OCR attempts for debugging
+                from src.detection.ocr_engine import read_route_name, preprocess_light_text
+                h, w = frame.shape[:2]
+                roi = route_det._route_roi
+                rx, ry = int(roi["x_ratio"] * w), int(roi["y_ratio"] * h)
+                rw, rh = int(roi["w_ratio"] * w), int(roi["h_ratio"] * h)
+                route_region = frame[ry:ry+rh, rx:rx+rw]
+                if route_region.size > 0:
+                    raw_text = read_route_name(route_region)
+                    log.info(f"OCR debug frame {frame_count}: route region {rw}x{rh} at ({rx},{ry}) -> '{raw_text}'")
 
-            else:
-                if in_battle:
-                    in_battle = False
-                    last_opponent = ""
-                    qt_update_fn(lambda: overlay.hide_battle())
+            if route_name and route_name != last_route:
+                last_route = route_name
+                region = route_det.current_region
+                log.info(f"Route detectee: {last_route} ({region})")
 
-                # Detect route (only outside battle)
-                route_name = route_det.detect_route(frame)
-                if route_name and route_name != last_route:
-                    last_route = route_name
-                    region = route_det.current_region
-                    log.info(f"Route: {last_route} ({region})")
+                name, reg = last_route, region
+                qt_update_fn(lambda: overlay.update_route(name, reg))
 
-                    # Update overlay route display
-                    name, reg = last_route, region  # Copies for closure
-                    qt_update_fn(lambda: overlay.update_route(name, reg))
+                spawns = fetch_spawns(last_route)
+                if spawns:
+                    log.info(f"Spawns: {len(spawns)} Pokemon dans {last_route}")
+                qt_update_fn(lambda: overlay.update_spawns(spawns))
+                qt_update_fn(lambda: overlay.update_counter_location(name, reg))
 
-                    # Fetch and display spawns
-                    spawns = fetch_spawns(last_route)
-                    qt_update_fn(lambda: overlay.update_spawns(spawns))
+            # Detect battle opponent
+            battle_info = battle_det.detect_opponent(frame)
+            if battle_info and battle_info.get("name"):
+                opponent = battle_info["name"]
+                if opponent != last_opponent:
+                    if not in_battle:
+                        in_battle = True
+                        log.info("Combat detecte !")
+                    last_opponent = opponent
+                    types_str = '/'.join(battle_info.get('types', []))
+                    log.info(f"Adversaire: {opponent} ({types_str})")
+                    info = dict(battle_info)
+                    qt_update_fn(lambda: overlay.show_battle(info))
+                    qt_update_fn(lambda: overlay.increment_encounter())
+            elif in_battle and not battle_info:
+                # No opponent detected for a while — battle probably ended
+                in_battle = False
+                last_opponent = ""
+                qt_update_fn(lambda: overlay.hide_battle())
 
-                    # Update encounter counter location
-                    qt_update_fn(lambda: overlay.update_counter_location(name, reg))
-
-            time.sleep(0.5)  # 2 FPS — sufficient for PokeMMO turn-based
+            time.sleep(0.5)
         except Exception as e:
-            log.debug(f"Detection error: {e}")
+            log.warning(f"Detection error: {e}")
             time.sleep(1)
 
 
