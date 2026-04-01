@@ -143,7 +143,7 @@ class RouteDetector:
         return text
 
     def _clean_route_name(self, text: str) -> str:
-        """Clean up OCR artifacts from route names."""
+        """Clean up OCR artifacts and normalize PokeMMO route names."""
         # Remove leading/trailing junk
         text = text.strip().strip("_|[]{}()!@#$%^&*")
 
@@ -152,9 +152,22 @@ class RouteDetector:
             "Reute": "Route",
             "Raute": "Route",
             "Toute": "Route",
+            "Rte ": "Route ",
+            "Rte.": "Route",
         }
         for old, new in replacements.items():
             text = text.replace(old, new)
+
+        # Expand PokeMMO abbreviations
+        abbreviations = {
+            "Ch.": "Chambre",
+            "Niv.": "Niveau",
+            "Rte.": "Route",
+            "Mt.": "Mont",
+            "Pt.": "Pont",
+        }
+        for abbr, full in abbreviations.items():
+            text = text.replace(abbr, full)
 
         # Validate: must contain at least one letter
         if not any(c.isalpha() for c in text):

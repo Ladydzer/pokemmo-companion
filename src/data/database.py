@@ -54,10 +54,24 @@ class Database:
             return dict(row) if row else None
 
     def get_all_pokemon_names(self) -> list[str]:
-        """Return all Pokemon names for fuzzy matching."""
+        """Return all Pokemon names (EN) for fuzzy matching."""
         with self.connect() as conn:
             rows = conn.execute("SELECT name FROM pokemon ORDER BY id").fetchall()
             return [r["name"] for r in rows]
+
+    def get_all_pokemon_names_fr(self) -> list[str]:
+        """Return all Pokemon names (FR) for fuzzy matching."""
+        with self.connect() as conn:
+            rows = conn.execute("SELECT name_fr FROM pokemon WHERE name_fr IS NOT NULL ORDER BY id").fetchall()
+            return [r["name_fr"] for r in rows]
+
+    def get_pokemon_by_name_fr(self, name_fr: str) -> dict | None:
+        """Look up a Pokemon by French name (case-insensitive)."""
+        with self.connect() as conn:
+            row = conn.execute(
+                "SELECT * FROM pokemon WHERE LOWER(name_fr) = LOWER(?)", (name_fr,)
+            ).fetchone()
+            return dict(row) if row else None
 
     def search_pokemon(self, query: str, limit: int = 20) -> list[dict]:
         """Search Pokemon by partial name match."""

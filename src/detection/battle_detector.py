@@ -26,13 +26,15 @@ class BattleDetector:
         self._last_battle_info: dict | None = None
 
         # ROI ratios for opponent info (relative to game window)
+        # Calibrated from ladyd_'s combat screenshot: opponent name is
+        # top-center area, roughly "Geodite Niv. 38"
         self._opponent_name_roi = {
-            "x_ratio": 0.52, "y_ratio": 0.05,
-            "w_ratio": 0.35, "h_ratio": 0.04,
+            "x_ratio": 0.08, "y_ratio": 0.08,
+            "w_ratio": 0.30, "h_ratio": 0.05,
         }
         self._opponent_level_roi = {
-            "x_ratio": 0.80, "y_ratio": 0.05,
-            "w_ratio": 0.12, "h_ratio": 0.04,
+            "x_ratio": 0.28, "y_ratio": 0.08,
+            "w_ratio": 0.12, "h_ratio": 0.05,
         }
 
     def set_name_roi(self, x_ratio: float, y_ratio: float,
@@ -84,17 +86,29 @@ class BattleDetector:
         level = read_level(level_region) if level_region.size > 0 else None
 
         # Look up Pokemon in database (with fuzzy matching fallback)
+        # PokeMMO displays names in French, so search name_fr first
         pokemon_data = None
         types = []
         if self.db:
+            # Try exact match (EN name)
             pokemon_data = self.db.get_pokemon_by_name(name)
             if not pokemon_data:
-                # Fuzzy match against known names
-                all_names = self.db.get_all_pokemon_names() if hasattr(self.db, 'get_all_pokemon_names') else []
-                matched = fuzzy_match_name(name, all_names, cutoff=0.7) if all_names else None
-                if matched:
-                    pokemon_data = self.db.get_pokemon_by_name(matched)
-                    log.info(f"Fuzzy matched '{name}' -> '{matched}'")
+                # Try FR name match
+                pokemon_data = self.db.get_pokemon_by_name_fr(name) if hasattr(self.db, 'get_pokemon_by_name_fr') else None
+            if not pokemon_data:
+                # Fuzzy match against FR names (PokeMMO shows FR names)
+                all_fr = self.db.get_all_pokemon_names_fr() if hasattr(self.db, 'get_all_pokemon_names_fr') else []
+                matched_fr = fuzzy_match_name(name, all_fr, cutoff=0.6) if all_fr else None
+                if matched_fr:
+                    pokemon_data = self.db.get_pokemon_by_name_fr(matched_fr)
+                    log.info(f"Fuzzy matched FR '{name}' -> '{matched_fr}'")
+                else:
+                    # Fallback: fuzzy match EN names
+                    all_en = self.db.get_all_pokemon_names() if hasattr(self.db, 'get_all_pokemon_names') else []
+                    matched_en = fuzzy_match_name(name, all_en, cutoff=0.7) if all_en else None
+                    if matched_en:
+                        pokemon_data = self.db.get_pokemon_by_name(matched_en)
+                        log.info(f"Fuzzy matched EN '{name}' -> '{matched_en}'")
             if pokemon_data:
                 types = [pokemon_data["type1"]]
                 if pokemon_data.get("type2"):

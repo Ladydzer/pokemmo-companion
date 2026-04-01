@@ -185,14 +185,20 @@ def read_text(image: np.ndarray, psm: int = 7, preprocess: bool = True,
 def read_pokemon_name(image: np.ndarray) -> str:
     """Read a Pokemon name from a battle screen region.
 
-    Optimized for the specific font and layout of PokeMMO battle text.
+    Optimized for PokeMMO battle text — supports French names with accents.
     """
-    # Pokemon names are ASCII letters + some special chars (Nidoran♀/♂, Mr. Mime, etc.)
-    whitelist = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-' 2♀♂"
-    text = read_text(image, psm=7, whitelist=whitelist)
+    # French Pokemon names use accented chars (Géolithe, Léviator, Méloetta...)
+    whitelist = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzéèêëàâäùûüôöîïçÉÈÊËÀÂÄÙÛÜÔÖÎÏÇ.-' 2♀♂"
+    # Try without whitelist first (more flexible for FR), fall back to whitelist
+    text = read_text(image, psm=7, whitelist="")
+    if not text or len(text) < 2:
+        text = read_text(image, psm=7, whitelist=whitelist)
 
     # Clean up common OCR artifacts
     text = text.strip().strip("_|[]{}()")
+
+    # Remove "Niv." and level number if present (e.g., "Géolithe Niv. 38" -> "Géolithe")
+    text = re.sub(r'\s*Niv\.?\s*\d+', '', text).strip()
 
     # Fix common misreads
     replacements = {
