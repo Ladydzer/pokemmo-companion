@@ -675,16 +675,13 @@ async def load_ocr_regions():
     config_path = PROJECT_ROOT / "data" / "ocr_regions.json"
     if config_path.exists():
         return _json.loads(config_path.read_text(encoding="utf-8"))
-    # Default regions for standard PokeMMO 1280x720
+    # Default regions for PokeMMO (calibrated from ladyd_'s 1920x1040)
     return {
         "regions": [
-            {"id": "route_name", "label": "Nom de Route", "x": 1, "y": 1, "w": 18, "h": 4, "color": "#00e5ff"},
-            {"id": "opponent_name", "label": "Nom Adversaire", "x": 52, "y": 5, "w": 35, "h": 4, "color": "#ff4081"},
-            {"id": "opponent_level", "label": "Niveau Adversaire", "x": 80, "y": 5, "w": 12, "h": 4, "color": "#ffd740"},
-            {"id": "player_hp", "label": "HP Joueur", "x": 55, "y": 75, "w": 20, "h": 3, "color": "#69f0ae"},
-            {"id": "opponent_hp", "label": "HP Adversaire", "x": 55, "y": 12, "w": 20, "h": 3, "color": "#ff6e40"},
+            {"id": "route_name", "label": "Nom de Route", "x": 1, "y": 0, "w": 20, "h": 4, "color": "#00e5ff"},
+            {"id": "opponent_name", "label": "Nom Adversaire", "x": 5, "y": 6, "w": 25, "h": 5, "color": "#ff4081"},
         ],
-        "resolution": "1280x720"
+        "resolution": "1920x1040"
     }
 
 

@@ -34,10 +34,10 @@ class RouteDetector:
         # Calibrated from ladyd_'s PokeMMO screenshot (1920x1040)
         # Route name: small text top-left, ~"Route Victoire Ch. 2"
         self._route_roi = {
-            "x_ratio": 0.005,
-            "y_ratio": 0.005,
-            "w_ratio": 0.12,
-            "h_ratio": 0.03,
+            "x_ratio": 0.01,
+            "y_ratio": 0.00,
+            "w_ratio": 0.20,
+            "h_ratio": 0.04,
         }
 
     def set_roi(self, x_ratio: float, y_ratio: float,

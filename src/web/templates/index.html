@@ -2003,8 +2003,8 @@ async function ocrLoadRegions(){
     try{const data=await fetch('/api/ocr/regions').then(r=>r.json());
     ocrRegions=data.regions||[];ocrRenderRegions();}catch(e){
     ocrRegions=[
-        {id:'route_name',label:'Nom de Route',x:0.5,y:0.5,w:12,h:3,color:'#00e5ff'},
-        {id:'opponent_name',label:'Nom Adversaire',x:8,y:8,w:25,h:5,color:'#ff4081'},
+        {id:'route_name',label:'Nom de Route',x:1,y:0,w:20,h:4,color:'#00e5ff'},
+        {id:'opponent_name',label:'Nom Adversaire',x:5,y:6,w:25,h:5,color:'#ff4081'},
     ];ocrRenderRegions();}
 }
 
@@ -2016,8 +2016,8 @@ async function ocrCaptureGame(){
         // Ensure default regions exist
         if(!ocrRegions||ocrRegions.length===0){
             ocrRegions=[
-                {id:'route_name',label:'Nom de Route',x:0.5,y:0.5,w:12,h:3,color:'#00e5ff'},
-                {id:'opponent_name',label:'Nom Adversaire',x:8,y:8,w:25,h:5,color:'#ff4081'},
+                {id:'route_name',label:'Nom de Route',x:1,y:0,w:20,h:4,color:'#00e5ff'},
+                {id:'opponent_name',label:'Nom Adversaire',x:5,y:6,w:25,h:5,color:'#ff4081'},
             ];
         }
         const img=new Image();

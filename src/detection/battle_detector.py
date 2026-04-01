@@ -29,12 +29,12 @@ class BattleDetector:
         # Calibrated from ladyd_'s combat screenshot: opponent name is
         # top-center area, roughly "Geodite Niv. 38"
         self._opponent_name_roi = {
-            "x_ratio": 0.08, "y_ratio": 0.08,
-            "w_ratio": 0.30, "h_ratio": 0.05,
+            "x_ratio": 0.05, "y_ratio": 0.06,
+            "w_ratio": 0.25, "h_ratio": 0.05,
         }
         self._opponent_level_roi = {
-            "x_ratio": 0.28, "y_ratio": 0.08,
-            "w_ratio": 0.12, "h_ratio": 0.05,
+            "x_ratio": 0.25, "y_ratio": 0.06,
+            "w_ratio": 0.10, "h_ratio": 0.05,
         }
 
     def set_name_roi(self, x_ratio: float, y_ratio: float,
