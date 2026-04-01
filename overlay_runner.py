@@ -62,37 +62,47 @@ def fetch_spawns(route_name):
 
 def detection_loop(overlay, qt_update_fn):
     """Background thread: capture screen, run OCR, update overlay via Qt signals."""
-    from src.detection.ocr_engine import init_tesseract
-    from src.detection.state_machine import GameStateDetector
-    from src.utils.constants import GameState
+    import traceback
+    print("[THREAD] Detection loop started", flush=True)
 
-    if not init_tesseract():
-        log.error("Tesseract non disponible — OCR desactive")
-        qt_update_fn(lambda: overlay.update_status("Tesseract non installe !"))
+    try:
+        from src.detection.ocr_engine import init_tesseract
+        print("[THREAD] OCR engine imported", flush=True)
+
+        if not init_tesseract():
+            print("[THREAD] Tesseract not found!", flush=True)
+            return
+
+        from src.capture.screen_capture import ScreenCapture
+        cap = ScreenCapture()
+        print("[THREAD] ScreenCapture created", flush=True)
+
+        while not cap.initialize():
+            print("[THREAD] Waiting for PokeMMO...", flush=True)
+            time.sleep(5)
+
+        print(f"[THREAD] PokeMMO found! rect={cap.window_rect}", flush=True)
+        qt_update_fn(lambda: overlay.update_status("PokeMMO connecte !"))
+
+    except Exception as e:
+        print(f"[THREAD] INIT CRASH: {e}", flush=True)
+        traceback.print_exc()
         return
 
     try:
-        from src.capture.screen_capture import ScreenCapture
-        cap = ScreenCapture()
-        qt_update_fn(lambda: overlay.update_status("Recherche PokeMMO..."))
-        while not cap.initialize():
-            log.info("PokeMMO non detecte — nouvelle tentative dans 5s...")
-            time.sleep(5)
-        log.info("PokeMMO detecte !")
-        qt_update_fn(lambda: overlay.update_status("PokeMMO connecte !"))
+        from src.detection.route_detector import RouteDetector
+        from src.detection.battle_detector import BattleDetector
+        from src.data.database import Database
+        print("[THREAD] Detectors imported", flush=True)
+
+        db = Database()
+        route_det = RouteDetector()
+        battle_det = BattleDetector(db=db)
+        print("[THREAD] Detectors created", flush=True)
     except Exception as e:
-        log.error(f"Capture ecran non disponible: {e}")
-        qt_update_fn(lambda: overlay.update_status(f"Erreur capture: {str(e)[:50]}"))
+        print(f"[THREAD] DETECTOR INIT CRASH: {e}", flush=True)
+        traceback.print_exc()
         return
-
-    from src.detection.route_detector import RouteDetector
-    from src.detection.battle_detector import BattleDetector
-    from src.data.database import Database
-
-    db = Database()
-    route_det = RouteDetector()
-    battle_det = BattleDetector(db=db)
-    state_det = GameStateDetector()
 
     # Apply saved OCR regions from Studio OCR
     regions = load_ocr_regions()
@@ -102,6 +112,7 @@ def detection_loop(overlay, qt_update_fn):
     last_opponent = ""
     in_battle = False
 
+    print("[THREAD] Entering main detection loop", flush=True)
     log.info("Pipeline OCR demarre — detection en cours...")
     qt_update_fn(lambda: overlay.update_status("Detection active"))
 
@@ -110,13 +121,14 @@ def detection_loop(overlay, qt_update_fn):
         try:
             frame = cap.capture_full()
             if frame is None:
-                log.debug("Frame capture returned None")
+                if frame_count == 0:
+                    print("[THREAD] First frame is None!", flush=True)
                 time.sleep(1)
                 continue
 
             frame_count += 1
-            if frame_count == 1:
-                log.info(f"Premiere frame capturee: {frame.shape} ({frame.shape[1]}x{frame.shape[0]})")
+            if frame_count <= 3:
+                print(f"[THREAD] Frame {frame_count}: {frame.shape}", flush=True)
 
             # Always try both route and battle detection
             # (state machine is unreliable without calibration)
