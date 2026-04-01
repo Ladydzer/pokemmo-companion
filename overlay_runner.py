@@ -111,6 +111,8 @@ def detection_loop(overlay, qt_update_fn):
     last_route = ""
     last_opponent = ""
     in_battle = False
+    last_region_reload = time.time()
+    REGION_RELOAD_INTERVAL = 10  # Reload OCR regions every 10s (for live recalibration)
 
     print("[THREAD] Entering main detection loop", flush=True)
     log.info("Pipeline OCR demarre — detection en cours...")
@@ -184,6 +186,14 @@ def detection_loop(overlay, qt_update_fn):
                 in_battle = False
                 last_opponent = ""
                 qt_update_fn(lambda: overlay.hide_battle())
+
+            # Periodically reload OCR regions (live recalibration from Studio OCR)
+            now = time.time()
+            if now - last_region_reload > REGION_RELOAD_INTERVAL:
+                last_region_reload = now
+                new_regions = load_ocr_regions()
+                if new_regions:
+                    apply_ocr_regions(route_det, battle_det, new_regions)
 
             time.sleep(0.5)
         except Exception as e:
