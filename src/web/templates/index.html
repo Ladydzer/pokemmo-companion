@@ -2003,11 +2003,8 @@ async function ocrLoadRegions(){
     try{const data=await fetch('/api/ocr/regions').then(r=>r.json());
     ocrRegions=data.regions||[];ocrRenderRegions();}catch(e){
     ocrRegions=[
-        {id:'route_name',label:'Nom de Route',x:1,y:1,w:18,h:4,color:'#00e5ff'},
-        {id:'opponent_name',label:'Nom Adversaire',x:52,y:5,w:35,h:4,color:'#ff4081'},
-        {id:'opponent_level',label:'Niveau Adversaire',x:80,y:5,w:12,h:4,color:'#ffd740'},
-        {id:'player_hp',label:'HP Joueur',x:55,y:75,w:20,h:3,color:'#69f0ae'},
-        {id:'opponent_hp',label:'HP Adversaire',x:55,y:12,w:20,h:3,color:'#ff6e40'},
+        {id:'route_name',label:'Nom de Route',x:0.5,y:0.5,w:12,h:3,color:'#00e5ff'},
+        {id:'opponent_name',label:'Nom Adversaire',x:8,y:8,w:25,h:5,color:'#ff4081'},
     ];ocrRenderRegions();}
 }
 
@@ -2016,6 +2013,13 @@ async function ocrCaptureGame(){
     try{
         const r=await fetch('/api/ocr/capture-game').then(r=>r.json());
         if(!r.available){showToast(r.error||'Erreur capture');return;}
+        // Ensure default regions exist
+        if(!ocrRegions||ocrRegions.length===0){
+            ocrRegions=[
+                {id:'route_name',label:'Nom de Route',x:0.5,y:0.5,w:12,h:3,color:'#00e5ff'},
+                {id:'opponent_name',label:'Nom Adversaire',x:8,y:8,w:25,h:5,color:'#ff4081'},
+            ];
+        }
         const img=new Image();
         img.onload=function(){
             ocrImage=r.image;
@@ -2030,9 +2034,10 @@ async function ocrCaptureGame(){
             document.getElementById('ocr-placeholder').style.display='none';
             document.getElementById('ocr-regions-overlay').style.display='block';
             ocrDrawRegions();
+            ocrRenderRegions();
             const testAllBtn=document.getElementById('ocr-test-all-btn');
             if(testAllBtn)testAllBtn.disabled=false;
-            showToast(`PokeMMO capture : ${r.width}x${r.height}`);
+            showToast(`PokeMMO capture : ${r.width}x${r.height} — Deplace les zones sur le texte du jeu`);
         };
         img.src=r.image;
     }catch(e){showToast('Erreur: '+e.message);}
