@@ -345,17 +345,20 @@ async def get_progression(region: str):
 @app.get("/api/game-status")
 async def game_status():
     """Check if PokeMMO is running and return window info."""
-    from ..capture.screen_capture import find_window, get_window_rect, get_window_title
-    hwnd = find_window("PokeMMO")
-    if hwnd and hwnd != 0:
-        rect = get_window_rect(hwnd)
-        title = get_window_title(hwnd)
-        return {
-            "connected": True,
-            "title": title,
-            "window": {"left": rect[0], "top": rect[1], "right": rect[2], "bottom": rect[3],
-                        "width": rect[2]-rect[0], "height": rect[3]-rect[1]} if rect else None
-        }
+    try:
+        from ..capture.screen_capture import find_window, get_window_rect, get_window_title
+        hwnd = find_window("PokeMMO")
+        if hwnd and hwnd != 0:
+            rect = get_window_rect(hwnd)
+            title = get_window_title(hwnd)
+            return {
+                "connected": True,
+                "title": title,
+                "window": {"left": rect[0], "top": rect[1], "right": rect[2], "bottom": rect[3],
+                            "width": rect[2]-rect[0], "height": rect[3]-rect[1]} if rect else None
+            }
+    except ImportError:
+        pass
     return {"connected": False, "title": "", "window": None}
 
 
@@ -388,7 +391,10 @@ async def ocr_status():
 @app.post("/api/ocr/calibrate")
 async def calibrate_ocr(body: dict):
     """Update OCR ROI positions from the web interface."""
-    from ..detection.route_detector import RouteDetector
+    try:
+        from ..detection.route_detector import RouteDetector
+    except ImportError:
+        return {"status": "error", "message": "OpenCV/numpy non installe"}
     rd = RouteDetector()
     if "route_roi" in body:
         roi = body["route_roi"]
@@ -405,9 +411,12 @@ async def calibrate_ocr(body: dict):
 @app.get("/api/ocr/capture")
 async def ocr_capture():
     """Capture a screenshot and try OCR on the route name region."""
-    from ..capture.screen_capture import ScreenCapture
-    from ..detection.ocr_engine import read_route_name, init_tesseract
-    import base64, cv2, numpy as np
+    try:
+        from ..capture.screen_capture import ScreenCapture
+        from ..detection.ocr_engine import read_route_name, init_tesseract
+        import base64, cv2, numpy as np
+    except ImportError:
+        return {"error": "OpenCV/numpy non installe — lancez pip install opencv-python numpy"}
 
     if not init_tesseract():
         return {"error": "Tesseract non installe"}
