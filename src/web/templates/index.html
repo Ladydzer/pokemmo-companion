@@ -1272,11 +1272,14 @@ async function loadGuide(region){
             <div class="flex-1">
                 <p class="font-bold text-white ${checked?'line-through':''}">${s.step}. ${s.title}</p>
                 <p class="text-sm text-gray-400 mt-1">${s.description||''}</p>
-                <div class="flex gap-4 mt-2 text-xs">
+                <div class="flex flex-wrap gap-3 mt-2 text-xs">
                     ${s.location?`<span class="text-gray-500">📍 ${s.location}</span>`:''}
                     ${s.recommended_level?`<span style="color:#69f0ae">Niv. ${s.recommended_level}+</span>`:''}
-                    ${s.badge_number!=null?`<span style="color:#ffd740">Badge ${s.badge_number}</span>`:''}
+                    ${s.badge_number!=null&&s.badge_number>0?`<span style="color:#ffd740">🏅 Badge ${s.badge_number}</span>`:''}
                 </div>
+                ${s.key_items?`<div class="mt-2 p-2 rounded" style="background:rgba(255,215,64,0.06);border:1px solid rgba(255,215,64,0.15)"><p class="text-[10px] font-bold tracking-wider mb-1" style="color:#ffd740">OBJETS CLES</p><p class="text-xs text-gray-300">${s.key_items}</p></div>`:''}
+                ${s.tms?`<div class="mt-2 p-2 rounded" style="background:rgba(213,0,249,0.06);border:1px solid rgba(213,0,249,0.15)"><p class="text-[10px] font-bold tracking-wider mb-1" style="color:#d500f9">CT / CS</p><p class="text-xs text-gray-300">${s.tms}</p></div>`:''}
+                ${s.tips?`<div class="mt-2 p-2 rounded" style="background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.15)"><p class="text-[10px] font-bold tracking-wider mb-1" style="color:#00e5ff">CONSEIL</p><p class="text-xs text-gray-300">${s.tips}</p></div>`:''}
             </div>
         </div>`;
     }).join('');
