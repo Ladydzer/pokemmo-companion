@@ -112,7 +112,23 @@ def detection_loop(overlay, qt_update_fn):
     last_opponent = ""
     in_battle = False
     last_region_reload = time.time()
-    REGION_RELOAD_INTERVAL = 10  # Reload OCR regions every 10s (for live recalibration)
+    REGION_RELOAD_INTERVAL = 10
+
+    # Load all route names for fuzzy matching
+    try:
+        import sqlite3
+        conn = sqlite3.connect(str(os.path.join(PROJECT_ROOT, "data", "pokemon.db")))
+        _routes_fr = [r[0] for r in conn.execute(
+            "SELECT name_fr FROM routes WHERE name_fr IS NOT NULL"
+        ).fetchall()]
+        _routes_en = [r[0] for r in conn.execute(
+            "SELECT name FROM routes"
+        ).fetchall()]
+        all_routes = list(set(_routes_fr + _routes_en))
+        conn.close()
+        log.info(f"Loaded {len(all_routes)} route names for fuzzy matching")
+    except Exception:
+        all_routes = []
 
     print("[THREAD] Entering main detection loop", flush=True)
     log.info("Pipeline OCR demarre — detection en cours...")
@@ -154,6 +170,15 @@ def detection_loop(overlay, qt_update_fn):
                     log.info(f"OCR debug frame {frame_count}: route region {rw}x{rh} at ({rx},{ry}) -> '{raw_text}'")
 
             if route_name and route_name != last_route:
+                # Fuzzy match against known routes
+                import difflib
+                if all_routes:
+                    # Try matching the raw OCR text (often words are stuck together)
+                    matches = difflib.get_close_matches(route_name, all_routes, n=1, cutoff=0.5)
+                    if matches:
+                        log.info(f"Route fuzzy: '{route_name}' -> '{matches[0]}'")
+                        route_name = matches[0]
+
                 last_route = route_name
                 region = route_det.current_region
                 log.info(f"Route detectee: {last_route} ({region})")
