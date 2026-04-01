@@ -22,10 +22,9 @@
 
         /* Glass cards */
         .glass-card {
-            background: linear-gradient(145deg, rgba(13,17,23,0.9), rgba(19,26,36,0.95));
+            background: linear-gradient(145deg, rgba(13,17,23,0.95), rgba(19,26,36,0.98));
             border: 1px solid rgba(0,229,255,0.08);
             border-radius: 16px;
-            backdrop-filter: blur(8px);
         }
         .glass-card:hover { border-color: rgba(0,229,255,0.2); }
 
@@ -47,7 +46,10 @@
         /* Animations */
         .fade-in { animation: fadeIn 0.5s ease; }
         @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-        .sprite-hover { transition:transform 0.2s; }
+        .sprite-hover { transition:transform 0.2s; image-rendering: auto; }
+        img[src*="sprite"] { image-rendering: pixelated; }
+        /* Crisp text rendering */
+        body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
         .sprite-hover:hover { transform:scale(1.1); }
 
         /* Spawn row */
@@ -799,8 +801,16 @@ function go(p){
         }
         document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
         document.querySelector(`[data-page="${p}"]`)?.classList.add('active');
+        // Lazy-load page data on first visit
         if(p==='pokedex'&&!window._dx)loadDex();
         if(p==='collection'&&!window._cl)loadCol();
+        if(p==='shiny'&&!window._sh){window._sh=true;ocrLoadRegions();loadOptStats();shinyUpdate();loadHordeSummary();loadHordes();calcSS();}
+        if(p==='combat'&&!window._cb){window._cb=true;rTm();loadChart();}
+        if(p==='equipe'&&!window._eq){window._eq=true;rTm();}
+        if(p==='guide'&&!window._gu){window._gu=true;loadGuide('Kanto');}
+        if(p==='evtrain'&&!window._ev){window._ev=true;loadEVTracker();calcBreed();renderNatures(NATURES);}
+        if(p==='options'&&!window._op){window._op=true;ocrLoadRegions();}
+        if(p==='routes'&&!window._rt){window._rt=true;loadRoutes();}
     }, current?150:0);
 }
 
@@ -887,17 +897,35 @@ function applyDexFilters(){
     rDex(list);
 }
 
+let _dexPage=0;const _DEX_PAGE=60;let _dexList=[];
 function rDex(list){
+    _dexList=list;_dexPage=0;
     const g=document.getElementById('dex-grid');g.innerHTML='';
     document.getElementById('dex-detail').classList.add('hidden');g.classList.remove('hidden');
-    list.forEach(p=>{
-        const t2 = p.type2 ? ' / '+tfr(p.type2) : '';
-        g.innerHTML+=`<div class="dex-card" onclick="showP(${p.id})" style="border-bottom:3px solid ${TC[p.type1]||'#888'}" title="${p.name_fr||p.name} (${tfr(p.type1)}${t2})">
-            <img src="${spr(p.name)}" data-id="${p.id}" class="w-14 h-14 mx-auto sprite-hover" loading="lazy" alt="${p.name_fr||p.name}">
+    _appendDex();
+}
+function _appendDex(){
+    const g=document.getElementById('dex-grid');
+    const start=_dexPage*_DEX_PAGE;const batch=_dexList.slice(start,start+_DEX_PAGE);
+    if(!batch.length)return;
+    const frag=document.createDocumentFragment();
+    batch.forEach(p=>{
+        const t2=p.type2?' / '+tfr(p.type2):'';
+        const d=document.createElement('div');d.className='dex-card';d.onclick=()=>showP(p.id);
+        d.style.borderBottom='3px solid '+(TC[p.type1]||'#888');
+        d.title=(p.name_fr||p.name)+' ('+tfr(p.type1)+t2+')';
+        d.innerHTML=`<img src="${spr(p.name)}" data-id="${p.id}" class="w-14 h-14 mx-auto sprite-hover" loading="lazy" alt="${p.name_fr||p.name}">
             <p class="text-[11px] font-semibold text-white mt-1">${p.name_fr||p.name}</p>
-            <p class="text-[9px] text-gray-600">#${String(p.id).padStart(3,'0')} ${p.name_fr&&p.name_fr!==p.name?`<span class="text-gray-700">${p.name}</span>`:''}</p>
-        </div>`;
+            <p class="text-[9px] text-gray-600">#${String(p.id).padStart(3,'0')} ${p.name_fr&&p.name_fr!==p.name?`<span class="text-gray-700">${p.name}</span>`:''}</p>`;
+        frag.appendChild(d);
     });
+    g.appendChild(frag);_dexPage++;
+    // Show load more button
+    let btn=document.getElementById('dex-load-more');
+    if(start+_DEX_PAGE<_dexList.length){
+        if(!btn){btn=document.createElement('button');btn.id='dex-load-more';btn.className='btn btn-ghost btn-sm text-neon-cyan w-full mt-4';btn.onclick=()=>_appendDex();g.parentNode.appendChild(btn);}
+        btn.textContent=`Charger plus (${_dexList.length-start-_DEX_PAGE} restants)`;btn.classList.remove('hidden');
+    }else if(btn){btn.classList.add('hidden');}
 }
 
 async function showP(id){
@@ -1196,17 +1224,37 @@ function showToast(msg){
 }
 
 // Make collection interactive
+let _colPage=0;const _COL_PAGE=100;let _colPk=[];
 async function loadCol(){
     window._cl=true;
     try{const pk=await fetch('/api/pokemon/all').then(r=>r.json());if(!Array.isArray(pk))return;
-    const caught=JSON.parse(localStorage.getItem('caught')||'[]');
+    _colPk=pk;_colPage=0;
     const g=document.getElementById('col-grid');g.innerHTML='';
-    pk.forEach(p=>{
-        const isCaught=caught.includes(p.id);
-        g.innerHTML+=`<div class="dex-card p-1 ${isCaught?'':'opacity-30'} hover:opacity-100 transition cursor-pointer" style="border-bottom:2px solid ${TC[p.type1]||'#888'}${isCaught?';box-shadow:0 0 8px rgba(105,240,174,0.3)':''}" onclick="toggleCatch(${p.id})" ondblclick="go('pokedex');setTimeout(()=>showP(${p.id}),300)" title="${p.name} — clic=capturer, double-clic=fiche" id="col-${p.id}"><img src="${spr(p.name)}" data-id="${p.id}" class="w-8 h-8 mx-auto" loading="lazy"><p class="text-[7px] text-gray-600">${p.id}</p></div>`;
-    });
-    updateColCount(caught.length);
+    _appendCol();
+    updateColCount(JSON.parse(localStorage.getItem('caught')||'[]').length);
     }catch(e){console.error(e);}
+}
+function _appendCol(){
+    const g=document.getElementById('col-grid');
+    const caught=JSON.parse(localStorage.getItem('caught')||'[]');
+    const start=_colPage*_COL_PAGE;const batch=_colPk.slice(start,start+_COL_PAGE);
+    if(!batch.length)return;
+    const frag=document.createDocumentFragment();
+    batch.forEach(p=>{
+        const isCaught=caught.includes(p.id);
+        const d=document.createElement('div');d.className='dex-card p-1 '+(isCaught?'':'opacity-30')+' hover:opacity-100 transition cursor-pointer';
+        d.style.borderBottom='2px solid '+(TC[p.type1]||'#888');if(isCaught)d.style.boxShadow='0 0 8px rgba(105,240,174,0.3)';
+        d.id='col-'+p.id;d.title=(p.name_fr||p.name)+' — clic=capturer, double-clic=fiche';
+        d.onclick=()=>toggleCatch(p.id);d.ondblclick=()=>{go('pokedex');setTimeout(()=>showP(p.id),300);};
+        d.innerHTML=`<img src="${spr(p.name)}" data-id="${p.id}" class="w-8 h-8 mx-auto" loading="lazy"><p class="text-[7px] text-gray-600">${p.id}</p>`;
+        frag.appendChild(d);
+    });
+    g.appendChild(frag);_colPage++;
+    let btn=document.getElementById('col-load-more');
+    if(start+_COL_PAGE<_colPk.length){
+        if(!btn){btn=document.createElement('button');btn.id='col-load-more';btn.className='btn btn-ghost btn-sm text-neon-cyan w-full mt-4';btn.onclick=()=>_appendCol();g.parentNode.appendChild(btn);}
+        btn.textContent=`Charger plus (${_colPk.length-start-_COL_PAGE} restants)`;btn.classList.remove('hidden');
+    }else if(btn){btn.classList.add('hidden');}
 }
 function toggleCatch(id){
     let caught=JSON.parse(localStorage.getItem('caught')||'[]');
@@ -2177,7 +2225,8 @@ async function ocrShowCombatPreview(p){
     }catch(e){el.innerHTML=`<p class="text-red-400">Erreur calcul faiblesses</p>`;}
 }
 
-loadAbilityFR();ocrLoadRegions();loadDash();loadChart();rTm();loadRoutes();checkGame();loadOptStats();shinyUpdate();calcBreed();renderNatures(NATURES);loadHordeSummary();loadHordes();calcSS();loadEVTracker();loadGuide('Kanto');dashLoadRoute();
+// Only load visible page (dashboard) at startup — others load on navigation
+loadAbilityFR();loadDash();loadChart();checkGame();dashLoadRoute();
 </script>
 </body>
 </html>
