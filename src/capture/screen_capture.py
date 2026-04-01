@@ -194,8 +194,7 @@ class ScreenCapture:
             log.warning("Could not get window rect")
             return False
 
-        # Clamp to screen bounds (maximized windows have -8,-8 borders on Windows)
-        # BetterCam requires region within screen resolution
+        # Clamp to screen bounds
         left, top, right, bottom = self.window_rect
         try:
             screen_w = user32.GetSystemMetrics(0)  # SM_CXSCREEN
@@ -204,12 +203,14 @@ class ScreenCapture:
             screen_w, screen_h = 1920, 1080
         left = max(0, left)
         top = max(0, top)
-        right = min(right, screen_w)
-        bottom = min(bottom, screen_h)
-        self.window_rect = (left, top, right, bottom)
-
+        right = max(0, min(right, screen_w))
+        bottom = max(0, min(bottom, screen_h))
         w = right - left
         h = bottom - top
+        if w < 100 or h < 100:
+            log.warning(f"Window too small or invalid: {w}x{h} (raw rect: {self.window_rect}). Window minimized?")
+            return False
+        self.window_rect = (left, top, right, bottom)
         log.info(f"Game window found: {w}x{h} at {self.window_rect} (screen: {screen_w}x{screen_h})")
 
         # Try PrintWindow first (captures by HWND, works even if covered)
