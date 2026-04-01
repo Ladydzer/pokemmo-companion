@@ -117,10 +117,6 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
             Collection
         </a>
-        <a class="nav-btn" data-page="notes" onclick="go('notes')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            Notes
-        </a>
         <a class="nav-btn" data-page="settings" onclick="go('settings')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             Options
@@ -223,7 +219,6 @@
             <div><p class="text-gray-500 text-[10px]">SHINIES</p><p id="ps-shi" class="text-xl font-black mono" style="color:#ffd740">0</p></div>
             <div><p class="text-gray-500 text-[10px]">COLLECTION</p><p id="ps-col" class="text-xl font-black mono" style="color:#69f0ae">0</p></div>
             <div><p class="text-gray-500 text-[10px]">FAVORIS</p><p id="ps-fav" class="text-xl font-black mono" style="color:#ff4081">0</p></div>
-            <div><p class="text-gray-500 text-[10px]">NOTES</p><p id="ps-not" class="text-xl font-black mono" style="color:#40c4ff">0</p></div>
         </div>
     </div>
 </div>
@@ -619,25 +614,6 @@
     </div>
     <div id="guide-content">
         <p class="text-gray-500">Chargement du guide Kanto...</p>
-    </div>
-</div>
-
-<!-- NOTES -->
-<div id="page-notes" class="page hidden fade-in max-w-4xl">
-    <h1 class="text-3xl font-black text-white mb-5">Notes de Route</h1>
-    <div class="glass-card p-6 mb-5">
-        <select id="notes-region" onchange="loadRoutes()" class="select select-bordered select-sm mb-3">
-            <option value="">Toutes les regions</option>
-            <option>Kanto</option><option>Johto</option><option>Hoenn</option><option>Sinnoh</option><option>Unova</option>
-        </select>
-        <div id="routes-list" class="max-h-96 overflow-y-auto space-y-1"></div>
-    </div>
-    <div class="glass-card p-6 mb-5">
-        <p id="note-title" class="text-xs font-bold tracking-widest text-gray-500 mb-3">Selectionne une route</p>
-        <!-- Route POI/items -->
-        <div id="route-poi" class="mb-4 hidden"></div>
-        <textarea id="note-text" rows="4" placeholder="Ecris tes notes ici..." class="textarea textarea-bordered w-full mb-3" disabled></textarea>
-        <button onclick="saveNote()" class="btn btn-sm btn-info" disabled id="save-note-btn">Sauvegarder</button>
     </div>
 </div>
 
@@ -1666,7 +1642,7 @@ if(savedTheme)document.documentElement.setAttribute('data-theme',savedTheme);
 // Keyboard shortcuts
 document.addEventListener('keydown',e=>{
     if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT')return;
-    const shortcuts={1:'dashboard',2:'pokedex',3:'battle',4:'team',5:'shiny',6:'guide',7:'evtrain',8:'collection',9:'notes',0:'settings'};
+    const shortcuts={1:'dashboard',2:'pokedex',3:'battle',4:'team',5:'shiny',6:'guide',7:'evtrain',8:'collection',0:'settings'};
     if(shortcuts[e.key])go(shortcuts[e.key]);
     if((e.key==='/'||e.key==='f')&&!e.ctrlKey&&!e.metaKey){e.preventDefault();document.getElementById('global-search')?.focus();}
 });
