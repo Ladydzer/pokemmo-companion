@@ -60,18 +60,35 @@ async def get_stats():
 async def get_all_pokemon():
     with _db() as conn:
         rows = conn.execute(
-            "SELECT id, name, type1, type2, hp, attack, defense, sp_attack, sp_defense, speed FROM pokemon ORDER BY id"
+            "SELECT id, name, name_fr, type1, type2, hp, attack, defense, sp_attack, sp_defense, speed FROM pokemon ORDER BY id"
         ).fetchall()
     return [dict(r) for r in rows]
 
 
+def _strip_accents(s: str) -> str:
+    """Remove accents for accent-insensitive search."""
+    import unicodedata
+    return ''.join(c for c in unicodedata.normalize('NFD', s)
+                   if unicodedata.category(c) != 'Mn')
+
+
 @app.get("/api/pokemon/search/{query}")
 async def search_pokemon(query: str):
+    q_clean = _strip_accents(query.lower())
     with _db() as conn:
+        # First try standard LIKE search
         rows = conn.execute(
-            "SELECT id, name, type1, type2, hp, attack, defense, sp_attack, sp_defense, speed FROM pokemon WHERE LOWER(name) LIKE LOWER(?) ORDER BY id LIMIT 30",
-            (f"%{query}%",)
+            "SELECT id, name, name_fr, type1, type2, hp, attack, defense, sp_attack, sp_defense, speed FROM pokemon WHERE (LOWER(name) LIKE LOWER(?) OR LOWER(name_fr) LIKE LOWER(?)) ORDER BY id LIMIT 30",
+            (f"%{query}%", f"%{query}%")
         ).fetchall()
+        if not rows:
+            # Fallback: accent-insensitive search
+            all_rows = conn.execute(
+                "SELECT id, name, name_fr, type1, type2, hp, attack, defense, sp_attack, sp_defense, speed FROM pokemon ORDER BY id"
+            ).fetchall()
+            rows = [r for r in all_rows
+                    if q_clean in _strip_accents((r["name"] or "").lower())
+                    or q_clean in _strip_accents((r["name_fr"] or "").lower())][:30]
     return [dict(r) for r in rows]
 
 
@@ -308,16 +325,23 @@ async def game_status():
 @app.get("/api/ocr/status")
 async def ocr_status():
     """Check OCR availability and show current ROI settings."""
-    from ..detection.ocr_engine import init_tesseract
-    tesseract_ok = init_tesseract()
-    from ..detection.route_detector import RouteDetector
-    rd = RouteDetector()
+    try:
+        from ..detection.ocr_engine import init_tesseract
+        tesseract_ok = init_tesseract()
+    except ImportError:
+        tesseract_ok = False
+    try:
+        from ..detection.route_detector import RouteDetector
+        rd = RouteDetector()
+        route_roi = rd._route_roi
+    except ImportError:
+        route_roi = {"x_ratio": 0.01, "y_ratio": 0.01, "w_ratio": 0.18, "h_ratio": 0.04}
     return {
         "tesseract_available": tesseract_ok,
-        "route_roi": rd._route_roi,
+        "route_roi": route_roi,
         "ocr_regions": [
-            {"name": "Route Name", "x": rd._route_roi["x_ratio"], "y": rd._route_roi["y_ratio"],
-             "w": rd._route_roi["w_ratio"], "h": rd._route_roi["h_ratio"]},
+            {"name": "Route Name", "x": route_roi["x_ratio"], "y": route_roi["y_ratio"],
+             "w": route_roi["w_ratio"], "h": route_roi["h_ratio"]},
             {"name": "Opponent Name", "x": 0.52, "y": 0.05, "w": 0.35, "h": 0.04},
             {"name": "Opponent Level", "x": 0.80, "y": 0.05, "w": 0.12, "h": 0.04},
         ]
@@ -613,6 +637,63 @@ async def test_ocr_region(body: dict):
         return {"text": "(OpenCV/Tesseract non installe — testable sur PC avec PokeMMO)", "available": False}
     except Exception as e:
         return {"text": f"(Erreur: {str(e)[:80]})", "available": False}
+
+
+@app.post("/api/ocr/analyze-stats")
+async def analyze_stats_screen(body: dict):
+    """Analyze a full Pokemon stats screen — extract IVs, EVs, nature, icons.
+
+    Expects base64 image of the PokeMMO PC/summary screen.
+    """
+    import base64
+    try:
+        import cv2
+        import numpy as np
+        from ..detection.ocr_engine import init_tesseract, read_stats_screen
+        if not init_tesseract():
+            return {"error": "Tesseract non installe", "available": False}
+
+        img_data = body.get("image", "")
+        if "base64," in img_data:
+            img_data = img_data.split("base64,")[1]
+        img_bytes = base64.b64decode(img_data)
+        nparr = np.frombuffer(img_bytes, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if img is None:
+            return {"error": "Image invalide", "available": True}
+
+        result = read_stats_screen(img)
+        result["available"] = True
+        return result
+    except ImportError:
+        return {"error": "OpenCV/Tesseract non installe", "available": False}
+    except Exception as e:
+        return {"error": str(e)[:100], "available": False}
+
+
+@app.post("/api/ocr/detect-icons")
+async def detect_icons(body: dict):
+    """Detect shiny/alpha/hidden ability icons in a screenshot."""
+    import base64
+    try:
+        import cv2
+        import numpy as np
+        from ..detection.ocr_engine import detect_special_icons
+
+        img_data = body.get("image", "")
+        if "base64," in img_data:
+            img_data = img_data.split("base64,")[1]
+        img_bytes = base64.b64decode(img_data)
+        nparr = np.frombuffer(img_bytes, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if img is None:
+            return {"error": "Image invalide"}
+
+        return detect_special_icons(img)
+    except ImportError:
+        return {"error": "OpenCV non installe"}
+    except Exception as e:
+        return {"error": str(e)[:100]}
 
 
 @app.get("/sprite/{pokemon_id}")

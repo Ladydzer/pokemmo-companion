@@ -2,7 +2,8 @@
 import numpy as np
 import cv2
 
-from .ocr_engine import read_pokemon_name, read_level, preprocess_light_text
+from .ocr_engine import (read_pokemon_name, read_level, preprocess_light_text,
+                         detect_special_icons, fuzzy_match_name)
 from ..data.type_chart import get_battle_summary, format_battle_summary
 from ..utils.logger import log
 
@@ -82,16 +83,26 @@ class BattleDetector:
         level_region = frame[ly:ly + lh, lx:lx + lw]
         level = read_level(level_region) if level_region.size > 0 else None
 
-        # Look up Pokemon in database
+        # Look up Pokemon in database (with fuzzy matching fallback)
         pokemon_data = None
         types = []
         if self.db:
             pokemon_data = self.db.get_pokemon_by_name(name)
+            if not pokemon_data:
+                # Fuzzy match against known names
+                all_names = self.db.get_all_pokemon_names() if hasattr(self.db, 'get_all_pokemon_names') else []
+                matched = fuzzy_match_name(name, all_names, cutoff=0.7) if all_names else None
+                if matched:
+                    pokemon_data = self.db.get_pokemon_by_name(matched)
+                    log.info(f"Fuzzy matched '{name}' -> '{matched}'")
             if pokemon_data:
                 types = [pokemon_data["type1"]]
                 if pokemon_data.get("type2"):
                     types.append(pokemon_data["type2"])
                 name = pokemon_data["name"]  # Use canonical name from DB
+
+        # Detect special icons (shiny/alpha/HA)
+        icons = detect_special_icons(frame)
 
         # Get battle summary
         battle_summary = get_battle_summary(types) if types else None
@@ -102,6 +113,9 @@ class BattleDetector:
             "types": types,
             "battle_summary": battle_summary,
             "pokemon_data": pokemon_data,
+            "shiny": icons["shiny"],
+            "alpha": icons["alpha"],
+            "hidden_ability": icons["hidden_ability"],
         }
 
         # Update state

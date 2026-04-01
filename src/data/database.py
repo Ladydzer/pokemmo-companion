@@ -53,6 +53,12 @@ class Database:
             ).fetchone()
             return dict(row) if row else None
 
+    def get_all_pokemon_names(self) -> list[str]:
+        """Return all Pokemon names for fuzzy matching."""
+        with self.connect() as conn:
+            rows = conn.execute("SELECT name FROM pokemon ORDER BY id").fetchall()
+            return [r["name"] for r in rows]
+
     def search_pokemon(self, query: str, limit: int = 20) -> list[dict]:
         """Search Pokemon by partial name match."""
         with self.connect() as conn:

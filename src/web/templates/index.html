@@ -863,7 +863,7 @@ async function loadDex(){
         document.getElementById('dex-search').addEventListener('input',e=>{
             const q=e.target.value.toLowerCase();
             if(q.length<2){rDex(window._pk);return;}
-            rDex(window._pk.filter(p=>p.name.toLowerCase().includes(q)||String(p.id).includes(q)||p.type1.toLowerCase().includes(q)||(p.type2||'').toLowerCase().includes(q)));
+            rDex(window._pk.filter(p=>p.name.toLowerCase().includes(q)||(p.name_fr||'').toLowerCase().includes(q)||String(p.id).includes(q)||p.type1.toLowerCase().includes(q)||(p.type2||'').toLowerCase().includes(q)));
         });
     }catch(e){console.error(e);}
 }
@@ -892,10 +892,10 @@ function rDex(list){
     document.getElementById('dex-detail').classList.add('hidden');g.classList.remove('hidden');
     list.forEach(p=>{
         const t2 = p.type2 ? ' / '+tfr(p.type2) : '';
-        g.innerHTML+=`<div class="dex-card" onclick="showP(${p.id})" style="border-bottom:3px solid ${TC[p.type1]||'#888'}" title="${p.name} (${tfr(p.type1)}${t2})">
-            <img src="${spr(p.name)}" data-id="${p.id}" class="w-14 h-14 mx-auto sprite-hover" loading="lazy" alt="${p.name}">
-            <p class="text-[11px] font-semibold text-white mt-1">${p.name}</p>
-            <p class="text-[9px] text-gray-600">#${String(p.id).padStart(3,'0')}</p>
+        g.innerHTML+=`<div class="dex-card" onclick="showP(${p.id})" style="border-bottom:3px solid ${TC[p.type1]||'#888'}" title="${p.name_fr||p.name} (${tfr(p.type1)}${t2})">
+            <img src="${spr(p.name)}" data-id="${p.id}" class="w-14 h-14 mx-auto sprite-hover" loading="lazy" alt="${p.name_fr||p.name}">
+            <p class="text-[11px] font-semibold text-white mt-1">${p.name_fr||p.name}</p>
+            <p class="text-[9px] text-gray-600">#${String(p.id).padStart(3,'0')} ${p.name_fr&&p.name_fr!==p.name?`<span class="text-gray-700">${p.name}</span>`:''}</p>
         </div>`;
     });
 }
@@ -914,7 +914,8 @@ async function showP(id){
             <div class="flex flex-col md:flex-row gap-8">
                 <div class="text-center flex-shrink-0">
                     <img src="${spr(p.name)}" data-id="${p.id}" class="w-36 h-36 mx-auto sprite-hover">
-                    <h2 class="text-2xl font-black text-white mt-3">#${String(p.id).padStart(3,'0')} ${p.name}</h2>
+                    <h2 class="text-2xl font-black text-white mt-3">#${String(p.id).padStart(3,'0')} ${p.name_fr||p.name}</h2>
+                    ${p.name_fr&&p.name_fr!==p.name?`<p class="text-xs text-gray-500 -mt-1">${p.name}</p>`:''}
                     <div class="flex gap-2 justify-center mt-2">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div>
                     <div class="flex flex-wrap gap-1 mt-2 justify-center">${p.ability1?`<button onclick="event.stopPropagation();showAbility(${JSON.stringify(p.ability1)})" class="text-[10px] px-2 py-0.5 rounded cursor-pointer hover:bg-dark-500" style="background:rgba(0,229,255,0.08);color:#00e5ff" title="Voir les Pokemon avec cette capacite">${afr(p.ability1)}</button>`:''} ${p.ability2?`<button onclick="event.stopPropagation();showAbility(${JSON.stringify(p.ability2)})" class="text-[10px] px-2 py-0.5 rounded cursor-pointer hover:bg-dark-500" style="background:rgba(0,229,255,0.08);color:#00e5ff">${afr(p.ability2)}</button>`:''} ${p.hidden_ability?`<button onclick="event.stopPropagation();showAbility(${JSON.stringify(p.hidden_ability)})" class="text-[10px] px-2 py-0.5 rounded cursor-pointer hover:bg-dark-500" style="background:rgba(213,0,249,0.1);color:#d500f9" title="Capacite Cachee">${afr(p.hidden_ability)} (CC)</button>`:''}</div>
                     <div class="flex gap-2 mt-2">
