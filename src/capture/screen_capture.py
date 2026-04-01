@@ -139,8 +139,14 @@ class ScreenCapture:
             log.warning("Could not get window rect")
             return False
 
-        w = self.window_rect[2] - self.window_rect[0]
-        h = self.window_rect[3] - self.window_rect[1]
+        # Clamp negative coordinates (maximized windows have -8,-8 borders on Windows)
+        left, top, right, bottom = self.window_rect
+        left = max(0, left)
+        top = max(0, top)
+        self.window_rect = (left, top, right, bottom)
+
+        w = right - left
+        h = bottom - top
         log.info(f"Game window found: {w}x{h} at {self.window_rect}")
 
         # Try capture engines in order: BetterCam > MSS > PIL
