@@ -260,6 +260,12 @@ class ScreenCapture:
             if self.camera == "printwindow":
                 # PrintWindow: captures by HWND, works even if window is covered
                 frame = capture_window_by_hwnd(self.hwnd)
+                if frame is not None:
+                    # Crop window borders (8px on maximized windows)
+                    h, w = frame.shape[:2]
+                    border = 8
+                    if h > border * 2 and w > border * 2:
+                        frame = frame[border:h-border, border:w-border]
             elif self.camera == "pil":
                 # PIL fallback
                 from PIL import ImageGrab

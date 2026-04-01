@@ -185,29 +185,44 @@ def read_text(image: np.ndarray, psm: int = 7, preprocess: bool = True,
 def read_pokemon_name(image: np.ndarray) -> str:
     """Read a Pokemon name from a battle screen region.
 
-    Optimized for PokeMMO battle text — supports French names with accents.
+    Tries multiple preprocessing approaches for PokeMMO's pixel font.
+    Supports French names with accents.
     """
-    # French Pokemon names use accented chars (Géolithe, Léviator, Méloetta...)
-    whitelist = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzéèêëàâäùûüôöîïçÉÈÊËÀÂÄÙÛÜÔÖÎÏÇ.-' 2♀♂"
-    # Try without whitelist first (more flexible for FR), fall back to whitelist
-    text = read_text(image, psm=7, whitelist="")
-    if not text or len(text) < 2:
-        text = read_text(image, psm=7, whitelist=whitelist)
+    if not _CV2_AVAILABLE or image is None or image.size == 0:
+        return ""
 
-    # Clean up common OCR artifacts
+    whitelist = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzéèêëàâùûôîïçÉÈÊËÀÂÙÛÔÎÏÇ.-' 0123456789"
+    results = []
+
+    # Method 1: Light text (invert + Otsu)
+    t1 = read_text(preprocess_light_text(image, upscale=3), psm=7,
+                   preprocess=False, whitelist=whitelist)
+    if t1 and len(t1) >= 3:
+        results.append(t1)
+
+    # Method 2: High upscale + inverted Otsu (pixel font friendly)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image.copy()
+    up = cv2.resize(gray, None, fx=4, fy=4, interpolation=cv2.INTER_NEAREST)
+    inv = cv2.bitwise_not(up)
+    _, binary = cv2.threshold(inv, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    t2 = read_text(binary, psm=7, preprocess=False, whitelist=whitelist)
+    if t2 and len(t2) >= 3:
+        results.append(t2)
+
+    # Method 3: Standard
+    t3 = read_text(image, psm=7, preprocess=True, whitelist=whitelist)
+    if t3 and len(t3) >= 3:
+        results.append(t3)
+
+    if not results:
+        return ""
+
+    # Pick best result (most alpha chars)
+    text = max(results, key=lambda t: sum(1 for c in t if c.isalpha()))
+
+    # Clean up
     text = text.strip().strip("_|[]{}()")
-
-    # Remove "Niv." and level number if present (e.g., "Géolithe Niv. 38" -> "Géolithe")
     text = re.sub(r'\s*Niv\.?\s*\d+', '', text).strip()
-
-    # Fix common misreads
-    replacements = {
-        "0": "O",  # Zero -> O in names
-        "1": "l",  # One -> l in names
-    }
-    for old, new in replacements.items():
-        if old in text and not text.isdigit():
-            text = text.replace(old, new)
 
     return text
 
@@ -215,14 +230,47 @@ def read_pokemon_name(image: np.ndarray) -> str:
 def read_route_name(image: np.ndarray) -> str:
     """Read a route/area name from the minimap/header region.
 
-    Route names in PokeMMO follow patterns like:
-    - "Route 101", "Route 1"
-    - "Littleroot Town", "Pallet Town"
-    - "Mt. Moon", "Viridian Forest"
+    Tries multiple preprocessing approaches and picks the best result.
+    PokeMMO text is typically light on dark background, pixel font.
     """
-    whitelist = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .'-"
-    text = read_text(image, psm=7, whitelist=whitelist)
-    return text.strip()
+    if not _CV2_AVAILABLE or image is None or image.size == 0:
+        return ""
+
+    whitelist = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .'-éèêëàâùûôîïçÉÈÊËÀÂÙÛÔÎÏÇ"
+    results = []
+
+    # Method 1: Light text preprocessing (invert + Otsu)
+    text1 = read_text(preprocess_light_text(image, upscale=3), psm=7,
+                      preprocess=False, whitelist=whitelist)
+    if text1:
+        results.append(text1)
+
+    # Method 2: Standard preprocessing with contrast
+    text2 = read_text(image, psm=7, preprocess=True, whitelist=whitelist)
+    if text2:
+        results.append(text2)
+
+    # Method 3: Simple grayscale + high upscale + Otsu (good for pixel fonts)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image.copy()
+    upscaled = cv2.resize(gray, None, fx=4, fy=4, interpolation=cv2.INTER_NEAREST)
+    _, binary = cv2.threshold(upscaled, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    text3 = read_text(binary, psm=7, preprocess=False, whitelist=whitelist)
+    if text3:
+        results.append(text3)
+
+    # Method 4: Inverted + high upscale (for light text on dark bg)
+    inverted = cv2.bitwise_not(upscaled)
+    _, binary_inv = cv2.threshold(inverted, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    text4 = read_text(binary_inv, psm=7, preprocess=False, whitelist=whitelist)
+    if text4:
+        results.append(text4)
+
+    if not results:
+        return ""
+
+    # Pick the result with the most alphabetic chars (least noise)
+    best = max(results, key=lambda t: sum(1 for c in t if c.isalpha()))
+    return best.strip()
 
 
 def read_level(image: np.ndarray) -> int | None:
