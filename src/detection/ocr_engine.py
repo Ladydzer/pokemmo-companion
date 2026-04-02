@@ -121,8 +121,6 @@ def preprocess_pixel_font(image: np.ndarray, upscale: int = 4) -> np.ndarray:
     text_only = cv2.GaussianBlur(text_only, (3, 3), 0)
 
     # Step 4: Otsu threshold (uniform intensity, better than adaptive for pixel fonts)
-    if len(text_only.shape) == 3:
-        text_only = cv2.cvtColor(text_only, cv2.COLOR_BGR2GRAY)
     _, binary = cv2.threshold(text_only, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
     # Step 5: Add 10px white border (Tesseract needs margin around text)
