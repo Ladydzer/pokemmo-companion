@@ -388,6 +388,87 @@ async def ocr_status():
     }
 
 
+@app.get("/api/diagnostic")
+async def diagnostic():
+    """Full system diagnostic — checks everything needed for OCR overlay."""
+    import shutil
+    checks = {}
+
+    # 1. Tesseract installed?
+    tesseract_path = shutil.which("tesseract") or r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+    try:
+        import pytesseract
+        pytesseract.pytesseract.tesseract_cmd = tesseract_path
+        version = str(pytesseract.get_tesseract_version())
+        checks["tesseract"] = {"ok": True, "version": version, "path": tesseract_path}
+    except Exception:
+        checks["tesseract"] = {
+            "ok": False,
+            "error": "Tesseract non installe",
+            "fix": "Telecharger depuis https://github.com/UB-Mannheim/tesseract/wiki",
+        }
+
+    # 2. fra.traineddata?
+    import os
+    tessdata_paths = [
+        os.path.join(os.path.dirname(tesseract_path), "tessdata", "fra.traineddata"),
+        r"C:\Program Files\Tesseract-OCR\tessdata\fra.traineddata",
+    ]
+    fra_found = any(os.path.exists(p) for p in tessdata_paths)
+    if fra_found:
+        checks["fra_language"] = {"ok": True}
+    else:
+        checks["fra_language"] = {
+            "ok": False,
+            "error": "fra.traineddata manquant (accents FR)",
+            "fix": "curl -L -o tessdata/fra.traineddata https://github.com/tesseract-ocr/tessdata/raw/main/fra.traineddata",
+        }
+
+    # 3. Game window detected?
+    try:
+        from ..capture.screen_capture import find_window, get_window_size
+        hwnd = find_window("PokeMMO")
+        if hwnd:
+            size = get_window_size(hwnd)
+            checks["game_window"] = {"ok": True, "size": f"{size[0]}x{size[1]}" if size else "?"}
+        else:
+            checks["game_window"] = {"ok": False, "error": "Fenetre PokeMMO non trouvee", "fix": "Lancez PokeMMO avant l'overlay"}
+    except Exception:
+        checks["game_window"] = {"ok": False, "error": "Erreur detection fenetre"}
+
+    # 4. OCR regions configured?
+    import json as _json
+    regions_path = PROJECT_ROOT / "data" / "ocr_regions.json"
+    if regions_path.exists():
+        try:
+            data = _json.loads(regions_path.read_text(encoding="utf-8"))
+            n_regions = len(data.get("regions", []))
+            checks["ocr_regions"] = {"ok": n_regions >= 2, "count": n_regions,
+                                     "error": "" if n_regions >= 2 else "Moins de 2 zones configurees",
+                                     "fix": "Options > Studio OCR > Capturer depuis PokeMMO > Positionner les zones"}
+        except Exception:
+            checks["ocr_regions"] = {"ok": False, "error": "Fichier regions corrompu"}
+    else:
+        checks["ocr_regions"] = {"ok": False, "error": "Zones OCR non calibrees",
+                                 "fix": "Options > Studio OCR > Capturer depuis PokeMMO > Sauvegarder"}
+
+    # 5. Python dependencies
+    deps_ok = True
+    missing = []
+    for mod in ["cv2", "numpy", "pytesseract"]:
+        try:
+            __import__(mod)
+        except ImportError:
+            deps_ok = False
+            missing.append(mod)
+    checks["dependencies"] = {"ok": deps_ok, "missing": missing}
+
+    # Overall status
+    all_ok = all(c.get("ok", False) for c in checks.values())
+
+    return {"status": "ready" if all_ok else "issues", "checks": checks}
+
+
 @app.get("/api/ocr/cache-stats")
 async def ocr_cache_stats():
     """Get OCR cache statistics (hits, misses, ratio) for debugging."""

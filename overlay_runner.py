@@ -102,6 +102,8 @@ class DetectionWorker(QObject):
 
             if not init_tesseract():
                 print("[THREAD] Tesseract not found!", flush=True)
+                self.qt_update(lambda: self.overlay.update_status(
+                    "Tesseract non installe — voir Options > Diagnostic"))
                 return
 
             from src.capture.screen_capture import ScreenCapture
@@ -166,9 +168,10 @@ class DetectionWorker(QObject):
 
         print("[THREAD] Entering main detection loop", flush=True)
         log.info("Pipeline OCR demarre — detection en cours...")
-        self.qt_update(lambda: self.overlay.update_status("Detection active"))
+        self.qt_update(lambda: self.overlay.update_status("OCR actif | F10: Normal"))
 
         frame_count = 0
+        ocr_reads = 0  # successful OCR reads counter
         while self._running:
             try:
                 frame = cap.capture_full()
@@ -199,6 +202,8 @@ class DetectionWorker(QObject):
                         raw_text = read_route_name(route_region)
                         log.info(f"OCR debug frame {frame_count}: route region {rw}x{rh} at ({rx},{ry}) -> '{raw_text}'")
 
+                if route_name:
+                    ocr_reads += 1
                 if route_name and route_name != last_route:
                     # Fuzzy match against known routes (rapidfuzz 77x faster)
                     if all_routes:
@@ -240,13 +245,19 @@ class DetectionWorker(QObject):
                     last_opponent = ""
                     self.qt_update(lambda: self.overlay.hide_battle())
 
-                # Periodically reload OCR regions
+                # Periodically reload OCR regions + update status
                 now = time.time()
                 if now - last_region_reload > REGION_RELOAD_INTERVAL:
                     last_region_reload = now
                     new_regions = load_ocr_regions()
                     if new_regions:
                         apply_ocr_regions(route_det, battle_det, new_regions)
+                    # Update status with OCR stats
+                    reads = ocr_reads
+                    status = f"OCR actif — {reads} lectures"
+                    if last_route:
+                        status += f" | {last_route}"
+                    self.qt_update(lambda: self.overlay.update_status(status))
 
                 time.sleep(0.2)  # 200ms interval (was 500ms)
             except Exception as e:
