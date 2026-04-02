@@ -52,6 +52,21 @@
         body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
         .sprite-hover:hover { transform:scale(1.1); }
 
+        /* Pulse animation for live dot */
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+        .live-pulse { animation:pulse 2s infinite; }
+
+        /* Skeleton loading */
+        @keyframes shimmer { 0%{background-position:-200px 0} 100%{background-position:200px 0} }
+        .skeleton { background:linear-gradient(90deg, rgba(30,30,40,0.6) 25%, rgba(50,50,60,0.8) 50%, rgba(30,30,40,0.6) 75%); background-size:200px 100%; animation:shimmer 1.5s infinite; border-radius:8px; }
+
+        /* Glass card hover */
+        .glass-card { transition:border-color 0.2s, box-shadow 0.2s; }
+        .glass-card:hover { border-color:rgba(0,229,255,0.08); }
+
+        /* Button press effect */
+        .btn:active { transform:scale(0.96); }
+
         /* Spawn row */
         .spawn-row { display:flex; align-items:center; gap:14px; padding:10px 0; border-bottom:1px solid rgba(0,229,255,0.04); }
         .spawn-row:last-child { border:none; }
@@ -695,7 +710,7 @@
             <div><label class="text-[10px] text-gray-500 block text-center">EV D.Spe</label><input type="number" id="iv-ev-spd" value="0" class="input input-bordered input-xs w-full text-center"></div>
             <div><label class="text-[10px] text-gray-500 block text-center">EV Vit</label><input type="number" id="iv-ev-spe" value="0" class="input input-bordered input-xs w-full text-center"></div>
         </div>
-        <button onclick="calcIVs()" class="btn btn-sm w-full" style="background:#00e5ff;color:#000;font-weight:700">Calculer les IVs</button>
+        <button onclick="calcIVs()" id="iv-calc-btn" class="btn btn-sm w-full" style="background:#00e5ff;color:#000;font-weight:700">Calculer les IVs</button>
     </div>
     <div id="iv-results" class="hidden glass-card p-6">
         <p class="text-[10px] font-bold tracking-widest text-gray-500 mb-4">RESULTATS</p>
@@ -947,7 +962,7 @@ setInterval(async()=>{
         const d=await fetch('/api/ocr/latest').then(r=>r.json());
         const dot=document.getElementById('live-dot');
         if(d.active){
-            dot.style.background='#76ff03';
+            dot.style.background='#76ff03';dot.classList.add('live-pulse');
             document.getElementById('live-route').textContent=d.route||'---';
             document.getElementById('live-region').textContent=d.region?`(${d.region})`:'';
             document.getElementById('live-age').textContent=d.age_seconds>=0?`${d.age_seconds.toFixed(0)}s`:'';
@@ -974,7 +989,7 @@ setInterval(async()=>{
                 document.getElementById('live-types').innerHTML=(d.opponent_types||[]).map(t=>pill(t)).join(' ');
             }else{bp.classList.add('hidden');}
         }else{
-            dot.style.background='#616161';
+            dot.style.background='#616161';dot.classList.remove('live-pulse');
             document.getElementById('live-age').textContent='offline';
         }
     }catch(e){}
@@ -1028,6 +1043,9 @@ async function loadDash(){
 
 async function loadDex(){
     window._dx=true;
+    // Show skeleton loading
+    const g=document.getElementById('dex-grid');
+    if(g)g.innerHTML=Array(12).fill('<div class="skeleton" style="height:120px"></div>').join('');
     try{
         const pk=await fetch('/api/pokemon/all').then(r=>r.json());
         if(!Array.isArray(pk))return;
@@ -1716,6 +1734,8 @@ function ivSelectPokemon(id,name){
 async function calcIVs(){
     const id=_ivPokemonId||document.getElementById('iv-pokemon-id').value;
     if(!id){showToast('Selectionnez un Pokemon');return;}
+    const btn=document.getElementById('iv-calc-btn');
+    btn.textContent='Calcul en cours...';btn.disabled=true;
     const level=parseInt(document.getElementById('iv-level').value)||50;
     const nature=document.getElementById('iv-nature').value;
     const stats=[
@@ -1811,6 +1831,7 @@ async function calcIVs(){
         html+=`</div>`;
         document.getElementById('iv-results-content').innerHTML=html;
     }catch(e){showToast('Erreur calcul: '+e.message);}
+    finally{btn.textContent='Calculer les IVs';btn.disabled=false;}
 }
 // Populate nature select
 (function(){
