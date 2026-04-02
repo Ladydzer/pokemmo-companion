@@ -48,11 +48,15 @@ class OverlayWindow(QMainWindow):
         self.config = config or AppConfig.load()
         self._is_compact = True
         self._is_visible = True
+        self._is_mini = True  # Mini mode: route + battle only
         self._last_battle_name = ""
+        self._last_activity = 0.0  # timestamp of last route/battle change
+        self._auto_hidden = False  # True when auto-hidden due to inactivity
 
         self._setup_window()
         self._setup_ui()
         self._setup_click_through()
+        self._setup_auto_hide()
 
     def _setup_window(self):
         """Configure window flags for overlay behavior."""
@@ -76,6 +80,7 @@ class OverlayWindow(QMainWindow):
                 self.move(geom.width() - oc.width - 20, 100)
 
         self.resize(self.config.overlay.width, 200)
+        self.setWindowOpacity(self.config.overlay.opacity)
 
     def _setup_ui(self):
         """Build the overlay UI."""
@@ -185,6 +190,45 @@ class OverlayWindow(QMainWindow):
 
         layout.addStretch()
 
+        # Start in mini mode (route + battle only)
+        self._apply_mini_mode()
+
+    def _apply_mini_mode(self):
+        """Apply mini mode — show only route + battle, hide details."""
+        mini = self._is_mini
+        # In mini mode, hide spawns and encounter counter
+        for w in [self.spawns_label, self.spawns_list, self.counter_sep,
+                  self.encounter_counter]:
+            w.setVisible(not mini)
+        self._adjust_size()
+
+    def _setup_auto_hide(self):
+        """Setup auto-hide timer — fade out after inactivity."""
+        import time
+        self._last_activity = time.time()
+        self._auto_hide_timer = QTimer(self)
+        self._auto_hide_timer.timeout.connect(self._check_auto_hide)
+        self._auto_hide_timer.start(1000)  # check every second
+
+    def _check_auto_hide(self):
+        """Auto-hide overlay after 10s of inactivity."""
+        import time
+        elapsed = time.time() - self._last_activity
+        if elapsed > 10 and not self._auto_hidden and self._is_visible:
+            self._auto_hidden = True
+            self.setWindowOpacity(0.15)  # fade to near-invisible
+        elif elapsed <= 10 and self._auto_hidden:
+            self._auto_hidden = False
+            self.setWindowOpacity(self.config.overlay.opacity)
+
+    def _mark_activity(self):
+        """Mark user-relevant activity (route change, battle detected)."""
+        import time
+        self._last_activity = time.time()
+        if self._auto_hidden:
+            self._auto_hidden = False
+            self.setWindowOpacity(self.config.overlay.opacity)
+
     def _setup_click_through(self):
         """Make the window click-through using Win32 API (except grip bar)."""
         try:
@@ -220,6 +264,7 @@ class OverlayWindow(QMainWindow):
         new_text = f"Route: {route_name}"
         if self.route_label.text() == new_text:
             return  # No change — skip repaint
+        self._mark_activity()
         self.route_label.setText(new_text)
         if region:
             self.region_label.setText(f"Region : {region}")
@@ -258,6 +303,7 @@ class OverlayWindow(QMainWindow):
         new_name = battle_info.get("name", "")
         if self._last_battle_name == new_name:
             return  # Same opponent — skip repaint
+        self._mark_activity()
         self._last_battle_name = new_name
         self.battle_panel.show_battle(battle_info)
         self._adjust_size()
@@ -269,18 +315,38 @@ class OverlayWindow(QMainWindow):
         self._adjust_size()
 
     def toggle_extended(self) -> None:
-        """Toggle between compact and extended mode."""
-        self._is_compact = not self._is_compact
-        extended = not self._is_compact
-        self.battle_panel.set_extended(extended)
-        # Show/hide extended-only panels
-        for panel in [self.guide_panel, self.pokedex_widget,
-                      self.team_analyzer, self.tools_panel]:
-            panel.setVisible(extended)
-        if extended:
-            self.resize(self.config.overlay.width, 700)
-        else:
+        """Cycle overlay modes: mini → normal → extended → mini."""
+        if self._is_mini:
+            # mini → normal
+            self._is_mini = False
+            self._is_compact = True
+            self._apply_mini_mode()
+            self.battle_panel.set_extended(False)
+            for panel in [self.guide_panel, self.pokedex_widget,
+                          self.team_analyzer, self.tools_panel]:
+                panel.hide()
             self.resize(self.config.overlay.width, 200)
+            self.update_status("Mode Normal | F10: Extended")
+        elif self._is_compact:
+            # normal → extended
+            self._is_compact = False
+            self.battle_panel.set_extended(True)
+            for panel in [self.guide_panel, self.pokedex_widget,
+                          self.team_analyzer, self.tools_panel]:
+                panel.show()
+            self.resize(self.config.overlay.width, 700)
+            self.update_status("Mode Extended | F10: Mini")
+        else:
+            # extended → mini
+            self._is_compact = True
+            self._is_mini = True
+            self.battle_panel.set_extended(False)
+            for panel in [self.guide_panel, self.pokedex_widget,
+                          self.team_analyzer, self.tools_panel]:
+                panel.hide()
+            self._apply_mini_mode()
+            self.resize(self.config.overlay.width, 120)
+            self.update_status("Mode Mini | F10: Normal")
         self._adjust_size()
 
     def toggle_debug(self) -> None:

@@ -35,7 +35,7 @@ class OCRConfig:
 
 @dataclass
 class OverlayConfig:
-    opacity: float = 0.85
+    opacity: float = 0.75  # 75% — less intrusive during gameplay
     toggle_hotkey: str = "f9"
     position_x: int = -1  # -1 = auto (right side)
     position_y: int = -1
