@@ -939,7 +939,7 @@ function _appendDex(){
         d.style.borderBottom='3px solid '+tc1;
         d.style.background=`linear-gradient(135deg, ${tc1}15 0%, rgba(13,17,23,0.6) 60%)`;
         d.title=(p.name_fr||p.name)+' ('+tfr(p.type1)+t2+')';
-        const typePills=`<span class="inline-block text-[8px] font-bold px-1.5 py-0.5 rounded-full mt-1" style="background:${tc1}40;color:${tc1}">${tfr(p.type1)}</span>`+(p.type2?` <span class="inline-block text-[8px] font-bold px-1.5 py-0.5 rounded-full mt-1" style="background:${TC[p.type2]||'#888'}40;color:${TC[p.type2]||'#888'}">${tfr(p.type2)}</span>`:'');
+        const typePills=`<span class="inline-block text-[8px] font-bold px-1.5 py-0.5 rounded-full mt-1 cursor-pointer hover:brightness-125" style="background:${tc1}40;color:${tc1}" onclick="event.stopPropagation();fDex('${p.type1}')">${tfr(p.type1)}</span>`+(p.type2?` <span class="inline-block text-[8px] font-bold px-1.5 py-0.5 rounded-full mt-1 cursor-pointer hover:brightness-125" style="background:${TC[p.type2]||'#888'}40;color:${TC[p.type2]||'#888'}" onclick="event.stopPropagation();fDex('${p.type2}')">${tfr(p.type2)}</span>`:'');
         d.innerHTML=`<img src="${spr(p.name)}" data-id="${p.id}" class="w-14 h-14 mx-auto sprite-hover" loading="lazy" alt="${p.name_fr||p.name}">
             <p class="text-[11px] font-semibold text-white mt-1">${p.name_fr||p.name}</p>
             <p class="text-[9px] text-gray-600">#${String(p.id).padStart(3,'0')}</p>
@@ -1146,7 +1146,7 @@ function rTm(){
             s.innerHTML+=`<div class="dex-card p-3 relative" onclick="rmTm(${i})" style="border-top:3px solid ${TC[p.type1]||'#888'};background:linear-gradient(135deg, ${TC[p.type1]||'#888'}15 0%, rgba(13,17,23,0.6) 60%)" title="Clic pour retirer">
                 <button class="absolute top-1 right-1 text-gray-700 hover:text-red-400 text-xs">✕</button>
                 <img src="${spr(p.name)}" data-id="${p.id}" class="w-16 h-16 mx-auto sprite-hover">
-                <p class="text-xs font-bold text-white mt-1">${p.name}</p>
+                <p class="text-xs font-bold text-white mt-1">${p.name_fr||p.name}</p>
                 <div class="flex gap-1 justify-center mt-1">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div>
                 <p class="text-[9px] text-gray-500 mt-1 mono">${topStat} | Spe:${p.speed} | BST:${bst}</p>
             </div>`;
