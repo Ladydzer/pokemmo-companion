@@ -2,12 +2,12 @@
 
 Runs the PyQt6 overlay with OCR detection pipeline.
 Communicates with web server API for Pokemon data.
+Uses QThread for proper Qt integration and signal-based updates.
 """
 import sys
 import os
 import json
 import time
-import threading
 import requests
 
 # Ensure project root is in path
@@ -60,170 +60,182 @@ def fetch_spawns(route_name):
     return []
 
 
-def detection_loop(overlay, qt_update_fn):
-    """Background thread: capture screen, run OCR, update overlay via Qt signals."""
-    import traceback
-    print("[THREAD] Detection loop started", flush=True)
+class DetectionWorker:
+    """Background worker: capture screen, run OCR, call update callbacks.
 
-    try:
-        from src.detection.ocr_engine import init_tesseract
-        print("[THREAD] OCR engine imported", flush=True)
+    Uses QThread for proper Qt lifecycle management.
+    Emits updates via callbacks scheduled on the Qt main thread.
+    """
 
-        if not init_tesseract():
-            print("[THREAD] Tesseract not found!", flush=True)
+    def __init__(self, overlay, qt_update_fn):
+        self.overlay = overlay
+        self.qt_update = qt_update_fn
+        self._running = True
+
+    def stop(self):
+        self._running = False
+
+    def run(self):
+        """Main detection loop — runs in QThread."""
+        import traceback
+        print("[THREAD] Detection loop started", flush=True)
+
+        try:
+            from src.detection.ocr_engine import init_tesseract
+            print("[THREAD] OCR engine imported", flush=True)
+
+            if not init_tesseract():
+                print("[THREAD] Tesseract not found!", flush=True)
+                return
+
+            from src.capture.screen_capture import ScreenCapture
+            cap = ScreenCapture()
+            print("[THREAD] ScreenCapture created", flush=True)
+
+            while self._running and not cap.initialize():
+                print("[THREAD] Waiting for PokeMMO...", flush=True)
+                time.sleep(5)
+
+            if not self._running:
+                return
+
+            print(f"[THREAD] PokeMMO found! rect={cap.window_rect}", flush=True)
+            self.qt_update(lambda: self.overlay.update_status("PokeMMO connecte !"))
+
+        except Exception as e:
+            print(f"[THREAD] INIT CRASH: {e}", flush=True)
+            traceback.print_exc()
             return
 
-        from src.capture.screen_capture import ScreenCapture
-        cap = ScreenCapture()
-        print("[THREAD] ScreenCapture created", flush=True)
-
-        while not cap.initialize():
-            print("[THREAD] Waiting for PokeMMO...", flush=True)
-            time.sleep(5)
-
-        print(f"[THREAD] PokeMMO found! rect={cap.window_rect}", flush=True)
-        qt_update_fn(lambda: overlay.update_status("PokeMMO connecte !"))
-
-    except Exception as e:
-        print(f"[THREAD] INIT CRASH: {e}", flush=True)
-        traceback.print_exc()
-        return
-
-    try:
-        from src.detection.route_detector import RouteDetector
-        from src.detection.battle_detector import BattleDetector
-        from src.data.database import Database
-        print("[THREAD] Detectors imported", flush=True)
-
-        db = Database()
-        route_det = RouteDetector()
-        battle_det = BattleDetector(db=db)
-        print("[THREAD] Detectors created", flush=True)
-    except Exception as e:
-        print(f"[THREAD] DETECTOR INIT CRASH: {e}", flush=True)
-        traceback.print_exc()
-        return
-
-    # Apply saved OCR regions from Studio OCR
-    regions = load_ocr_regions()
-    apply_ocr_regions(route_det, battle_det, regions)
-
-    last_route = ""
-    last_opponent = ""
-    in_battle = False
-    last_region_reload = time.time()
-    REGION_RELOAD_INTERVAL = 10
-
-    # Load all route names for fuzzy matching
-    try:
-        import sqlite3
-        conn = sqlite3.connect(str(os.path.join(PROJECT_ROOT, "data", "pokemon.db")))
-        _routes_fr = [r[0] for r in conn.execute(
-            "SELECT name_fr FROM routes WHERE name_fr IS NOT NULL"
-        ).fetchall()]
-        _routes_en = [r[0] for r in conn.execute(
-            "SELECT name FROM routes"
-        ).fetchall()]
-        all_routes = list(set(_routes_fr + _routes_en))
-        conn.close()
-        log.info(f"Loaded {len(all_routes)} route names for fuzzy matching")
-    except Exception:
-        all_routes = []
-
-    print("[THREAD] Entering main detection loop", flush=True)
-    log.info("Pipeline OCR demarre — detection en cours...")
-    qt_update_fn(lambda: overlay.update_status("Detection active"))
-
-    frame_count = 0
-    while True:
         try:
-            frame = cap.capture_full()
-            if frame is None:
-                if frame_count == 0:
-                    print("[THREAD] First frame is None!", flush=True)
-                time.sleep(1)
-                continue
+            from src.detection.route_detector import RouteDetector
+            from src.detection.battle_detector import BattleDetector
+            from src.data.database import Database
+            print("[THREAD] Detectors imported", flush=True)
 
-            frame_count += 1
-            if frame_count <= 3:
-                print(f"[THREAD] Frame {frame_count}: {frame.shape}", flush=True)
-            # Skip first 2 frames (may capture our own window during startup)
-            if frame_count <= 2:
-                time.sleep(0.5)
-                continue
-
-            # Always try both route and battle detection
-            # (state machine is unreliable without calibration)
-
-            # Detect route
-            route_name = route_det.detect_route(frame)
-            if frame_count <= 3:
-                # Log first few OCR attempts for debugging
-                from src.detection.ocr_engine import read_route_name, preprocess_light_text
-                h, w = frame.shape[:2]
-                roi = route_det._route_roi
-                rx, ry = int(roi["x_ratio"] * w), int(roi["y_ratio"] * h)
-                rw, rh = int(roi["w_ratio"] * w), int(roi["h_ratio"] * h)
-                route_region = frame[ry:ry+rh, rx:rx+rw]
-                if route_region.size > 0:
-                    raw_text = read_route_name(route_region)
-                    log.info(f"OCR debug frame {frame_count}: route region {rw}x{rh} at ({rx},{ry}) -> '{raw_text}'")
-
-            if route_name and route_name != last_route:
-                # Fuzzy match against known routes
-                import difflib
-                if all_routes:
-                    # Try matching the raw OCR text (often words are stuck together)
-                    matches = difflib.get_close_matches(route_name, all_routes, n=1, cutoff=0.5)
-                    if matches:
-                        log.info(f"Route fuzzy: '{route_name}' -> '{matches[0]}'")
-                        route_name = matches[0]
-
-                last_route = route_name
-                region = route_det.current_region
-                log.info(f"Route detectee: {last_route} ({region})")
-
-                name, reg = last_route, region
-                qt_update_fn(lambda: overlay.update_route(name, reg))
-
-                spawns = fetch_spawns(last_route)
-                if spawns:
-                    log.info(f"Spawns: {len(spawns)} Pokemon dans {last_route}")
-                qt_update_fn(lambda: overlay.update_spawns(spawns))
-                qt_update_fn(lambda: overlay.update_counter_location(name, reg))
-
-            # Detect battle opponent
-            battle_info = battle_det.detect_opponent(frame)
-            if battle_info and battle_info.get("name"):
-                opponent = battle_info["name"]
-                if opponent != last_opponent:
-                    if not in_battle:
-                        in_battle = True
-                        log.info("Combat detecte !")
-                    last_opponent = opponent
-                    types_str = '/'.join(battle_info.get('types', []))
-                    log.info(f"Adversaire: {opponent} ({types_str})")
-                    info = dict(battle_info)
-                    qt_update_fn(lambda: overlay.show_battle(info))
-                    qt_update_fn(lambda: overlay.increment_encounter())
-            elif in_battle and not battle_info:
-                # No opponent detected for a while — battle probably ended
-                in_battle = False
-                last_opponent = ""
-                qt_update_fn(lambda: overlay.hide_battle())
-
-            # Periodically reload OCR regions (live recalibration from Studio OCR)
-            now = time.time()
-            if now - last_region_reload > REGION_RELOAD_INTERVAL:
-                last_region_reload = now
-                new_regions = load_ocr_regions()
-                if new_regions:
-                    apply_ocr_regions(route_det, battle_det, new_regions)
-
-            time.sleep(0.5)
+            db = Database()
+            route_det = RouteDetector()
+            battle_det = BattleDetector(db=db)
+            print("[THREAD] Detectors created", flush=True)
         except Exception as e:
-            log.warning(f"Detection error: {e}")
-            time.sleep(1)
+            print(f"[THREAD] DETECTOR INIT CRASH: {e}", flush=True)
+            traceback.print_exc()
+            return
+
+        # Apply saved OCR regions from Studio OCR
+        regions = load_ocr_regions()
+        apply_ocr_regions(route_det, battle_det, regions)
+
+        last_route = ""
+        last_opponent = ""
+        in_battle = False
+        last_region_reload = time.time()
+        REGION_RELOAD_INTERVAL = 10
+
+        # Load all route names for fuzzy matching
+        try:
+            import sqlite3
+            conn = sqlite3.connect(str(os.path.join(PROJECT_ROOT, "data", "pokemon.db")))
+            _routes_fr = [r[0] for r in conn.execute(
+                "SELECT name_fr FROM routes WHERE name_fr IS NOT NULL"
+            ).fetchall()]
+            _routes_en = [r[0] for r in conn.execute(
+                "SELECT name FROM routes"
+            ).fetchall()]
+            all_routes = list(set(_routes_fr + _routes_en))
+            conn.close()
+            log.info(f"Loaded {len(all_routes)} route names for fuzzy matching")
+        except Exception:
+            all_routes = []
+
+        print("[THREAD] Entering main detection loop", flush=True)
+        log.info("Pipeline OCR demarre — detection en cours...")
+        self.qt_update(lambda: self.overlay.update_status("Detection active"))
+
+        frame_count = 0
+        while self._running:
+            try:
+                frame = cap.capture_full()
+                if frame is None:
+                    if frame_count == 0:
+                        print("[THREAD] First frame is None!", flush=True)
+                    time.sleep(1)
+                    continue
+
+                frame_count += 1
+                if frame_count <= 3:
+                    print(f"[THREAD] Frame {frame_count}: {frame.shape}", flush=True)
+                # Skip first 2 frames (may capture our own window during startup)
+                if frame_count <= 2:
+                    time.sleep(0.5)
+                    continue
+
+                # Detect route
+                route_name = route_det.detect_route(frame)
+                if frame_count <= 3:
+                    from src.detection.ocr_engine import read_route_name
+                    h, w = frame.shape[:2]
+                    roi = route_det._route_roi
+                    rx, ry = int(roi["x_ratio"] * w), int(roi["y_ratio"] * h)
+                    rw, rh = int(roi["w_ratio"] * w), int(roi["h_ratio"] * h)
+                    route_region = frame[ry:ry+rh, rx:rx+rw]
+                    if route_region.size > 0:
+                        raw_text = read_route_name(route_region)
+                        log.info(f"OCR debug frame {frame_count}: route region {rw}x{rh} at ({rx},{ry}) -> '{raw_text}'")
+
+                if route_name and route_name != last_route:
+                    # Fuzzy match against known routes (rapidfuzz 77x faster)
+                    if all_routes:
+                        from src.detection.ocr_engine import fuzzy_match_name
+                        matched = fuzzy_match_name(route_name, all_routes, cutoff=0.5)
+                        if matched:
+                            log.info(f"Route fuzzy: '{route_name}' -> '{matched}'")
+                            route_name = matched
+
+                    last_route = route_name
+                    region = route_det.current_region
+                    log.info(f"Route detectee: {last_route} ({region})")
+
+                    name, reg = last_route, region
+                    self.qt_update(lambda: self.overlay.update_route(name, reg))
+
+                    spawns = fetch_spawns(last_route)
+                    if spawns:
+                        log.info(f"Spawns: {len(spawns)} Pokemon dans {last_route}")
+                    self.qt_update(lambda: self.overlay.update_spawns(spawns))
+                    self.qt_update(lambda: self.overlay.update_counter_location(name, reg))
+
+                # Detect battle opponent (anti-flipflop: 3 reads + 1.5s cooldown)
+                battle_info = battle_det.detect_opponent(frame)
+                if battle_info and battle_info.get("name"):
+                    opponent = battle_info["name"]
+                    if opponent != last_opponent:
+                        if not in_battle:
+                            in_battle = True
+                            log.info("Combat detecte !")
+                        last_opponent = opponent
+                        types_str = '/'.join(battle_info.get('types', []))
+                        log.info(f"Adversaire: {opponent} ({types_str})")
+                        info = dict(battle_info)
+                        self.qt_update(lambda: self.overlay.show_battle(info))
+                        self.qt_update(lambda: self.overlay.increment_encounter())
+                elif in_battle and battle_info is None:
+                    in_battle = False
+                    last_opponent = ""
+                    self.qt_update(lambda: self.overlay.hide_battle())
+
+                # Periodically reload OCR regions
+                now = time.time()
+                if now - last_region_reload > REGION_RELOAD_INTERVAL:
+                    last_region_reload = now
+                    new_regions = load_ocr_regions()
+                    if new_regions:
+                        apply_ocr_regions(route_det, battle_det, new_regions)
+
+                time.sleep(0.2)  # 200ms interval (was 500ms)
+            except Exception as e:
+                log.warning(f"Detection error: {e}")
+                time.sleep(1)
 
 
 def main():
@@ -231,7 +243,7 @@ def main():
 
     try:
         from PyQt6.QtWidgets import QApplication
-        from PyQt6.QtCore import QTimer
+        from PyQt6.QtCore import QTimer, QThread
         from src.ui.overlay import OverlayWindow
     except ImportError as e:
         log.error(f"PyQt6 non installe: {e}")
@@ -249,8 +261,13 @@ def main():
         """Schedule a function to run on the Qt main thread."""
         QTimer.singleShot(0, fn)
 
-    # Start detection loop in background
-    det_thread = threading.Thread(target=detection_loop, args=(overlay, qt_update), daemon=True)
+    # Start detection in QThread
+    worker = DetectionWorker(overlay, qt_update)
+    det_thread = QThread()
+    det_thread.started.connect(worker.run)
+    app.aboutToQuit.connect(worker.stop)
+    app.aboutToQuit.connect(det_thread.quit)
+    worker_ref = worker  # prevent GC
     det_thread.start()
 
     # Setup hotkeys

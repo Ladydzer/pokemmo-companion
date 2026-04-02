@@ -25,6 +25,14 @@ class BattleDetector:
         self.current_opponent_types: list[str] = []
         self._last_battle_info: dict | None = None
 
+        # Anti-flipflop: require consecutive consistent reads before changing
+        self._consecutive_reads: dict[str, int] = {}
+        self._min_consecutive: int = 3  # 3 consistent reads to confirm
+        self._last_change_time: float = 0.0
+        self._change_cooldown: float = 1.5  # seconds between opponent changes
+        self._no_detection_count: int = 0
+        self._exit_threshold: int = 5  # frames without detection to exit battle
+
         # ROI ratios for opponent info (relative to game window)
         # Calibrated from ladyd_'s combat screenshot: opponent name is
         # top-center area, roughly "Geodite Niv. 38"
@@ -48,6 +56,8 @@ class BattleDetector:
     def detect_opponent(self, frame: np.ndarray) -> dict | None:
         """Detect opponent Pokemon from battle screen.
 
+        Anti-flipflop: requires 3 consecutive consistent reads + 1.5s cooldown
+        before reporting a new opponent. Exits battle after 5 frames with no detection.
         Returns battle info dict or None if detection failed.
         """
         if frame is None or frame.size == 0:
@@ -64,6 +74,9 @@ class BattleDetector:
 
         name_region = frame[y:y + rh, x:x + rw]
         if name_region.size == 0:
+            self._no_detection_count += 1
+            if self._no_detection_count >= self._exit_threshold:
+                return None  # Battle ended (hysteresis exit)
             return self._last_battle_info
 
         # Read opponent name
@@ -74,14 +87,23 @@ class BattleDetector:
             name = read_pokemon_name(processed)
 
         if not name or len(name) < 3:
+            self._no_detection_count += 1
+            if self._no_detection_count >= self._exit_threshold:
+                return None  # Battle ended (hysteresis exit)
             return self._last_battle_info
 
         # Filter garbage OCR results (special chars, too short, our own app)
         import re as _re
         if _re.search(r'[#~—_\[\]={}|]', name) or len(name.strip()) < 4:
+            self._no_detection_count += 1
+            if self._no_detection_count >= self._exit_threshold:
+                return None
             return self._last_battle_info
         if any(x in name.lower() for x in ["companion", "overlay", "pokemmo"]):
             return self._last_battle_info
+
+        # Valid detection — reset no-detection counter
+        self._no_detection_count = 0
 
         # Read opponent level
         lroi = self._opponent_level_roi
@@ -103,16 +125,16 @@ class BattleDetector:
                 # Try FR name match
                 pokemon_data = self.db.get_pokemon_by_name_fr(name) if hasattr(self.db, 'get_pokemon_by_name_fr') else None
             if not pokemon_data:
-                # Fuzzy match against FR names (PokeMMO shows FR names)
+                # Fuzzy match against FR names (cutoff 0.75 — ScoutBot recommendation)
                 all_fr = self.db.get_all_pokemon_names_fr() if hasattr(self.db, 'get_all_pokemon_names_fr') else []
-                matched_fr = fuzzy_match_name(name, all_fr, cutoff=0.7) if all_fr and len(name) >= 4 else None
+                matched_fr = fuzzy_match_name(name, all_fr, cutoff=0.75) if all_fr and len(name) >= 4 else None
                 if matched_fr:
                     pokemon_data = self.db.get_pokemon_by_name_fr(matched_fr)
                     log.info(f"Fuzzy matched FR '{name}' -> '{matched_fr}'")
                 else:
                     # Fallback: fuzzy match EN names
                     all_en = self.db.get_all_pokemon_names() if hasattr(self.db, 'get_all_pokemon_names') else []
-                    matched_en = fuzzy_match_name(name, all_en, cutoff=0.7) if all_en else None
+                    matched_en = fuzzy_match_name(name, all_en, cutoff=0.75) if all_en else None
                     if matched_en:
                         pokemon_data = self.db.get_pokemon_by_name(matched_en)
                         log.info(f"Fuzzy matched EN '{name}' -> '{matched_en}'")
@@ -121,6 +143,14 @@ class BattleDetector:
                 if pokemon_data.get("type2"):
                     types.append(pokemon_data["type2"])
                 name = pokemon_data["name"]  # Use canonical name from DB
+
+        # Anti-flipflop: require consecutive consistent reads
+        self._consecutive_reads[name] = self._consecutive_reads.get(name, 0) + 1
+        for key in list(self._consecutive_reads.keys()):
+            if key != name:
+                self._consecutive_reads[key] = max(0, self._consecutive_reads[key] - 1)
+                if self._consecutive_reads[key] == 0:
+                    del self._consecutive_reads[key]
 
         # Detect special icons (shiny/alpha/HA)
         icons = detect_special_icons(frame)
@@ -139,8 +169,16 @@ class BattleDetector:
             "hidden_ability": icons["hidden_ability"],
         }
 
-        # Update state
+        # Only update if enough consecutive reads AND cooldown elapsed
+        import time
+        now = time.time()
         if name != self.current_opponent:
+            if (self._consecutive_reads.get(name, 0) < self._min_consecutive or
+                    now - self._last_change_time < self._change_cooldown):
+                # Not enough confirmations yet — return last known info
+                return self._last_battle_info
+
+            self._last_change_time = now
             self.current_opponent = name
             self.current_opponent_level = level
             self.current_opponent_types = types

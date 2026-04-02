@@ -27,7 +27,7 @@ class RouteDetector:
         self._consecutive_reads: dict[str, int] = {}
         self._min_consecutive = 3  # Require 3 consistent reads before updating
         self._last_change_time: float = 0.0
-        self._change_cooldown: float = 3.0  # Minimum seconds between route changes
+        self._change_cooldown: float = 1.5  # Minimum seconds between route changes
         self._ignore_patterns = ["companion", "pokemmo companion", "overlay", "runner"]
 
         # ROI (Region of Interest) ratios relative to game window

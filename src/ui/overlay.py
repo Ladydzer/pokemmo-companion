@@ -215,8 +215,11 @@ class OverlayWindow(QMainWindow):
     # === Public API for updating the overlay ===
 
     def update_route(self, route_name: str, region: str = "") -> None:
-        """Update the displayed route information."""
-        self.route_label.setText(f"Route: {route_name}")
+        """Update the displayed route information. Skip repaint if unchanged."""
+        new_text = f"Route: {route_name}"
+        if self.route_label.text() == new_text:
+            return  # No change — skip repaint
+        self.route_label.setText(new_text)
         if region:
             self.region_label.setText(f"Region : {region}")
             self.region_label.show()

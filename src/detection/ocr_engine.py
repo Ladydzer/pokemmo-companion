@@ -41,16 +41,20 @@ class OCRCache:
         self.misses = 0
 
     def _phash(self, image: np.ndarray) -> int:
-        """Compute a fast perceptual hash (8x8 DCT-based).
+        """Compute a fast perceptual hash (8x8 mean-based).
 
         Downsample to 8x8 grayscale, compare each pixel to mean → 64-bit hash.
         Robust to small noise/compression artifacts.
+        Returns -1 for uniform/black images (not cacheable).
         """
         if image is None or image.size == 0:
-            return 0
+            return -1
         gray = image
         if len(image.shape) == 3:
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        # Skip uniform images (black screen, loading, etc.) — not worth caching
+        if gray.std() < 5:
+            return -1
         resized = cv2.resize(gray, (8, 8), interpolation=cv2.INTER_AREA)
         mean_val = resized.mean()
         bits = (resized > mean_val).flatten()
@@ -59,6 +63,8 @@ class OCRCache:
     def get(self, image: np.ndarray) -> str | None:
         """Look up cached OCR result for this image. Returns None on miss."""
         h = self._phash(image)
+        if h == -1:
+            return None  # Uniform image — always reprocess
         if h in self._cache:
             self._cache.move_to_end(h)
             self.hits += 1
@@ -69,6 +75,8 @@ class OCRCache:
     def put(self, image: np.ndarray, text: str) -> None:
         """Store OCR result for this image hash."""
         h = self._phash(image)
+        if h == -1:
+            return  # Don't cache uniform images
         self._cache[h] = text
         self._cache.move_to_end(h)
         if len(self._cache) > self._maxsize:
@@ -595,15 +603,23 @@ def read_stats_screen(image: np.ndarray) -> dict:
 
 def fuzzy_match_name(name: str, valid_names: list[str],
                      cutoff: float = 0.7) -> str | None:
-    """Fuzzy-match an OCR-read name against a list of valid Pokemon names.
+    """Fuzzy-match an OCR-read name against a list of valid names.
 
-    Uses difflib SequenceMatcher (same approach as pokemon-ocr-scrapper).
-    Returns the best match above the cutoff, or None.
+    Uses rapidfuzz (77x faster than difflib) with fallback to difflib.
+    cutoff: 0.0-1.0 (converted to 0-100 for rapidfuzz internally).
     """
     if not name or not valid_names:
         return None
-    matches = difflib.get_close_matches(name, valid_names, n=1, cutoff=cutoff)
-    return matches[0] if matches else None
+    try:
+        from rapidfuzz import process, fuzz
+        result = process.extractOne(name, valid_names,
+                                    scorer=fuzz.ratio,
+                                    score_cutoff=cutoff * 100)
+        return result[0] if result else None
+    except ImportError:
+        # Fallback to difflib if rapidfuzz not installed
+        matches = difflib.get_close_matches(name, valid_names, n=1, cutoff=cutoff)
+        return matches[0] if matches else None
 
 
 if __name__ == "__main__":
