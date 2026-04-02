@@ -1,5 +1,6 @@
 """Main overlay window — transparent, click-through, always-on-top."""
 import sys
+import time
 import ctypes
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
@@ -204,30 +205,38 @@ class OverlayWindow(QMainWindow):
 
     def _setup_auto_hide(self):
         """Setup auto-hide timer — fade out after inactivity."""
-        import time
         self._last_activity = time.time()
         self._auto_hide_timer = QTimer(self)
         self._auto_hide_timer.timeout.connect(self._check_auto_hide)
         self._auto_hide_timer.start(1000)  # check every second
 
     def _check_auto_hide(self):
-        """Auto-hide overlay after 10s of inactivity."""
-        import time
+        """Auto-hide overlay after inactivity (configurable delay)."""
         elapsed = time.time() - self._last_activity
-        if elapsed > 10 and not self._auto_hidden and self._is_visible:
+        delay = getattr(self.config.overlay, 'auto_hide_delay', 10)
+        if elapsed > delay and not self._auto_hidden and self._is_visible:
             self._auto_hidden = True
-            self.setWindowOpacity(0.15)  # fade to near-invisible
-        elif elapsed <= 10 and self._auto_hidden:
+            self._fade_to(0.15)
+        elif elapsed <= delay and self._auto_hidden:
             self._auto_hidden = False
-            self.setWindowOpacity(self.config.overlay.opacity)
+            self._fade_to(self.config.overlay.opacity)
+
+    def _fade_to(self, target_opacity: float):
+        """Animate opacity transition over 500ms."""
+        anim = QPropertyAnimation(self, b"windowOpacity")
+        anim.setDuration(500)
+        anim.setStartValue(self.windowOpacity())
+        anim.setEndValue(target_opacity)
+        anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
+        self._opacity_anim = anim  # prevent GC during animation
+        anim.start()
 
     def _mark_activity(self):
         """Mark user-relevant activity (route change, battle detected)."""
-        import time
         self._last_activity = time.time()
         if self._auto_hidden:
             self._auto_hidden = False
-            self.setWindowOpacity(self.config.overlay.opacity)
+            self._fade_to(self.config.overlay.opacity)
 
     def _setup_click_through(self):
         """Make the window click-through using Win32 API (except grip bar)."""
@@ -310,6 +319,7 @@ class OverlayWindow(QMainWindow):
 
     def hide_battle(self) -> None:
         """Hide battle information."""
+        self._mark_activity()
         self._last_battle_name = ""
         self.battle_panel.hide_battle()
         self._adjust_size()

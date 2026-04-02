@@ -57,8 +57,8 @@
         .spawn-row:last-child { border:none; }
 
         /* Pokedex card */
-        .dex-card { background:rgba(13,17,23,0.6); border:1px solid rgba(0,229,255,0.06); border-radius:12px; padding:10px; text-align:center; cursor:pointer; transition:all 0.2s; }
-        .dex-card:hover { border-color:rgba(0,229,255,0.3); transform:translateY(-4px); box-shadow:0 12px 32px rgba(0,0,0,0.4); }
+        .dex-card { background:rgba(13,17,23,0.6); border:1px solid rgba(100,100,140,0.1); border-radius:12px; padding:10px; text-align:center; cursor:pointer; transition:all 0.2s; }
+        .dex-card:hover { border-color:rgba(255,255,255,0.15); transform:translateY(-4px); box-shadow:0 12px 32px rgba(0,0,0,0.5); }
 
         /* Scrollbar */
         ::-webkit-scrollbar { width:5px; }
@@ -935,11 +935,15 @@ function _appendDex(){
     batch.forEach(p=>{
         const t2=p.type2?' / '+tfr(p.type2):'';
         const d=document.createElement('div');d.className='dex-card';d.onclick=()=>showP(p.id);
-        d.style.borderBottom='3px solid '+(TC[p.type1]||'#888');
+        const tc1=TC[p.type1]||'#888';
+        d.style.borderBottom='3px solid '+tc1;
+        d.style.background=`linear-gradient(135deg, ${tc1}15 0%, rgba(13,17,23,0.6) 60%)`;
         d.title=(p.name_fr||p.name)+' ('+tfr(p.type1)+t2+')';
+        const typePills=`<span class="inline-block text-[8px] font-bold px-1.5 py-0.5 rounded-full mt-1" style="background:${tc1}40;color:${tc1}">${tfr(p.type1)}</span>`+(p.type2?` <span class="inline-block text-[8px] font-bold px-1.5 py-0.5 rounded-full mt-1" style="background:${TC[p.type2]||'#888'}40;color:${TC[p.type2]||'#888'}">${tfr(p.type2)}</span>`:'');
         d.innerHTML=`<img src="${spr(p.name)}" data-id="${p.id}" class="w-14 h-14 mx-auto sprite-hover" loading="lazy" alt="${p.name_fr||p.name}">
             <p class="text-[11px] font-semibold text-white mt-1">${p.name_fr||p.name}</p>
-            <p class="text-[9px] text-gray-600">#${String(p.id).padStart(3,'0')} ${p.name_fr&&p.name_fr!==p.name?`<span class="text-gray-700">${p.name}</span>`:''}</p>`;
+            <p class="text-[9px] text-gray-600">#${String(p.id).padStart(3,'0')}</p>
+            <div>${typePills}</div>`;
         frag.appendChild(d);
     });
     g.appendChild(frag);_dexPage++;
@@ -1065,11 +1069,12 @@ document.getElementById('battle-input')?.addEventListener('input',async e=>{
         else if(m<=0.5)resist05.push(atk);
     });
     document.getElementById('battle-result').classList.remove('hidden');
-    let h=`<div class="glass-card p-5">
+    const btc=TC[p.type1]||'#00e5ff';
+    let h=`<div class="glass-card p-5" style="border-left:4px solid ${btc};background:linear-gradient(135deg, ${btc}12 0%, transparent 40%)">
         <div class="flex items-center gap-6 mb-4">
             <img src="${spr(p.name)}" data-id="${p.id}" class="w-20 h-20 sprite-hover">
             <div class="flex-1">
-                <h4 class="text-xl font-black text-white">#${String(p.id).padStart(3,'0')} ${p.name}</h4>
+                <h4 class="text-xl font-black text-white">#${String(p.id).padStart(3,'0')} ${p.name_fr||p.name}</h4>
                 <div class="flex gap-2 mt-1">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div>
                 <p class="text-xs text-gray-400 mt-1 mono">BST ${bst} | ${p.attack>=p.sp_attack?'Physique (Atk:'+p.attack+')':'Special (SpA:'+p.sp_attack+')'} | Spe:${p.speed}</p>
             </div>
@@ -1138,7 +1143,7 @@ function rTm(){
             const p=tm[i];
             const bst=p.hp+p.attack+p.defense+p.sp_attack+p.sp_defense+p.speed;
             const topStat=p.attack>=p.sp_attack?`Atk:${p.attack}`:`SpA:${p.sp_attack}`;
-            s.innerHTML+=`<div class="dex-card p-3 relative" onclick="rmTm(${i})" style="border-top:3px solid ${TC[p.type1]||'#888'}" title="Clic pour retirer">
+            s.innerHTML+=`<div class="dex-card p-3 relative" onclick="rmTm(${i})" style="border-top:3px solid ${TC[p.type1]||'#888'};background:linear-gradient(135deg, ${TC[p.type1]||'#888'}15 0%, rgba(13,17,23,0.6) 60%)" title="Clic pour retirer">
                 <button class="absolute top-1 right-1 text-gray-700 hover:text-red-400 text-xs">✕</button>
                 <img src="${spr(p.name)}" data-id="${p.id}" class="w-16 h-16 mx-auto sprite-hover">
                 <p class="text-xs font-bold text-white mt-1">${p.name}</p>
