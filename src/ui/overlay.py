@@ -48,6 +48,7 @@ class OverlayWindow(QMainWindow):
         self.config = config or AppConfig.load()
         self._is_compact = True
         self._is_visible = True
+        self._last_battle_name = ""
 
         self._setup_window()
         self._setup_ui()
@@ -255,7 +256,7 @@ class OverlayWindow(QMainWindow):
     def show_battle(self, battle_info: dict) -> None:
         """Show battle information overlay. Skip repaint if same opponent."""
         new_name = battle_info.get("name", "")
-        if hasattr(self, '_last_battle_name') and self._last_battle_name == new_name:
+        if self._last_battle_name == new_name:
             return  # Same opponent — skip repaint
         self._last_battle_name = new_name
         self.battle_panel.show_battle(battle_info)

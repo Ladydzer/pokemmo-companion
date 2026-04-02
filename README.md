@@ -33,7 +33,7 @@ tesseract --list-langs
 # Doit afficher : eng, fra
 ```
 
-> **Note :** Sans `fra.traineddata`, l'OCR fonctionne avec `eng` en fallback, mais les accents francais (e, e, c, etc.) seront moins bien reconnus.
+> **Note :** Sans `fra.traineddata`, l'OCR fonctionne avec `eng` en fallback, mais les caracteres accentues francais seront moins bien reconnus.
 
 ### 3. Lancer
 
