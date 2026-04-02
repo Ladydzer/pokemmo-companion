@@ -9,7 +9,7 @@ import re
 import numpy as np
 import cv2
 
-from .ocr_engine import read_route_name, preprocess_light_text
+from .ocr_engine import read_route_name, preprocess_light_text, detect_text_regions
 from ..capture.screen_capture import get_window_title
 from ..utils.logger import log
 
@@ -111,6 +111,20 @@ class RouteDetector:
             # Try with inverted preprocessing (light text on dark background)
             processed = preprocess_light_text(route_region)
             text = read_route_name(processed)
+
+        if not text or len(text) < 3:
+            # Fallback: auto-detect text regions in top portion of frame
+            top_area = frame[:int(h * 0.15), :]  # top 15% of screen
+            regions = detect_text_regions(top_area)
+            for rx, ry, rw_auto, rh_auto in regions[:2]:  # try first 2 detected regions
+                auto_region = top_area[ry:ry+rh_auto, rx:rx+rw_auto]
+                if auto_region.size > 0:
+                    text = read_route_name(auto_region)
+                    if text and len(text) >= 3:
+                        log.info(f"Route auto-detected at ({rx},{ry} {rw_auto}x{rh_auto}): '{text}'")
+                        break
+            else:
+                return None
 
         if not text or len(text) < 3:
             return None
