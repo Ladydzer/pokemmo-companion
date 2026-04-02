@@ -288,8 +288,8 @@ class BetterCamBackend(CaptureBackend):
 # Backend registry — order = priority for auto-selection
 BACKENDS = {
     "printwindow": PrintWindowBackend,
-    "pil": PILBackend,
     "bettercam": BetterCamBackend,
+    "pil": PILBackend,
 }
 
 

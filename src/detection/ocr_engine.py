@@ -414,6 +414,8 @@ def read_pokemon_name(image: np.ndarray) -> str:
     # Clean up
     text = text.strip().strip("_|[]{}()")
     text = re.sub(r'\s*Niv\.?\s*\d+', '', text).strip()
+    # Remove gender symbols (♀/♂) that appear after level
+    text = text.replace('\u2640', '').replace('\u2642', '').strip()
 
     cache.put(image, text)
     return text

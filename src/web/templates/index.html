@@ -1495,7 +1495,8 @@ async function loadOptStats(){
     }catch(e){}
 }
 
-// OCR cache stats
+// OCR cache stats (auto-refresh every 5s when on settings page)
+setInterval(()=>{if(!document.getElementById('page-settings').classList.contains('hidden'))loadCacheStats();},5000);
 async function loadCacheStats(){
     try{
         const data=await fetch('/api/ocr/cache-stats').then(r=>r.json());
