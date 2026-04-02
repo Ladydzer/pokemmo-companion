@@ -117,6 +117,10 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
             Collection
         </a>
+        <a class="nav-btn" data-page="ivcalc" onclick="go('ivcalc')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg>
+            Calculateur IV
+        </a>
         <a class="nav-btn" data-page="settings" onclick="go('settings')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             Options
@@ -172,6 +176,7 @@
                 <span id="live-age" class="text-[10px] text-gray-700"></span>
             </div>
         </div>
+        <div id="live-spawns" class="hidden mt-2 pt-2 border-t border-gray-800 flex flex-wrap gap-1"></div>
     </div>
 
     <!-- Stat cards -->
@@ -641,6 +646,57 @@
     </div>
 </div>
 
+<!-- IV CALCULATOR -->
+<div id="page-ivcalc" class="page hidden fade-in max-w-3xl">
+    <h1 class="text-3xl font-black text-white mb-5">Calculateur IV</h1>
+    <div class="glass-card p-6 mb-5">
+        <p class="text-[10px] font-bold tracking-widest text-gray-500 mb-4">IDENTIFIER LES IVs D'UN POKEMON</p>
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
+                <label class="text-xs text-gray-400 mb-1 block">Pokemon</label>
+                <input type="text" id="iv-pokemon" placeholder="Nom du Pokemon..." class="input input-bordered input-sm w-full" oninput="ivSearchPokemon(this.value)">
+                <div id="iv-pokemon-results" class="hidden mt-1 glass-card p-2 max-h-32 overflow-y-auto text-sm"></div>
+                <input type="hidden" id="iv-pokemon-id" value="">
+            </div>
+            <div>
+                <label class="text-xs text-gray-400 mb-1 block">Niveau</label>
+                <input type="number" id="iv-level" value="50" min="1" max="100" class="input input-bordered input-sm w-full">
+            </div>
+        </div>
+        <div class="mb-4">
+            <label class="text-xs text-gray-400 mb-1 block">Nature</label>
+            <select id="iv-nature" class="select select-bordered select-sm w-full">
+                <option value="">-- Inconnue --</option>
+            </select>
+        </div>
+        <div class="grid grid-cols-6 gap-2 mb-4">
+            <div><label class="text-[10px] text-gray-500 block text-center">PV</label><input type="number" id="iv-hp" class="input input-bordered input-xs w-full text-center" placeholder="0"></div>
+            <div><label class="text-[10px] text-gray-500 block text-center">Atq</label><input type="number" id="iv-atk" class="input input-bordered input-xs w-full text-center" placeholder="0"></div>
+            <div><label class="text-[10px] text-gray-500 block text-center">Def</label><input type="number" id="iv-def" class="input input-bordered input-xs w-full text-center" placeholder="0"></div>
+            <div><label class="text-[10px] text-gray-500 block text-center">A.Spe</label><input type="number" id="iv-spa" class="input input-bordered input-xs w-full text-center" placeholder="0"></div>
+            <div><label class="text-[10px] text-gray-500 block text-center">D.Spe</label><input type="number" id="iv-spd" class="input input-bordered input-xs w-full text-center" placeholder="0"></div>
+            <div><label class="text-[10px] text-gray-500 block text-center">Vit</label><input type="number" id="iv-spe" class="input input-bordered input-xs w-full text-center" placeholder="0"></div>
+        </div>
+        <div class="flex items-center gap-3 mb-4">
+            <label class="text-xs text-gray-400">EVs connus ?</label>
+            <input type="checkbox" id="iv-has-evs" class="toggle toggle-xs toggle-info" onchange="document.getElementById('iv-evs-row').classList.toggle('hidden')">
+        </div>
+        <div id="iv-evs-row" class="hidden grid grid-cols-6 gap-2 mb-4">
+            <div><label class="text-[10px] text-gray-500 block text-center">EV PV</label><input type="number" id="iv-ev-hp" value="0" class="input input-bordered input-xs w-full text-center"></div>
+            <div><label class="text-[10px] text-gray-500 block text-center">EV Atq</label><input type="number" id="iv-ev-atk" value="0" class="input input-bordered input-xs w-full text-center"></div>
+            <div><label class="text-[10px] text-gray-500 block text-center">EV Def</label><input type="number" id="iv-ev-def" value="0" class="input input-bordered input-xs w-full text-center"></div>
+            <div><label class="text-[10px] text-gray-500 block text-center">EV A.Spe</label><input type="number" id="iv-ev-spa" value="0" class="input input-bordered input-xs w-full text-center"></div>
+            <div><label class="text-[10px] text-gray-500 block text-center">EV D.Spe</label><input type="number" id="iv-ev-spd" value="0" class="input input-bordered input-xs w-full text-center"></div>
+            <div><label class="text-[10px] text-gray-500 block text-center">EV Vit</label><input type="number" id="iv-ev-spe" value="0" class="input input-bordered input-xs w-full text-center"></div>
+        </div>
+        <button onclick="calcIVs()" class="btn btn-sm w-full" style="background:#00e5ff;color:#000;font-weight:700">Calculer les IVs</button>
+    </div>
+    <div id="iv-results" class="hidden glass-card p-6">
+        <p class="text-[10px] font-bold tracking-widest text-gray-500 mb-4">RESULTATS</p>
+        <div id="iv-results-content"></div>
+    </div>
+</div>
+
 <!-- SETTINGS -->
 <div id="page-settings" class="page hidden fade-in max-w-3xl">
     <h1 class="text-3xl font-black text-white mb-5">Options</h1>
@@ -863,12 +919,14 @@ function go(p){
         if(p==='equipe'&&!window._eq){window._eq=true;rTm();}
         if(p==='guide'&&!window._gu){window._gu=true;loadGuide('Kanto');}
         if(p==='evtrain'&&!window._ev){window._ev=true;loadEVTracker();calcBreed();renderNatures(NATURES);}
+        if(p==='ivcalc'){}// IV calc page is static, no lazy load needed
         if(p==='options'&&!window._op){window._op=true;ocrLoadRegions();runDiagnostic();}
         if(p==='routes'&&!window._rt){window._rt=true;loadRoutes();}
     }, current?150:0);
 }
 
 // Live detection polling (overlay → web sync)
+let _lastLiveRoute='';
 setInterval(async()=>{
     if(document.getElementById('page-dashboard').classList.contains('hidden'))return;
     try{
@@ -881,6 +939,18 @@ setInterval(async()=>{
             document.getElementById('live-age').textContent=d.age_seconds>=0?`${d.age_seconds.toFixed(0)}s`:'';
             // Update dashboard route card too
             if(d.route)document.getElementById('loc-route').textContent=d.route;
+            // Auto-load spawns when route changes
+            if(d.route&&d.route!==_lastLiveRoute){
+                _lastLiveRoute=d.route;
+                try{
+                    const spawns=await fetch(`/api/spawns/${encodeURIComponent(d.route)}`).then(r=>r.json());
+                    const el=document.getElementById('live-spawns');
+                    if(el&&Array.isArray(spawns)&&spawns.length){
+                        el.innerHTML=spawns.slice(0,6).map(s=>`<span class="text-xs px-2 py-0.5 rounded" style="background:${TC[s.type1]||'#888'}20;color:${TC[s.type1]||'#ccc'}">${s.pokemon_name} ${s.rate?.toFixed(0)||'?'}%</span>`).join(' ');
+                        el.classList.remove('hidden');
+                    }else if(el){el.classList.add('hidden');}
+                }catch(e){}
+            }
             // Battle state
             const bp=document.getElementById('live-battle');
             if(d.in_battle&&d.opponent){
@@ -1577,6 +1647,98 @@ async function loadCacheStats(){
     }catch(e){console.error(e);}
 }
 
+// IV Calculator
+let _ivPokemonId=null;
+function ivSearchPokemon(q){
+    const el=document.getElementById('iv-pokemon-results');
+    if(q.length<2){el.classList.add('hidden');return;}
+    fetch(`/api/pokemon/search/${q}`).then(r=>r.json()).then(res=>{
+        if(!Array.isArray(res)||!res.length){el.classList.add('hidden');return;}
+        el.classList.remove('hidden');
+        el.innerHTML=res.slice(0,6).map(p=>`<div class="flex items-center gap-2 p-1 rounded cursor-pointer hover:bg-dark-600" onclick="ivSelectPokemon(${p.id},'${(p.name_fr||p.name).replace(/'/g,"\\'")}')"><img src="${spr(p.name)}" class="w-6 h-6"><span class="text-white">${p.name_fr||p.name}</span><span class="text-gray-600 text-[10px]">#${p.id}</span></div>`).join('');
+    }).catch(()=>{});
+}
+function ivSelectPokemon(id,name){
+    _ivPokemonId=id;
+    document.getElementById('iv-pokemon').value=name;
+    document.getElementById('iv-pokemon-id').value=id;
+    document.getElementById('iv-pokemon-results').classList.add('hidden');
+}
+async function calcIVs(){
+    const id=_ivPokemonId||document.getElementById('iv-pokemon-id').value;
+    if(!id){showToast('Selectionnez un Pokemon');return;}
+    const level=parseInt(document.getElementById('iv-level').value)||50;
+    const nature=document.getElementById('iv-nature').value;
+    const stats=[
+        parseInt(document.getElementById('iv-hp').value)||0,
+        parseInt(document.getElementById('iv-atk').value)||0,
+        parseInt(document.getElementById('iv-def').value)||0,
+        parseInt(document.getElementById('iv-spa').value)||0,
+        parseInt(document.getElementById('iv-spd').value)||0,
+        parseInt(document.getElementById('iv-spe').value)||0,
+    ];
+    const evs=document.getElementById('iv-has-evs').checked?[
+        parseInt(document.getElementById('iv-ev-hp').value)||0,
+        parseInt(document.getElementById('iv-ev-atk').value)||0,
+        parseInt(document.getElementById('iv-ev-def').value)||0,
+        parseInt(document.getElementById('iv-ev-spa').value)||0,
+        parseInt(document.getElementById('iv-ev-spd').value)||0,
+        parseInt(document.getElementById('iv-ev-spe').value)||0,
+    ]:[0,0,0,0,0,0];
+    try{
+        const r=await fetch('/api/iv-calc',{method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({pokemon_id:parseInt(id),level,nature,stats,evs})}).then(r=>r.json());
+        if(r.error){showToast(r.error);return;}
+        const el=document.getElementById('iv-results');el.classList.remove('hidden');
+        const colors=['#78C850','#F08030','#F8D030','#6890F0','#78C850','#F85888'];
+        let html='<div class="space-y-3">';
+        r.results.forEach((s,i)=>{
+            const ivText=s.possible_ivs.length===0?'<span class="text-red-400">Impossible</span>'
+                :s.exact?`<span class="font-black" style="color:${s.min_iv>=26?'#76ff03':s.min_iv>=16?'#ffd740':'#ff5252'}">${s.min_iv}</span>`
+                :`<span style="color:${colors[i]}">${s.min_iv} - ${s.max_iv}</span>`;
+            const bar=s.max_iv!==null?`<div class="stat-track mt-1"><div class="stat-fill" style="width:${(s.max_iv||0)/31*100}%;background:${colors[i]}"></div></div>`:'';
+            html+=`<div class="flex items-center gap-3">
+                <span class="w-16 text-xs text-gray-400">${s.name}</span>
+                <span class="w-8 text-xs text-right mono text-gray-500">${s.base}</span>
+                <span class="w-8 text-xs text-right mono text-white">${s.stat}</span>
+                <div class="flex-1">${bar}</div>
+                <span class="w-16 text-right text-sm mono">${ivText}</span>
+            </div>`;
+        });
+        html+='</div>';
+        // Summary
+        const exact=r.results.filter(s=>s.exact);
+        const perfect=r.results.filter(s=>s.max_iv===31);
+        if(exact.length===6)html+=`<p class="mt-4 text-center text-sm font-bold text-green-400">IVs exacts determines !</p>`;
+        else html+=`<p class="mt-4 text-center text-xs text-gray-500">${exact.length}/6 stats exactes. Testez a un niveau different pour affiner.</p>`;
+        if(perfect.length>=5)html+=`<p class="text-center text-sm font-bold" style="color:#ffd740">Pokemon quasi-parfait ! (${perfect.length}x31)</p>`;
+        document.getElementById('iv-results-content').innerHTML=html;
+    }catch(e){showToast('Erreur calcul: '+e.message);}
+}
+// Populate nature select
+(function(){
+    const sel=document.getElementById('iv-nature');
+    if(!sel)return;
+    const natures=Object.entries(TFR).length?null:null; // TFR already loaded
+    const NATURES_DATA={
+        Hardy:['Hardi','—','—'],Lonely:['Solo','+Atq','-Def'],Brave:['Brave','+Atq','-Vit'],
+        Adamant:['Rigide','+Atq','-A.Spe'],Naughty:['Mauvais','+Atq','-D.Spe'],
+        Bold:['Assure','+Def','-Atq'],Docile:['Docile','—','—'],Relaxed:['Relax','+Def','-Vit'],
+        Impish:['Malin','+Def','-A.Spe'],Lax:['Lache','+Def','-D.Spe'],
+        Timid:['Timide','+Vit','-Atq'],Hasty:['Presse','+Vit','-Def'],Serious:['Serieux','—','—'],
+        Jolly:['Jovial','+Vit','-A.Spe'],Naive:['Naif','+Vit','-D.Spe'],
+        Modest:['Modeste','+A.Spe','-Atq'],Mild:['Doux','+A.Spe','-Def'],Quiet:['Discret','+A.Spe','-Vit'],
+        Bashful:['Pudique','—','—'],Rash:['Foufou','+A.Spe','-D.Spe'],
+        Calm:['Calme','+D.Spe','-Atq'],Gentle:['Gentil','+D.Spe','-Def'],Sassy:['Malpoli','+D.Spe','-Vit'],
+        Careful:['Prudent','+D.Spe','-A.Spe'],Quirky:['Bizarre','—','—'],
+    };
+    Object.entries(NATURES_DATA).forEach(([en,[fr,up,down]])=>{
+        const opt=document.createElement('option');opt.value=en;
+        opt.textContent=up==='—'?`${fr} (neutre)`:`${fr} (${up} / ${down})`;
+        sel.appendChild(opt);
+    });
+})();
+
 // System diagnostic
 async function runDiagnostic(){
     const el=document.getElementById('diagnostic-results');
@@ -1770,7 +1932,7 @@ if(savedTheme)document.documentElement.setAttribute('data-theme',savedTheme);
 // Keyboard shortcuts
 document.addEventListener('keydown',e=>{
     if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT')return;
-    const shortcuts={1:'dashboard',2:'pokedex',3:'battle',4:'team',5:'shiny',6:'guide',7:'evtrain',8:'collection',0:'settings'};
+    const shortcuts={1:'dashboard',2:'pokedex',3:'battle',4:'team',5:'shiny',6:'guide',7:'evtrain',8:'collection',9:'ivcalc',0:'settings'};
     if(shortcuts[e.key])go(shortcuts[e.key]);
     if((e.key==='/'||e.key==='f')&&!e.ctrlKey&&!e.metaKey){e.preventDefault();document.getElementById('global-search')?.focus();}
 });

@@ -496,6 +496,85 @@ async def get_latest_detection():
     return state
 
 
+@app.post("/api/iv-calc")
+async def iv_calculator(body: dict):
+    """Reverse-calculate Pokemon IVs from visible stats.
+
+    Gen 5 formulas (PokeMMO):
+    HP = floor((2*Base + IV + floor(EV/4)) * Level / 100) + Level + 10
+    Other = floor((floor((2*Base + IV + floor(EV/4)) * Level / 100) + 5) * NatureMod)
+
+    Input: pokemon_id, level, nature, stats [hp, atk, def, spa, spd, spe], evs (optional)
+    Output: possible IV ranges for each stat
+    """
+    pokemon_id = body.get("pokemon_id")
+    level = body.get("level", 50)
+    nature = body.get("nature", "")
+    stats = body.get("stats", [])  # [hp, atk, def, spa, spd, spe]
+    evs = body.get("evs", [0, 0, 0, 0, 0, 0])
+
+    if not pokemon_id or len(stats) != 6:
+        return {"error": "pokemon_id et stats (6 valeurs) requis"}
+
+    # Get base stats
+    with _db() as conn:
+        row = conn.execute(
+            "SELECT hp, attack, defense, sp_attack, sp_defense, speed FROM pokemon WHERE id = ?",
+            (pokemon_id,)
+        ).fetchone()
+    if not row:
+        return {"error": f"Pokemon #{pokemon_id} non trouve"}
+
+    base_stats = [row["hp"], row["attack"], row["defense"],
+                  row["sp_attack"], row["sp_defense"], row["speed"]]
+    stat_names = ["HP", "Attaque", "Defense", "Atq. Spe.", "Def. Spe.", "Vitesse"]
+
+    # Nature modifiers
+    NATURE_MODS = {
+        "Hardy": [1,1,1,1,1,1], "Lonely": [1,1.1,0.9,1,1,1], "Brave": [1,1.1,1,1,1,0.9],
+        "Adamant": [1,1.1,1,0.9,1,1], "Naughty": [1,1.1,1,1,0.9,1],
+        "Bold": [1,0.9,1.1,1,1,1], "Docile": [1,1,1,1,1,1], "Relaxed": [1,1,1.1,1,1,0.9],
+        "Impish": [1,1,1.1,0.9,1,1], "Lax": [1,1,1.1,1,0.9,1],
+        "Timid": [1,0.9,1,1,1,1.1], "Hasty": [1,1,0.9,1,1,1.1], "Serious": [1,1,1,1,1,1],
+        "Jolly": [1,1,1,0.9,1,1.1], "Naive": [1,1,1,1,0.9,1.1],
+        "Modest": [1,0.9,1,1.1,1,1], "Mild": [1,1,0.9,1.1,1,1], "Quiet": [1,1,1,1.1,1,0.9],
+        "Bashful": [1,1,1,1,1,1], "Rash": [1,1,1,1.1,0.9,1],
+        "Calm": [1,0.9,1,1,1.1,1], "Gentle": [1,1,0.9,1,1.1,1], "Sassy": [1,1,1,1,1.1,0.9],
+        "Careful": [1,1,1,0.9,1.1,1], "Quirky": [1,1,1,1,1,1],
+    }
+    nature_mods = NATURE_MODS.get(nature, [1,1,1,1,1,1])
+
+    import math
+    results = []
+    for i in range(6):
+        base = base_stats[i]
+        stat_val = stats[i]
+        ev = evs[i] if i < len(evs) else 0
+        possible_ivs = []
+
+        for iv in range(32):
+            if i == 0:  # HP
+                calc = math.floor((2 * base + iv + math.floor(ev / 4)) * level / 100) + level + 10
+            else:
+                calc = math.floor((math.floor((2 * base + iv + math.floor(ev / 4)) * level / 100) + 5) * nature_mods[i])
+
+            if calc == stat_val:
+                possible_ivs.append(iv)
+
+        results.append({
+            "name": stat_names[i],
+            "base": base,
+            "stat": stat_val,
+            "ev": ev,
+            "possible_ivs": possible_ivs,
+            "min_iv": min(possible_ivs) if possible_ivs else None,
+            "max_iv": max(possible_ivs) if possible_ivs else None,
+            "exact": len(possible_ivs) == 1,
+        })
+
+    return {"pokemon_id": pokemon_id, "level": level, "nature": nature, "results": results}
+
+
 @app.get("/api/ocr/cache-stats")
 async def ocr_cache_stats():
     """Get OCR cache statistics (hits, misses, ratio) for debugging."""
