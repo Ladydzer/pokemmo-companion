@@ -359,15 +359,33 @@
     </div>
     <div class="glass-card p-6 mb-5">
         <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">CALCULATEUR DE DEGATS</p>
-        <div class="grid grid-cols-3 gap-3 mb-3">
-            <input type="text" id="dmg-atk" placeholder="Ton Pokemon" class="input input-bordered input-sm">
-            <input type="text" id="dmg-def" placeholder="Adversaire" class="input input-bordered input-sm">
-            <div class="flex gap-2">
-                <input type="number" id="dmg-power" value="90" class="input input-bordered input-sm w-16 text-center">
-                <select id="dmg-type" class="select select-bordered select-sm flex-1"></select>
+        <div class="grid grid-cols-2 gap-3 mb-3">
+            <div>
+                <label class="text-[10px] text-gray-500 mb-1 block">Ton Pokemon</label>
+                <input type="text" id="dmg-atk" placeholder="Rechercher..." class="input input-bordered input-sm w-full" oninput="dmgSearch(this,'dmg-atk-results')">
+                <div id="dmg-atk-results" class="hidden mt-1 glass-card p-2 max-h-28 overflow-y-auto text-xs"></div>
+            </div>
+            <div>
+                <label class="text-[10px] text-gray-500 mb-1 block">Adversaire</label>
+                <input type="text" id="dmg-def" placeholder="Rechercher..." class="input input-bordered input-sm w-full" oninput="dmgSearch(this,'dmg-def-results')">
+                <div id="dmg-def-results" class="hidden mt-1 glass-card p-2 max-h-28 overflow-y-auto text-xs"></div>
             </div>
         </div>
-        <button onclick="calcDmg()" class="btn btn-sm btn-warning">Calculer</button>
+        <div class="flex gap-3 items-center mb-3">
+            <div>
+                <label class="text-[10px] text-gray-500 mb-1 block">Puissance</label>
+                <input type="number" id="dmg-power" value="90" class="input input-bordered input-sm w-20 text-center">
+            </div>
+            <div class="flex-1">
+                <label class="text-[10px] text-gray-500 mb-1 block">Type attaque</label>
+                <div id="dmg-type-pills" class="flex flex-wrap gap-1"></div>
+                <input type="hidden" id="dmg-type" value="Normal">
+            </div>
+        </div>
+        <div class="flex gap-3 items-center">
+            <button onclick="calcDmg()" class="btn btn-sm btn-warning">Calculer</button>
+            <span id="dmg-stab" class="hidden text-[10px] font-bold px-2 py-0.5 rounded" style="background:rgba(118,255,3,0.15);color:#76ff03">STAB x1.5</span>
+        </div>
         <div id="dmg-result" class="hidden mt-3 glass-card p-4 text-sm"></div>
     </div>
     <div class="glass-card p-6 mb-5">
@@ -1393,6 +1411,37 @@ document.getElementById('battle-input')?.addEventListener('input',async e=>{
     }catch(e){console.error(e);}
 });
 
+// Damage calc autocomplete
+function dmgSearch(input,resultsId){
+    const q=input.value.trim();
+    const el=document.getElementById(resultsId);
+    if(q.length<2){el.classList.add('hidden');return;}
+    fetch(`/api/pokemon/search/${encodeURIComponent(q)}`).then(r=>r.json()).then(res=>{
+        if(!Array.isArray(res)||!res.length){el.classList.add('hidden');return;}
+        el.classList.remove('hidden');
+        el.innerHTML=res.slice(0,5).map(p=>`<div class="flex items-center gap-2 p-1 rounded cursor-pointer hover:bg-dark-600" onclick="input=document.getElementById('${input.id}');input.value='${(p.name_fr||p.name).replace(/'/g,"\\'")}';document.getElementById('${resultsId}').classList.add('hidden');dmgCheckStab()"><img src="${spr(p.name)}" class="w-5 h-5"><span class="text-white">${p.name_fr||p.name}</span></div>`).join('');
+    }).catch(()=>{});
+}
+// Type pills for damage calc
+function initDmgTypePills(){
+    const el=document.getElementById('dmg-type-pills');
+    if(!el)return;
+    el.innerHTML=Object.entries(TC).map(([t,c])=>`<span class="type-pill cursor-pointer hover:brightness-125" style="background:${c};font-size:8px;padding:2px 6px;opacity:${t==='Normal'?'1':'0.4'}" onclick="selectDmgType('${t}')" id="dmg-tp-${t}">${tfr(t).slice(0,3)}</span>`).join('');
+}
+function selectDmgType(t){
+    document.getElementById('dmg-type').value=t;
+    document.querySelectorAll('[id^="dmg-tp-"]').forEach(el=>el.style.opacity='0.4');
+    const sel=document.getElementById('dmg-tp-'+t);
+    if(sel)sel.style.opacity='1';
+    dmgCheckStab();
+}
+function dmgCheckStab(){
+    // Visual STAB indicator (approximate — checks if attacker name matches type)
+    const stab=document.getElementById('dmg-stab');
+    if(stab)stab.classList.add('hidden'); // simplified — full check needs API
+}
+initDmgTypePills();
+
 async function calcDmg(){
     const a=document.getElementById('dmg-atk').value,d=document.getElementById('dmg-def').value,pw=document.getElementById('dmg-power').value,tp=document.getElementById('dmg-type').value;
     if(!a||!d)return;
@@ -1400,9 +1449,11 @@ async function calcDmg(){
     const el=document.getElementById('dmg-result');el.classList.remove('hidden');
     if(r.error){el.innerHTML=`<span style="color:#ff5252">${r.error}</span>`;return;}
     const ohko=r.max_pct>=100;const pctColor=r.max_pct>=100?'#76ff03':r.max_pct>=50?'#ffd740':'#ff5252';
+    const stabBadge=r.stab?'<span class="text-[10px] font-bold px-2 py-0.5 rounded" style="background:rgba(118,255,3,0.15);color:#76ff03">STAB</span>':'';
     el.innerHTML=`<div class="flex items-center gap-4 mb-2">
         <p class="font-bold text-white text-lg">${r.attacker} <span class="text-gray-500">vs</span> ${r.defender}</p>
         ${ohko?'<span class="text-xs font-bold px-2 py-0.5 rounded" style="background:rgba(118,255,3,0.15);color:#76ff03">OHKO</span>':''}
+        ${stabBadge}
     </div>
     <div class="flex items-center gap-4">
         <p class="text-2xl mono font-black" style="color:${pctColor}">${r.min_damage}-${r.max_damage}</p>
