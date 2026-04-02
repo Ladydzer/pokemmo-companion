@@ -360,12 +360,12 @@
     <div class="glass-card p-6 mb-5">
         <div class="flex gap-3 mb-4">
             <input type="text" id="team-input" placeholder="Ajouter un Pokemon (Entree)..." class="input input-bordered input-primary flex-1">
-            <button onclick="toggleSD()" class="btn btn-xs btn-secondary">Import Showdown</button>
+            <button onclick="toggleSD()" class="btn btn-xs btn-secondary">Importer Showdown</button> <span class="text-[10px] text-gray-600" title="Collez un export Pokemon Showdown pour importer une equipe">?</span>
             <button onclick="clearTm()" class="btn btn-xs btn-error btn-outline">Effacer</button>
         </div>
         <div id="sd-import" class="hidden mb-4">
             <textarea id="sd-text" rows="5" placeholder="Colle ta team Showdown..." class="textarea textarea-bordered w-full font-mono"></textarea>
-            <button onclick="importSD()" class="mt-2 px-4 py-2 rounded-lg text-sm font-bold" style="background:rgba(213,0,249,0.15);color:#d500f9">Import</button>
+            <button onclick="importSD()" class="mt-2 px-4 py-2 rounded-lg text-sm font-bold" style="background:rgba(213,0,249,0.15);color:#d500f9">Importer</button>
         </div>
         <div id="team-slots" class="grid grid-cols-6 gap-3"></div>
     </div>
@@ -554,7 +554,7 @@
                 <button onclick="presetEV('sweeper_phy')" class="btn btn-xs btn-outline">252 Atk/Spe</button>
                 <button onclick="presetEV('sweeper_spe')" class="btn btn-xs btn-outline">252 SpA/Spe</button>
                 <button onclick="presetEV('tank')" class="btn btn-xs btn-outline">252 HP/Def</button>
-                <button onclick="presetEV('reset')" class="btn btn-xs btn-error btn-outline">Reset</button>
+                <button onclick="presetEV('reset')" class="btn btn-xs btn-error btn-outline">Reinitialiser</button>
             </div>
         </div>
         <div class="stat-track mt-2 h-2 rounded"><div id="ev-total-bar" class="stat-fill bg-neon-cyan rounded" style="width:0%"></div></div>
@@ -1338,7 +1338,7 @@ async function aTm(){
         ts.forEach(t=>mh+=`<td class="p-1 text-center"><span class="type-pill" style="background:${TC[t]};font-size:7px;padding:1px 3px">${tfr(t).slice(0,3)}</span></td>`);
         mh+='</tr>';
         tm.forEach(p=>{
-            mh+=`<tr><td class="p-1 font-bold text-white text-[10px] whitespace-nowrap">${p.name.slice(0,10)}</td>`;
+            mh+=`<tr><td class="p-1 font-bold text-white text-[10px] whitespace-nowrap">${(p.name_fr||p.name).slice(0,10)}</td>`;
             ts.forEach(atk=>{
                 let m=ch[atk+'_'+p.type1]||1;if(p.type2)m*=(ch[atk+'_'+p.type2]||1);
                 const bg=m>=2?'rgba(255,82,82,0.4)':m===0?'rgba(64,196,255,0.3)':m<1?'rgba(105,240,174,0.2)':'';
@@ -1579,7 +1579,7 @@ async function globalSearch(q){
         const res=await fetch(`/api/pokemon/search/${q}`).then(r=>r.json());
         if(!Array.isArray(res)||!res.length){el.classList.add('hidden');return;}
         el.classList.remove('hidden');
-        el.innerHTML=res.slice(0,8).map(p=>`<div class="flex items-center gap-2 p-1.5 rounded cursor-pointer hover:bg-dark-600" onclick="go('pokedex');setTimeout(()=>showP(${p.id}),300);document.getElementById('search-results').classList.add('hidden');document.getElementById('global-search').value='';"><img src="${spr(p.name)}" class="w-6 h-6"><span class="text-white font-medium">${p.name}</span><span class="text-gray-600 text-[10px]">#${p.id}</span></div>`).join('');
+        el.innerHTML=res.slice(0,8).map(p=>`<div class="flex items-center gap-2 p-1.5 rounded cursor-pointer hover:bg-dark-600" onclick="go('pokedex');setTimeout(()=>showP(${p.id}),300);document.getElementById('search-results').classList.add('hidden');document.getElementById('global-search').value='';"><img src="${spr(p.name)}" class="w-6 h-6"><span class="text-white font-medium">${p.name_fr||p.name}</span><span class="text-gray-600 text-[10px]">#${p.id}</span></div>`).join('');
     }catch(e){el.classList.add('hidden');}
 }
 
@@ -1893,11 +1893,11 @@ function renderCompare(){
     svg+=`</svg>`;
 
     // Legend + stats table
-    let legend=compareList.map((p,i)=>`<div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background:${colors[i]}"></div><img src="${spr(p.name)}" class="w-8 h-8"><span class="font-bold text-white text-sm">${p.name}</span></div>`).join('');
+    let legend=compareList.map((p,i)=>`<div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background:${colors[i]}"></div><img src="${spr(p.name)}" class="w-8 h-8"><span class="font-bold text-white text-sm">${p.name_fr||p.name}</span></div>`).join('');
 
     // Stats comparison table
     let table='<table class="text-sm w-full mt-4"><tr><th class="text-left text-gray-500 text-xs p-1">Stat</th>';
-    compareList.forEach((p,i)=>table+=`<th class="text-center p-1" style="color:${colors[i]}">${p.name}</th>`);
+    compareList.forEach((p,i)=>table+=`<th class="text-center p-1" style="color:${colors[i]}">${p.name_fr||p.name}</th>`);
     table+='</tr>';
     labels.forEach((l,li)=>{
         table+=`<tr><td class="text-gray-400 text-xs p-1">${l}</td>`;
@@ -2108,7 +2108,7 @@ async function loadHordes(){
                 </div>
                 <div class="flex flex-wrap gap-2">${group.pokemon.map(p=>`<div class="flex items-center gap-1.5 px-2 py-1 rounded" style="background:rgba(255,255,255,0.03)">
                     <img src="${spr(p.name)}" data-id="${p.pokemon_id}" class="w-6 h-6 sprite-hover" loading="lazy">
-                    <span class="text-xs text-white">${p.name}</span>
+                    <span class="text-xs text-white">${p.name_fr||p.name}</span>
                     ${pill(p.type1)}${p.type2?' '+pill(p.type2):''}
                     <span class="text-[10px] text-gray-500">Lv.${p.level_min}-${p.level_max}</span>
                 </div>`).join('')}</div>
@@ -2262,7 +2262,7 @@ async function showAbility(ability){
                     const isHA=p.ability_type==='hidden';
                     return `<div class="dex-card ${isHA?'':'border-l-2'}" style="${isHA?'border-color:#d500f9':'border-color:#00e5ff'};border-bottom:3px solid ${TC[p.type1]||'#888'}" onclick="showP(${p.id})">
                         <img src="${spr(p.name)}" data-id="${p.id}" class="w-12 h-12 mx-auto sprite-hover" loading="lazy">
-                        <p class="text-[10px] font-bold text-white mt-1">${p.name}</p>
+                        <p class="text-[10px] font-bold text-white mt-1">${p.name_fr||p.name}</p>
                         <p class="text-[9px] ${isHA?'':'text-gray-600'}" style="${isHA?'color:#d500f9':''}">${isHA?'HA':'Normal'}</p>
                     </div>`;
                 }).join('')}
@@ -2569,7 +2569,7 @@ async function ocrTestRegion(idx){
                 const p=match[0];
                 html+=`<div class="glass-card p-3 mt-2"><p class="text-xs text-gray-500 mb-1">POKEMON DETECTE</p>
                 <div class="flex items-center gap-3"><img src="${spr(p.name)}" data-id="${p.id}" class="w-12 h-12">
-                <div><p class="font-bold text-white">${p.name}</p><div class="flex gap-1">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div></div></div></div>`;
+                <div><p class="font-bold text-white">${p.name_fr||p.name}</p><div class="flex gap-1">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div></div></div></div>`;
                 // Show in combat preview
                 ocrShowCombatPreview(p);
             }
@@ -2595,7 +2595,7 @@ async function ocrShowCombatPreview(p){
         let h=`<div class="flex items-center gap-4 mb-3">
             <img src="${spr(p.name)}" data-id="${p.id}" class="w-16 h-16 sprite-hover">
             <div class="flex-1">
-                <p class="font-bold text-white text-lg">${p.name} <span class="text-xs text-gray-500">#${p.id} BST:${bst}</span></p>
+                <p class="font-bold text-white text-lg">${p.name_fr||p.name} <span class="text-xs text-gray-500">#${p.id} BST:${bst}</span></p>
                 <div class="flex gap-1 mt-1">${pill(p.type1)}${p.type2?' '+pill(p.type2):''}</div>
                 <p class="text-xs text-gray-400 mt-1">${p.attack>=p.sp_attack?'Physique (Atk:'+p.attack+')':'Special (SpA:'+p.sp_attack+')'} | Spe:${p.speed}</p>
             </div>
