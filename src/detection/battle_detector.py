@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 
 from .ocr_engine import (read_pokemon_name, read_level, preprocess_light_text,
-                         detect_special_icons, fuzzy_match_name)
+                         detect_special_icons, fuzzy_match_name, detect_text_regions)
 from ..data.type_chart import get_battle_summary, format_battle_summary
 from ..utils.logger import log
 
@@ -83,14 +83,25 @@ class BattleDetector:
         # Read opponent name
         name = read_pokemon_name(name_region)
         if not name or len(name) < 3:
-            # Try inverted
             processed = preprocess_light_text(name_region)
             name = read_pokemon_name(processed)
 
         if not name or len(name) < 3:
+            # Fallback: auto-detect text in upper-center area
+            center_area = frame[:int(h * 0.2), int(w * 0.1):int(w * 0.6)]
+            regions = detect_text_regions(center_area)
+            for rx, ry, rw_a, rh_a in regions[:2]:
+                auto_region = center_area[ry:ry+rh_a, rx:rx+rw_a]
+                if auto_region.size > 0:
+                    name = read_pokemon_name(auto_region)
+                    if name and len(name) >= 3:
+                        log.info(f"Opponent auto-detected at ({rx},{ry}): '{name}'")
+                        break
+
+        if not name or len(name) < 3:
             self._no_detection_count += 1
             if self._no_detection_count >= self._exit_threshold:
-                return None  # Battle ended (hysteresis exit)
+                return None
             return self._last_battle_info
 
         # Filter garbage OCR results (special chars, too short, our own app)
