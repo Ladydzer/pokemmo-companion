@@ -701,12 +701,25 @@
     <div class="flex items-center justify-between mb-4">
         <h1 class="text-3xl font-black text-white">Collection</h1>
         <div class="flex items-center gap-3">
-            <button onclick="exportCol()" class="btn btn-xs btn-outline btn-info">Exporter</button>
+            <button onclick="exportColText()" class="btn btn-xs btn-outline btn-warning" title="Copier en texte">Copier texte</button>
+            <button onclick="exportCol()" class="btn btn-xs btn-outline btn-info">Exporter JSON</button>
             <label class="btn btn-xs btn-outline btn-success cursor-pointer"><input type="file" accept=".json" onchange="importCol(event)" class="hidden">Importer</label>
             <span id="col-header-count" class="text-lg font-bold" style="color:#69f0ae">0 / 649</span>
         </div>
     </div>
-    <div class="stat-track h-3 rounded-lg mb-6"><div id="col-progress-bar" class="stat-fill rounded-lg bg-neon-green" style="width:0%"></div></div>
+    <div class="stat-track h-3 rounded-lg mb-4"><div id="col-progress-bar" class="stat-fill rounded-lg bg-neon-green" style="width:0%"></div></div>
+    <!-- Region progress -->
+    <div id="col-region-progress" class="grid grid-cols-5 gap-3 mb-4"></div>
+    <!-- Region filter -->
+    <div class="flex gap-2 mb-4">
+        <button onclick="filterCol('')" class="btn btn-xs btn-outline" style="border-color:#00e5ff;color:#00e5ff">Tous</button>
+        <button onclick="filterCol('1-151')" class="btn btn-xs btn-outline" style="border-color:#40c4ff;color:#40c4ff">Kanto</button>
+        <button onclick="filterCol('152-251')" class="btn btn-xs btn-outline" style="border-color:#ffd740;color:#ffd740">Johto</button>
+        <button onclick="filterCol('252-386')" class="btn btn-xs btn-outline" style="border-color:#69f0ae;color:#69f0ae">Hoenn</button>
+        <button onclick="filterCol('387-493')" class="btn btn-xs btn-outline" style="border-color:#d500f9;color:#d500f9">Sinnoh</button>
+        <button onclick="filterCol('494-649')" class="btn btn-xs btn-outline" style="border-color:#ff6e40;color:#ff6e40">Unova</button>
+        <button onclick="filterCol('missing')" class="btn btn-xs btn-outline btn-error">Manquants</button>
+    </div>
     <div id="col-grid" class="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-14 gap-1"></div>
 </div>
 
@@ -1579,8 +1592,54 @@ async function loadCol(){
     _colPk=pk;_colPage=0;
     const g=document.getElementById('col-grid');g.innerHTML='';
     _appendCol();
-    updateColCount(JSON.parse(localStorage.getItem('caught')||'[]').length);
+    const caught=JSON.parse(localStorage.getItem('caught')||'[]');
+    updateColCount(caught.length);
+    updateRegionProgress(caught);
     }catch(e){console.error(e);}
+}
+function updateRegionProgress(caught){
+    const regions=[
+        {name:'Kanto',start:1,end:151,color:'#40c4ff'},
+        {name:'Johto',start:152,end:251,color:'#ffd740'},
+        {name:'Hoenn',start:252,end:386,color:'#69f0ae'},
+        {name:'Sinnoh',start:387,end:493,color:'#d500f9'},
+        {name:'Unova',start:494,end:649,color:'#ff6e40'},
+    ];
+    const el=document.getElementById('col-region-progress');
+    if(!el)return;
+    el.innerHTML=regions.map(r=>{
+        const total=r.end-r.start+1;
+        const have=caught.filter(id=>id>=r.start&&id<=r.end).length;
+        const pct=Math.round(have/total*100);
+        return`<div class="p-2 rounded-lg text-center" style="background:${r.color}08;border:1px solid ${r.color}20">
+            <p class="text-[10px] font-bold" style="color:${r.color}">${r.name}</p>
+            <p class="text-sm font-black text-white mono">${have}/${total}</p>
+            <div class="stat-track mt-1 h-1.5 rounded"><div class="stat-fill rounded" style="width:${pct}%;background:${r.color}"></div></div>
+        </div>`;
+    }).join('');
+}
+function filterCol(range){
+    if(!_colPk.length)return;
+    const caught=JSON.parse(localStorage.getItem('caught')||'[]');
+    let filtered=_colPk;
+    if(range==='missing'){
+        filtered=_colPk.filter(p=>!caught.includes(p.id));
+    }else if(range){
+        const[s,e]=range.split('-').map(Number);
+        filtered=_colPk.filter(p=>p.id>=s&&p.id<=e);
+    }
+    _colPk=filtered;_colPage=0;
+    document.getElementById('col-grid').innerHTML='';
+    _appendCol();
+    // Reload full list for next filter (without re-fetching)
+    if(range)fetch('/api/pokemon/all').then(r=>r.json()).then(pk=>{if(Array.isArray(pk))_colPk=pk;});
+}
+function exportColText(){
+    const caught=JSON.parse(localStorage.getItem('caught')||'[]');
+    if(!caught.length){showToast('Collection vide');return;}
+    const names=_colPk.filter(p=>caught.includes(p.id)).map(p=>p.name_fr||p.name);
+    navigator.clipboard.writeText(`Ma collection PokeMMO (${names.length}/649):\n${names.join(', ')}`);
+    showToast(`${names.length} Pokemon copies dans le presse-papier !`);
 }
 function _appendCol(){
     const g=document.getElementById('col-grid');
@@ -1614,6 +1673,7 @@ function toggleCatch(id){
         else{el.classList.add('opacity-30');el.style.boxShadow='';}
     }
     updateColCount(caught.length);
+    updateRegionProgress(caught);
 }
 function updateColCount(n){
     const hdr=document.getElementById('col-header-count');
