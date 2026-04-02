@@ -257,6 +257,15 @@
         </div>
     </div>
 
+    <!-- Recent Favorites -->
+    <div id="dash-favs" class="glass-card p-4 mb-6 hidden">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-[10px] font-bold tracking-widest text-gray-500">FAVORIS</p>
+            <button onclick="go('pokedex');setTimeout(filterFavs,300)" class="text-[10px]" style="color:#ffd740">Voir tous →</button>
+        </div>
+        <div id="dash-favs-list" class="flex gap-3 flex-wrap"></div>
+    </div>
+
     <!-- Spawns -->
     <div class="glass-card p-6 mb-6">
         <div class="flex items-center justify-between mb-4">
@@ -1106,9 +1115,24 @@ async function loadDash(){
     const caught=JSON.parse(localStorage.getItem('caught')||'[]');
     updateColCount(caught.length);
 
+    // Recent favorites on dashboard
+    const favs=JSON.parse(localStorage.getItem('favorites')||'[]');
+    if(favs.length){
+        const panel=document.getElementById('dash-favs');
+        const list=document.getElementById('dash-favs-list');
+        panel.classList.remove('hidden');
+        const recent=favs.slice(-6).reverse(); // last 6, newest first
+        try{
+            const favData=await Promise.all(recent.map(id=>fetch(`/api/pokemon/${id}`).then(r=>r.json()).catch(()=>null)));
+            list.innerHTML=favData.filter(Boolean).map(p=>`<div class="text-center cursor-pointer" onclick="go('pokedex');setTimeout(()=>showP(${p.id}),300)" title="${p.name_fr||p.name}">
+                <img src="${spr(p.name)}" class="w-10 h-10 mx-auto sprite-hover" style="border-bottom:2px solid ${TC[p.type1]||'#888'}">
+                <p class="text-[9px] text-white mt-1">${(p.name_fr||p.name).slice(0,8)}</p>
+            </div>`).join('');
+        }catch(e){}
+    }
+
     // Player stats
     const shD=JSON.parse(localStorage.getItem('shiny_data')||'{}');
-    const favs=JSON.parse(localStorage.getItem('favorites')||'[]');
     const noteCount=Object.keys(localStorage).filter(k=>k.startsWith('note_')).length;
     const el2=id=>document.getElementById(id);
     if(el2('ps-enc'))el2('ps-enc').textContent=(shD.total||0).toLocaleString();
