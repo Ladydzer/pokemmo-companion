@@ -216,7 +216,7 @@ class OverlayWindow(QMainWindow):
         delay = getattr(self.config.overlay, 'auto_hide_delay', 10)
         if elapsed > delay and not self._auto_hidden and self._is_visible:
             self._auto_hidden = True
-            self._fade_to(0.15)
+            self._fade_to(0.45)
         elif elapsed <= delay and self._auto_hidden:
             self._auto_hidden = False
             self._fade_to(self.config.overlay.opacity)
