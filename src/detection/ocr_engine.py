@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import re
 import difflib
+from collections import OrderedDict
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -26,6 +27,71 @@ from ..utils.config import AppConfig
 from ..utils.logger import log
 
 _config = None
+
+
+# === Perceptual hash + LRU cache for OCR results ===
+
+class OCRCache:
+    """LRU cache keyed by perceptual image hash — skips OCR on identical frames."""
+
+    def __init__(self, maxsize: int = 100):
+        self._cache: OrderedDict[int, str] = OrderedDict()
+        self._maxsize = maxsize
+        self.hits = 0
+        self.misses = 0
+
+    def _phash(self, image: np.ndarray) -> int:
+        """Compute a fast perceptual hash (8x8 DCT-based).
+
+        Downsample to 8x8 grayscale, compare each pixel to mean → 64-bit hash.
+        Robust to small noise/compression artifacts.
+        """
+        if image is None or image.size == 0:
+            return 0
+        gray = image
+        if len(image.shape) == 3:
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        resized = cv2.resize(gray, (8, 8), interpolation=cv2.INTER_AREA)
+        mean_val = resized.mean()
+        bits = (resized > mean_val).flatten()
+        return int(''.join('1' if b else '0' for b in bits), 2)
+
+    def get(self, image: np.ndarray) -> str | None:
+        """Look up cached OCR result for this image. Returns None on miss."""
+        h = self._phash(image)
+        if h in self._cache:
+            self._cache.move_to_end(h)
+            self.hits += 1
+            return self._cache[h]
+        self.misses += 1
+        return None
+
+    def put(self, image: np.ndarray, text: str) -> None:
+        """Store OCR result for this image hash."""
+        h = self._phash(image)
+        self._cache[h] = text
+        self._cache.move_to_end(h)
+        if len(self._cache) > self._maxsize:
+            self._cache.popitem(last=False)
+
+
+# Shared cache instances (one per OCR function type)
+_route_cache = None
+_pokemon_cache = None
+
+
+def _get_route_cache() -> OCRCache:
+    global _route_cache
+    if _route_cache is None:
+        _route_cache = OCRCache(maxsize=100)
+    return _route_cache
+
+
+def _get_pokemon_cache() -> OCRCache:
+    global _pokemon_cache
+    if _pokemon_cache is None:
+        _pokemon_cache = OCRCache(maxsize=100)
+    return _pokemon_cache
 
 def _get_config():
     global _config
@@ -264,9 +330,16 @@ def read_pokemon_name(image: np.ndarray) -> str:
     Tries multiple preprocessing approaches for PokeMMO's pixel font.
     Supports French names with accents.
     Priority: pixel font pipeline (HSV isolation) > inverted Otsu > standard.
+    Uses perceptual hash cache to skip OCR on identical frames.
     """
     if not _CV2_AVAILABLE or image is None or image.size == 0:
         return ""
+
+    # Check cache first — skip expensive OCR if frame region hasn't changed
+    cache = _get_pokemon_cache()
+    cached = cache.get(image)
+    if cached is not None:
+        return cached
 
     whitelist = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzéèêëàâùûôîïçÉÈÊËÀÂÙÛÔÎÏÇ.-' 0123456789"
     results = []
@@ -303,6 +376,7 @@ def read_pokemon_name(image: np.ndarray) -> str:
     text = text.strip().strip("_|[]{}()")
     text = re.sub(r'\s*Niv\.?\s*\d+', '', text).strip()
 
+    cache.put(image, text)
     return text
 
 
@@ -311,9 +385,16 @@ def read_route_name(image: np.ndarray) -> str:
 
     Tries multiple preprocessing approaches and picks the best result.
     Priority: pixel font pipeline (HSV) > inverted NN upscale > standard.
+    Uses perceptual hash cache to skip OCR on identical frames.
     """
     if not _CV2_AVAILABLE or image is None or image.size == 0:
         return ""
+
+    # Check cache first — skip expensive OCR if frame region hasn't changed
+    cache = _get_route_cache()
+    cached = cache.get(image)
+    if cached is not None:
+        return cached
 
     whitelist = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .'-éèêëàâùûôîïçÉÈÊËÀÂÙÛÔÎÏÇ"
     results = []
@@ -352,7 +433,9 @@ def read_route_name(image: np.ndarray) -> str:
 
     # Pick the result with the most alphabetic chars (least noise)
     best = max(results, key=lambda t: sum(1 for c in t if c.isalpha()))
-    return best.strip()
+    result = best.strip()
+    cache.put(image, result)
+    return result
 
 
 def read_level(image: np.ndarray) -> int | None:

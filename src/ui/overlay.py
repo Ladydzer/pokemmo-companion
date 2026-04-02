@@ -194,6 +194,14 @@ class OverlayWindow(QMainWindow):
             # Click-through for the content area is handled by Qt's
             # WA_TransparentForMouseEvents on individual widgets.
             user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style | WS_EX_LAYERED | WS_EX_TOOLWINDOW)
+
+            # Exclude overlay from screen capture APIs (PrintWindow, WGC, etc.)
+            # WDA_EXCLUDEFROMCAPTURE = 0x00000011
+            WDA_EXCLUDEFROMCAPTURE = 0x00000011
+            if user32.SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE):
+                log.info("Overlay excluded from screen capture (SetWindowDisplayAffinity)")
+            else:
+                log.debug("SetWindowDisplayAffinity not supported — overlay may appear in captures")
         except Exception as e:
             log.warning(f"Click-through setup failed: {e}")
 

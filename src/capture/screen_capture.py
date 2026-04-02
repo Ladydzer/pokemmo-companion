@@ -9,6 +9,17 @@ from ..utils.logger import log
 # Win32 API for finding game window
 user32 = ctypes.windll.user32
 
+# Set DPI awareness early — ensures GetWindowRect returns unscaled pixel coordinates
+# PROCESS_PER_MONITOR_DPI_AWARE = 2
+try:
+    ctypes.windll.shcore.SetProcessDpiAwareness(2)
+except Exception:
+    # Fallback for older Windows (pre-8.1)
+    try:
+        user32.SetProcessDPIAware()
+    except Exception:
+        pass
+
 
 def _normalize_title(text: str) -> str:
     """Normalize window title for matching — handles Cyrillic lookalikes.
