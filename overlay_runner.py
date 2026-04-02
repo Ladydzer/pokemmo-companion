@@ -2,13 +2,27 @@
 
 Runs the PyQt6 overlay with OCR detection pipeline.
 Communicates with web server API for Pokemon data.
-Uses QThread for proper Qt integration and signal-based updates.
+Uses QThread + moveToThread() for proper Qt integration.
 """
 import sys
 import os
 import json
 import time
 import requests
+
+# Late-import PyQt6 (not available on dev server, only on game machine)
+try:
+    from PyQt6.QtCore import QObject, pyqtSlot
+    _QT_AVAILABLE = True
+except ImportError:
+    _QT_AVAILABLE = False
+    # Stub for when PyQt6 isn't installed
+    class QObject:  # type: ignore[no-redef]
+        pass
+    def pyqtSlot(*args, **kwargs):  # type: ignore[no-redef]
+        def decorator(fn):
+            return fn
+        return decorator
 
 # Ensure project root is in path
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -60,14 +74,15 @@ def fetch_spawns(route_name):
     return []
 
 
-class DetectionWorker:
+class DetectionWorker(QObject):
     """Background worker: capture screen, run OCR, call update callbacks.
 
-    Uses QThread for proper Qt lifecycle management.
+    Uses QThread with moveToThread() for proper Qt lifecycle management.
     Emits updates via callbacks scheduled on the Qt main thread.
     """
 
     def __init__(self, overlay, qt_update_fn):
+        super().__init__()
         self.overlay = overlay
         self.qt_update = qt_update_fn
         self._running = True
@@ -75,8 +90,9 @@ class DetectionWorker:
     def stop(self):
         self._running = False
 
+    @pyqtSlot()
     def run(self):
-        """Main detection loop — runs in QThread."""
+        """Main detection loop — runs in QThread via moveToThread."""
         import traceback
         print("[THREAD] Detection loop started", flush=True)
 
@@ -261,9 +277,10 @@ def main():
         """Schedule a function to run on the Qt main thread."""
         QTimer.singleShot(0, fn)
 
-    # Start detection in QThread
+    # Start detection in QThread (moveToThread pattern)
     worker = DetectionWorker(overlay, qt_update)
     det_thread = QThread()
+    worker.moveToThread(det_thread)
     det_thread.started.connect(worker.run)
     app.aboutToQuit.connect(worker.stop)
     app.aboutToQuit.connect(det_thread.quit)

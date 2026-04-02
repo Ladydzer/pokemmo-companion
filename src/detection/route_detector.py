@@ -149,12 +149,15 @@ class RouteDetector:
         if now - self._last_change_time < self._change_cooldown:
             return None
 
-        old_route = self.current_route
+        old_route = self.current_route or "(none)"
+        elapsed = now - self._last_change_time if self._last_change_time > 0 else 0
         self.current_route = text
         self.current_region = self._infer_region(text)
         self.last_change = now
         self._last_change_time = now
-        log.info(f"Route changed: '{old_route}' -> '{text}' (region: {self.current_region})")
+        consec = self._consecutive_reads.get(text, 0)
+        log.info(f"Route transition: '{old_route}' -> '{text}' (region: {self.current_region}) "
+                 f"| reads={consec} elapsed={elapsed:.1f}s")
         return text
 
     def _clean_route_name(self, text: str) -> str:

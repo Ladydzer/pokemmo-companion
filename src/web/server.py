@@ -388,6 +388,27 @@ async def ocr_status():
     }
 
 
+@app.get("/api/ocr/cache-stats")
+async def ocr_cache_stats():
+    """Get OCR cache statistics (hits, misses, ratio) for debugging."""
+    try:
+        from ..detection.ocr_engine import _get_route_cache, _get_pokemon_cache
+        rc = _get_route_cache()
+        pc = _get_pokemon_cache()
+        def _stats(cache):
+            total = cache.hits + cache.misses
+            return {
+                "hits": cache.hits,
+                "misses": cache.misses,
+                "ratio": round(cache.hits / total, 3) if total > 0 else 0,
+                "size": len(cache._cache),
+                "maxsize": cache._maxsize,
+            }
+        return {"route_cache": _stats(rc), "pokemon_cache": _stats(pc)}
+    except Exception as e:
+        return {"error": str(e)}
+
+
 @app.post("/api/ocr/calibrate")
 async def calibrate_ocr(body: dict):
     """Update OCR ROI positions from the web interface."""

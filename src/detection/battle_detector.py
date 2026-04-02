@@ -1,4 +1,5 @@
 """Battle detection — identifies opponent Pokemon and provides type info."""
+import time
 import numpy as np
 import cv2
 
@@ -170,19 +171,23 @@ class BattleDetector:
         }
 
         # Only update if enough consecutive reads AND cooldown elapsed
-        import time
         now = time.time()
+        consec = self._consecutive_reads.get(name, 0)
         if name != self.current_opponent:
-            if (self._consecutive_reads.get(name, 0) < self._min_consecutive or
-                    now - self._last_change_time < self._change_cooldown):
-                # Not enough confirmations yet — return last known info
+            elapsed = now - self._last_change_time
+            if consec < self._min_consecutive or elapsed < self._change_cooldown:
+                log.debug(f"Battle pending: '{name}' reads={consec}/{self._min_consecutive} "
+                          f"cooldown={elapsed:.1f}/{self._change_cooldown}s")
                 return self._last_battle_info
 
             self._last_change_time = now
+            old = self.current_opponent or "(none)"
             self.current_opponent = name
             self.current_opponent_level = level
             self.current_opponent_types = types
-            log.info(f"Opponent detected: {name} (Lv.{level}) — Types: {'/'.join(types) if types else '?'}")
+            types_str = '/'.join(types) if types else '?'
+            log.info(f"Battle transition: '{old}' -> '{name}' (Lv.{level}) "
+                     f"Types: {types_str} | reads={consec} elapsed={elapsed:.1f}s")
 
         self._last_battle_info = info
         return info

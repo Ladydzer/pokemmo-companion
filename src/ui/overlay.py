@@ -253,16 +253,17 @@ class OverlayWindow(QMainWindow):
         self.spawns_list.setText("\n".join(lines))
 
     def show_battle(self, battle_info: dict) -> None:
-        """Show battle information overlay using the battle panel widget.
-
-        Args:
-            battle_info: dict from BattleDetector.detect_opponent()
-        """
+        """Show battle information overlay. Skip repaint if same opponent."""
+        new_name = battle_info.get("name", "")
+        if hasattr(self, '_last_battle_name') and self._last_battle_name == new_name:
+            return  # Same opponent — skip repaint
+        self._last_battle_name = new_name
         self.battle_panel.show_battle(battle_info)
         self._adjust_size()
 
     def hide_battle(self) -> None:
         """Hide battle information."""
+        self._last_battle_name = ""
         self.battle_panel.hide_battle()
         self._adjust_size()
 
