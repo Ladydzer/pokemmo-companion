@@ -74,6 +74,19 @@ def fetch_spawns(route_name):
     return []
 
 
+def push_detection(route="", region="", opponent="", opponent_types=None,
+                   in_battle=False, level=None):
+    """Push live detection state to web backend for dashboard sync."""
+    try:
+        requests.post(f"{API_BASE}/api/ocr/detection", json={
+            "route": route, "region": region, "opponent": opponent,
+            "opponent_types": opponent_types or [], "in_battle": in_battle,
+            "level": level,
+        }, timeout=1)
+    except Exception:
+        pass  # non-blocking, best-effort
+
+
 class DetectionWorker(QObject):
     """Background worker: capture screen, run OCR, call update callbacks.
 
@@ -225,6 +238,7 @@ class DetectionWorker(QObject):
                         log.info(f"Spawns: {len(spawns)} Pokemon dans {last_route}")
                     self.qt_update(lambda: self.overlay.update_spawns(spawns))
                     self.qt_update(lambda: self.overlay.update_counter_location(name, reg))
+                    push_detection(route=route_name, region=route_det.current_region)
 
                 # Detect battle opponent (anti-flipflop: 3 reads + 1.5s cooldown)
                 battle_info = battle_det.detect_opponent(frame)
@@ -240,10 +254,15 @@ class DetectionWorker(QObject):
                         info = dict(battle_info)
                         self.qt_update(lambda: self.overlay.show_battle(info))
                         self.qt_update(lambda: self.overlay.increment_encounter())
+                        ocr_reads += 1
+                        push_detection(route=last_route, region=route_det.current_region,
+                                       opponent=opponent, opponent_types=battle_info.get('types', []),
+                                       in_battle=True, level=battle_info.get('level'))
                 elif in_battle and battle_info is None:
                     in_battle = False
                     last_opponent = ""
                     self.qt_update(lambda: self.overlay.hide_battle())
+                    push_detection(route=last_route, region=route_det.current_region, in_battle=False)
 
                 # Periodically reload OCR regions + update status
                 now = time.time()

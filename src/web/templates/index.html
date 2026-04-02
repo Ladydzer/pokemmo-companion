@@ -153,6 +153,27 @@
         </div>
     </div>
 
+    <!-- Live OCR Detection -->
+    <div class="glass-card p-4 mb-6" id="live-detection" style="border-left:4px solid #00e5ff">
+        <div class="flex items-center gap-4">
+            <div>
+                <div class="flex items-center gap-2 mb-1">
+                    <div id="live-dot" class="w-2.5 h-2.5 rounded-full bg-gray-600"></div>
+                    <span class="text-[10px] font-bold tracking-widest text-gray-500">OVERLAY LIVE</span>
+                </div>
+                <p class="text-sm"><span class="text-gray-400">Route:</span> <span id="live-route" class="text-white font-bold">---</span> <span id="live-region" class="text-gray-600 text-xs"></span></p>
+            </div>
+            <div class="flex-1"></div>
+            <div id="live-battle" class="hidden">
+                <p class="text-sm"><span class="text-gray-400">Combat:</span> <span id="live-opponent" class="font-bold" style="color:#ff4081">---</span> <span id="live-level" class="text-gray-500 text-xs"></span></p>
+                <div id="live-types" class="flex gap-1 mt-0.5"></div>
+            </div>
+            <div>
+                <span id="live-age" class="text-[10px] text-gray-700"></span>
+            </div>
+        </div>
+    </div>
+
     <!-- Stat cards -->
     <div class="grid grid-cols-4 gap-4 mb-6">
         <div class="glass-card p-5">
@@ -842,10 +863,38 @@ function go(p){
         if(p==='equipe'&&!window._eq){window._eq=true;rTm();}
         if(p==='guide'&&!window._gu){window._gu=true;loadGuide('Kanto');}
         if(p==='evtrain'&&!window._ev){window._ev=true;loadEVTracker();calcBreed();renderNatures(NATURES);}
-        if(p==='options'&&!window._op){window._op=true;ocrLoadRegions();}
+        if(p==='options'&&!window._op){window._op=true;ocrLoadRegions();runDiagnostic();}
         if(p==='routes'&&!window._rt){window._rt=true;loadRoutes();}
     }, current?150:0);
 }
+
+// Live detection polling (overlay → web sync)
+setInterval(async()=>{
+    if(document.getElementById('page-dashboard').classList.contains('hidden'))return;
+    try{
+        const d=await fetch('/api/ocr/latest').then(r=>r.json());
+        const dot=document.getElementById('live-dot');
+        if(d.active){
+            dot.style.background='#76ff03';
+            document.getElementById('live-route').textContent=d.route||'---';
+            document.getElementById('live-region').textContent=d.region?`(${d.region})`:'';
+            document.getElementById('live-age').textContent=d.age_seconds>=0?`${d.age_seconds.toFixed(0)}s`:'';
+            // Update dashboard route card too
+            if(d.route)document.getElementById('loc-route').textContent=d.route;
+            // Battle state
+            const bp=document.getElementById('live-battle');
+            if(d.in_battle&&d.opponent){
+                bp.classList.remove('hidden');
+                document.getElementById('live-opponent').textContent=d.opponent;
+                document.getElementById('live-level').textContent=d.level?`Niv.${d.level}`:'';
+                document.getElementById('live-types').innerHTML=(d.opponent_types||[]).map(t=>pill(t)).join(' ');
+            }else{bp.classList.add('hidden');}
+        }else{
+            dot.style.background='#616161';
+            document.getElementById('live-age').textContent='offline';
+        }
+    }catch(e){}
+},2000);
 
 async function loadDash(){
     try{

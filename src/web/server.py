@@ -13,6 +13,12 @@ SPRITES_DIR = PROJECT_ROOT / "data" / "sprites"
 WEB_DIR = Path(__file__).parent
 TEMPLATES_DIR = WEB_DIR / "templates"
 
+# Live detection state — updated by overlay, polled by frontend
+_detection_state = {
+    "route": "", "region": "", "opponent": "", "opponent_types": [],
+    "in_battle": False, "level": None, "timestamp": 0,
+}
+
 app = FastAPI(title="PokeMMO Companion", version="0.5.0")
 
 # Mount static files (create dir if missing)
@@ -467,6 +473,27 @@ async def diagnostic():
     all_ok = all(c.get("ok", False) for c in checks.values())
 
     return {"status": "ready" if all_ok else "issues", "checks": checks}
+
+
+@app.post("/api/ocr/detection")
+async def post_detection(body: dict):
+    """Receive live detection from overlay — route, opponent, battle state."""
+    import time as _time
+    _detection_state["timestamp"] = _time.time()
+    for key in ["route", "region", "opponent", "opponent_types", "in_battle", "level"]:
+        if key in body:
+            _detection_state[key] = body[key]
+    return {"status": "ok"}
+
+
+@app.get("/api/ocr/latest")
+async def get_latest_detection():
+    """Get latest detection state for live dashboard polling."""
+    import time as _time
+    state = dict(_detection_state)
+    state["age_seconds"] = round(_time.time() - state["timestamp"], 1) if state["timestamp"] else -1
+    state["active"] = state["age_seconds"] >= 0 and state["age_seconds"] < 30
+    return state
 
 
 @app.get("/api/ocr/cache-stats")
