@@ -137,6 +137,69 @@ def init_tesseract() -> bool:
     return False
 
 
+def detect_text_regions(image: np.ndarray, min_height: int = 8, max_height: int = 40,
+                        min_width: int = 4, max_width: int = 30) -> list[tuple[int,int,int,int]]:
+    """Auto-detect text regions using connected components.
+
+    Finds character-sized blobs, groups them into horizontal lines.
+    Returns list of bounding boxes (x, y, w, h) for text lines.
+    No hardcoded ROI needed — works at any resolution.
+    """
+    if not _CV2_AVAILABLE or image is None or image.size == 0:
+        return []
+
+    # Binarize: HSV isolation if color, threshold if grayscale
+    if len(image.shape) == 3:
+        binary = isolate_text_by_color(image)
+    else:
+        _, binary = cv2.threshold(image, 128, 255, cv2.THRESH_BINARY)
+
+    # Connected components
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(binary)
+
+    # Filter by character size
+    char_blobs = []
+    for i in range(1, num_labels):  # skip background (0)
+        x, y, w, h, area = stats[i]
+        if min_height <= h <= max_height and min_width <= w <= max_width and area >= 20:
+            char_blobs.append((x, y, w, h, centroids[i][1]))  # include y-center
+
+    if not char_blobs:
+        return []
+
+    # Group blobs into horizontal lines (similar y-center, within threshold)
+    char_blobs.sort(key=lambda b: b[4])  # sort by y-center
+    lines = []
+    current_line = [char_blobs[0]]
+    for blob in char_blobs[1:]:
+        if abs(blob[4] - current_line[-1][4]) < max_height * 0.6:
+            current_line.append(blob)
+        else:
+            if len(current_line) >= 3:  # minimum 3 chars = likely text
+                lines.append(current_line)
+            current_line = [blob]
+    if len(current_line) >= 3:
+        lines.append(current_line)
+
+    # Convert lines to bounding boxes
+    regions = []
+    for line in lines:
+        x_min = min(b[0] for b in line)
+        y_min = min(b[1] for b in line)
+        x_max = max(b[0] + b[2] for b in line)
+        y_max = max(b[1] + b[3] for b in line)
+        # Add padding
+        pad = 4
+        x_min = max(0, x_min - pad)
+        y_min = max(0, y_min - pad)
+        x_max = min(image.shape[1], x_max + pad)
+        y_max = min(image.shape[0], y_max + pad)
+        regions.append((x_min, y_min, x_max - x_min, y_max - y_min))
+
+    # Sort by y position (top to bottom)
+    return sorted(regions, key=lambda r: r[1])
+
+
 def isolate_text_by_color(image: np.ndarray) -> np.ndarray:
     """Extract text pixels by HSV color range, removing background noise.
 
