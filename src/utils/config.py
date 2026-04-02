@@ -27,9 +27,10 @@ class CaptureConfig:
 @dataclass
 class OCRConfig:
     tesseract_path: str = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-    language: str = "eng"
+    language: str = "fra"  # French — PokeMMO displays FR names (fallback to eng)
     psm: int = 7  # Single line
-    upscale_factor: int = 3
+    oem: int = 1  # LSTM engine
+    upscale_factor: int = 4  # 4x for pixel fonts (need ~300 DPI equivalent)
 
 
 @dataclass

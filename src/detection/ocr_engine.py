@@ -63,6 +63,75 @@ def init_tesseract() -> bool:
     return False
 
 
+def isolate_text_by_color(image: np.ndarray) -> np.ndarray:
+    """Extract text pixels by HSV color range, removing background noise.
+
+    PokeMMO text colors:
+    - White text: low saturation, high value (route names, menus)
+    - Yellow text: H 20-40 (Pokemon names, highlights)
+    Returns binary image: white text on black background.
+    """
+    if image is None or image.size == 0 or len(image.shape) < 3:
+        return image
+
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+    # White text mask (low saturation, high brightness)
+    white_mask = cv2.inRange(hsv, np.array([0, 0, 180]), np.array([180, 50, 255]))
+
+    # Yellow text mask
+    yellow_mask = cv2.inRange(hsv, np.array([18, 80, 150]), np.array([40, 255, 255]))
+
+    # Light gray/cream text (some UI elements)
+    light_mask = cv2.inRange(hsv, np.array([0, 0, 150]), np.array([180, 30, 255]))
+
+    # Combine all text masks
+    text_mask = white_mask | yellow_mask | light_mask
+
+    # Apply mask: text becomes white, everything else black
+    result = np.zeros(image.shape[:2], dtype=np.uint8)
+    result[text_mask > 0] = 255
+
+    return result
+
+
+def preprocess_pixel_font(image: np.ndarray, upscale: int = 4) -> np.ndarray:
+    """Optimized preprocessing for PokeMMO pixel art fonts.
+
+    Pipeline: HSV isolation → INTER_NEAREST upscale → Otsu → 10px border.
+    No CLAHE (adds noise to clean pixel art).
+    No medianBlur (destroys 1px strokes).
+    """
+    if image is None or image.size == 0:
+        return image
+
+    # Step 1: HSV color isolation (removes background noise)
+    if len(image.shape) == 3:
+        text_only = isolate_text_by_color(image)
+    else:
+        text_only = image.copy()
+
+    # Step 2: Upscale with INTER_NEAREST (preserves pixel edges, no anti-aliasing)
+    if upscale > 1:
+        h, w = text_only.shape[:2]
+        text_only = cv2.resize(text_only, (w * upscale, h * upscale),
+                               interpolation=cv2.INTER_NEAREST)
+
+    # Step 3: Light Gaussian blur to smooth jagged edges after upscale
+    text_only = cv2.GaussianBlur(text_only, (3, 3), 0)
+
+    # Step 4: Otsu threshold (uniform intensity, better than adaptive for pixel fonts)
+    if len(text_only.shape) == 3:
+        text_only = cv2.cvtColor(text_only, cv2.COLOR_BGR2GRAY)
+    _, binary = cv2.threshold(text_only, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    # Step 5: Add 10px white border (Tesseract needs margin around text)
+    binary = cv2.copyMakeBorder(binary, 10, 10, 10, 10,
+                                cv2.BORDER_CONSTANT, value=255)
+
+    return binary
+
+
 def enhance_contrast(image: np.ndarray, factor: float = 1.5) -> np.ndarray:
     """Boost contrast before OCR (technique from pokemon-ocr-scrapper).
 
@@ -107,18 +176,15 @@ def preprocess_for_ocr(image: np.ndarray, upscale: int = 3,
     else:
         gray = image.copy()
 
-    # Upscale
+    # Upscale with INTER_NEAREST (preserves pixel font edges)
     if upscale > 1:
         h, w = gray.shape
-        gray = cv2.resize(gray, (w * upscale, h * upscale), interpolation=cv2.INTER_CUBIC)
+        gray = cv2.resize(gray, (w * upscale, h * upscale), interpolation=cv2.INTER_NEAREST)
 
     # Adaptive threshold to isolate text
     binary = cv2.adaptiveThreshold(
         gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
     )
-
-    # Light denoise
-    binary = cv2.medianBlur(binary, 3)
 
     return binary
 
@@ -135,7 +201,7 @@ def preprocess_light_text(image: np.ndarray, upscale: int = 3) -> np.ndarray:
 
     if upscale > 1:
         h, w = gray.shape
-        gray = cv2.resize(gray, (w * upscale, h * upscale), interpolation=cv2.INTER_CUBIC)
+        gray = cv2.resize(gray, (w * upscale, h * upscale), interpolation=cv2.INTER_NEAREST)
 
     # Invert (light text on dark bg -> dark text on light bg for Tesseract)
     inverted = cv2.bitwise_not(gray)
@@ -146,13 +212,14 @@ def preprocess_light_text(image: np.ndarray, upscale: int = 3) -> np.ndarray:
     return binary
 
 
-def read_text(image: np.ndarray, psm: int = 7, preprocess: bool = True,
-              whitelist: str = "") -> str:
+def read_text(image: np.ndarray, psm: int = 7, oem: int = 1,
+              preprocess: bool = True, whitelist: str = "") -> str:
     """Read text from an image region using Tesseract.
 
     Args:
         image: BGR or grayscale image
         psm: Page segmentation mode (7=single line, 6=block, 13=raw line)
+        oem: OCR Engine Mode (0=legacy, 1=LSTM, 3=both)
         preprocess: Apply preprocessing pipeline
         whitelist: Limit characters (e.g., "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz ")
     """
@@ -170,14 +237,25 @@ def read_text(image: np.ndarray, psm: int = 7, preprocess: bool = True,
     else:
         processed = image
 
-    config = f"--psm {psm}"
+    config = f"--psm {psm} --oem {oem}"
     if whitelist:
         config += f" -c tessedit_char_whitelist={whitelist}"
 
+    # Determine language — prefer fra for French Pokemon names
+    cfg = _get_config()
+    lang = cfg.ocr.language
+
     try:
-        text = pytesseract.image_to_string(processed, lang=_get_config().ocr.language, config=config)
+        text = pytesseract.image_to_string(processed, lang=lang, config=config)
         return text.strip()
     except Exception as e:
+        # Fallback to eng if fra not available
+        if lang != "eng":
+            try:
+                text = pytesseract.image_to_string(processed, lang="eng", config=config)
+                return text.strip()
+            except Exception:
+                pass
         log.debug(f"OCR failed: {e}")
         return ""
 
@@ -187,6 +265,7 @@ def read_pokemon_name(image: np.ndarray) -> str:
 
     Tries multiple preprocessing approaches for PokeMMO's pixel font.
     Supports French names with accents.
+    Priority: pixel font pipeline (HSV isolation) > inverted Otsu > standard.
     """
     if not _CV2_AVAILABLE or image is None or image.size == 0:
         return ""
@@ -194,30 +273,32 @@ def read_pokemon_name(image: np.ndarray) -> str:
     whitelist = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzéèêëàâùûôîïçÉÈÊËÀÂÙÛÔÎÏÇ.-' 0123456789"
     results = []
 
-    # Method 1: Light text (invert + Otsu)
-    t1 = read_text(preprocess_light_text(image, upscale=3), psm=7,
-                   preprocess=False, whitelist=whitelist)
+    # Method 1 (PRIMARY): Pixel font pipeline — HSV isolation + INTER_NEAREST + Otsu + border
+    pixel_img = preprocess_pixel_font(image, upscale=4)
+    t1 = read_text(pixel_img, psm=7, oem=1, preprocess=False, whitelist=whitelist)
     if t1 and len(t1) >= 3:
         results.append(t1)
 
-    # Method 2: High upscale + inverted Otsu (pixel font friendly)
+    # Method 2: High upscale + inverted Otsu (pixel font, no HSV)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image.copy()
     up = cv2.resize(gray, None, fx=4, fy=4, interpolation=cv2.INTER_NEAREST)
     inv = cv2.bitwise_not(up)
     _, binary = cv2.threshold(inv, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    t2 = read_text(binary, psm=7, preprocess=False, whitelist=whitelist)
+    binary = cv2.copyMakeBorder(binary, 10, 10, 10, 10, cv2.BORDER_CONSTANT, value=255)
+    t2 = read_text(binary, psm=7, oem=1, preprocess=False, whitelist=whitelist)
     if t2 and len(t2) >= 3:
         results.append(t2)
 
-    # Method 3: Standard
-    t3 = read_text(image, psm=7, preprocess=True, whitelist=whitelist)
+    # Method 3: Light text (invert + Otsu, legacy approach)
+    t3 = read_text(preprocess_light_text(image, upscale=4), psm=7, oem=1,
+                   preprocess=False, whitelist=whitelist)
     if t3 and len(t3) >= 3:
         results.append(t3)
 
     if not results:
         return ""
 
-    # Pick best result (most alpha chars)
+    # Pick best result (most alpha chars = least noise)
     text = max(results, key=lambda t: sum(1 for c in t if c.isalpha()))
 
     # Clean up
@@ -231,7 +312,7 @@ def read_route_name(image: np.ndarray) -> str:
     """Read a route/area name from the minimap/header region.
 
     Tries multiple preprocessing approaches and picks the best result.
-    PokeMMO text is typically light on dark background, pixel font.
+    Priority: pixel font pipeline (HSV) > inverted NN upscale > standard.
     """
     if not _CV2_AVAILABLE or image is None or image.size == 0:
         return ""
@@ -239,29 +320,32 @@ def read_route_name(image: np.ndarray) -> str:
     whitelist = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .'-éèêëàâùûôîïçÉÈÊËÀÂÙÛÔÎÏÇ"
     results = []
 
-    # Method 1: Light text preprocessing (invert + Otsu)
-    text1 = read_text(preprocess_light_text(image, upscale=3), psm=7,
-                      preprocess=False, whitelist=whitelist)
+    # Method 1 (PRIMARY): Pixel font pipeline — HSV isolation + NN upscale + Otsu + border
+    pixel_img = preprocess_pixel_font(image, upscale=4)
+    text1 = read_text(pixel_img, psm=7, oem=1, preprocess=False, whitelist=whitelist)
     if text1:
         results.append(text1)
 
-    # Method 2: Standard preprocessing with contrast
-    text2 = read_text(image, psm=7, preprocess=True, whitelist=whitelist)
+    # Method 2: Inverted + high upscale + Otsu + border (no HSV, catches edge cases)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image.copy()
+    upscaled = cv2.resize(gray, None, fx=4, fy=4, interpolation=cv2.INTER_NEAREST)
+    inverted = cv2.bitwise_not(upscaled)
+    _, binary_inv = cv2.threshold(inverted, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    binary_inv = cv2.copyMakeBorder(binary_inv, 10, 10, 10, 10, cv2.BORDER_CONSTANT, value=255)
+    text2 = read_text(binary_inv, psm=7, oem=1, preprocess=False, whitelist=whitelist)
     if text2:
         results.append(text2)
 
-    # Method 3: Simple grayscale + high upscale + Otsu (good for pixel fonts)
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image.copy()
-    upscaled = cv2.resize(gray, None, fx=4, fy=4, interpolation=cv2.INTER_NEAREST)
-    _, binary = cv2.threshold(upscaled, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    text3 = read_text(binary, psm=7, preprocess=False, whitelist=whitelist)
+    # Method 3: Direct Otsu + border (for high-contrast text)
+    _, binary_direct = cv2.threshold(upscaled, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    binary_direct = cv2.copyMakeBorder(binary_direct, 10, 10, 10, 10, cv2.BORDER_CONSTANT, value=255)
+    text3 = read_text(binary_direct, psm=7, oem=1, preprocess=False, whitelist=whitelist)
     if text3:
         results.append(text3)
 
-    # Method 4: Inverted + high upscale (for light text on dark bg)
-    inverted = cv2.bitwise_not(upscaled)
-    _, binary_inv = cv2.threshold(inverted, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    text4 = read_text(binary_inv, psm=7, preprocess=False, whitelist=whitelist)
+    # Method 4: Light text preprocessing (legacy fallback)
+    text4 = read_text(preprocess_light_text(image, upscale=4), psm=7, oem=1,
+                      preprocess=False, whitelist=whitelist)
     if text4:
         results.append(text4)
 
