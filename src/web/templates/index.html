@@ -650,7 +650,10 @@
 <div id="page-ivcalc" class="page hidden fade-in max-w-3xl">
     <h1 class="text-3xl font-black text-white mb-5">Calculateur IV</h1>
     <div class="glass-card p-6 mb-5">
-        <p class="text-[10px] font-bold tracking-widest text-gray-500 mb-4">IDENTIFIER LES IVs D'UN POKEMON</p>
+        <div class="flex items-center justify-between mb-4">
+            <p class="text-[10px] font-bold tracking-widest text-gray-500">IDENTIFIER LES IVs D'UN POKEMON</p>
+            <button onclick="ivImportOverlay()" class="btn btn-xs btn-outline" style="border-color:#76ff03;color:#76ff03">Importer depuis overlay</button>
+        </div>
         <div class="grid grid-cols-2 gap-4 mb-4">
             <div>
                 <label class="text-xs text-gray-400 mb-1 block">Pokemon</label>
@@ -1228,7 +1231,17 @@ async function calcDmg(){
     try{const r=await fetch(`/api/damage?attacker=${a}&defender=${d}&power=${pw}&move_type=${tp}`).then(r=>r.json());
     const el=document.getElementById('dmg-result');el.classList.remove('hidden');
     if(r.error){el.innerHTML=`<span style="color:#ff5252">${r.error}</span>`;return;}
-    el.innerHTML=`<p class="font-bold text-white">${r.attacker} vs ${r.defender}</p><p class="text-lg mono" style="color:#ff6e40">${r.min_damage}-${r.max_damage} HP (${r.min_pct}%-${r.max_pct}%)</p><p class="text-xs text-gray-500 mt-1">${r.text.replace(/\n/g,'<br>')}</p>`;
+    const ohko=r.max_pct>=100;const pctColor=r.max_pct>=100?'#76ff03':r.max_pct>=50?'#ffd740':'#ff5252';
+    el.innerHTML=`<div class="flex items-center gap-4 mb-2">
+        <p class="font-bold text-white text-lg">${r.attacker} <span class="text-gray-500">vs</span> ${r.defender}</p>
+        ${ohko?'<span class="text-xs font-bold px-2 py-0.5 rounded" style="background:rgba(118,255,3,0.15);color:#76ff03">OHKO</span>':''}
+    </div>
+    <div class="flex items-center gap-4">
+        <p class="text-2xl mono font-black" style="color:${pctColor}">${r.min_damage}-${r.max_damage}</p>
+        <div class="flex-1"><div class="stat-track"><div class="stat-fill" style="width:${Math.min(r.max_pct,100)}%;background:${pctColor}"></div></div></div>
+        <p class="text-sm mono" style="color:${pctColor}">${r.min_pct}%-${r.max_pct}%</p>
+    </div>
+    <p class="text-xs text-gray-500 mt-2">${r.text.replace(/\n/g,'<br>')}</p>`;
     }catch(e){console.error(e);}
 }
 
@@ -1649,6 +1662,20 @@ async function loadCacheStats(){
 
 // IV Calculator
 let _ivPokemonId=null;
+async function ivImportOverlay(){
+    try{
+        const d=await fetch('/api/ocr/latest').then(r=>r.json());
+        if(!d.active||!d.opponent){showToast('Overlay inactif ou pas en combat');return;}
+        // Search for the opponent pokemon
+        const res=await fetch(`/api/pokemon/search/${encodeURIComponent(d.opponent)}`).then(r=>r.json());
+        if(Array.isArray(res)&&res.length){
+            const p=res[0];
+            ivSelectPokemon(p.id, p.name_fr||p.name);
+            if(d.level)document.getElementById('iv-level').value=d.level;
+            showToast(`Import: ${p.name_fr||p.name} Niv.${d.level||'?'}`);
+        }else{showToast('Pokemon non trouve: '+d.opponent);}
+    }catch(e){showToast('Erreur import overlay');}
+}
 function ivSearchPokemon(q){
     const el=document.getElementById('iv-pokemon-results');
     if(q.length<2){el.classList.add('hidden');return;}
@@ -1723,10 +1750,10 @@ async function calcIVs(){
     const NATURES_DATA={
         Hardy:['Hardi','—','—'],Lonely:['Solo','+Atq','-Def'],Brave:['Brave','+Atq','-Vit'],
         Adamant:['Rigide','+Atq','-A.Spe'],Naughty:['Mauvais','+Atq','-D.Spe'],
-        Bold:['Assure','+Def','-Atq'],Docile:['Docile','—','—'],Relaxed:['Relax','+Def','-Vit'],
-        Impish:['Malin','+Def','-A.Spe'],Lax:['Lache','+Def','-D.Spe'],
-        Timid:['Timide','+Vit','-Atq'],Hasty:['Presse','+Vit','-Def'],Serious:['Serieux','—','—'],
-        Jolly:['Jovial','+Vit','-A.Spe'],Naive:['Naif','+Vit','-D.Spe'],
+        Bold:['Assuré','+Def','-Atq'],Docile:['Docile','—','—'],Relaxed:['Relax','+Def','-Vit'],
+        Impish:['Malin','+Def','-A.Spe'],Lax:['Lâche','+Def','-D.Spe'],
+        Timid:['Timide','+Vit','-Atq'],Hasty:['Pressé','+Vit','-Def'],Serious:['Sérieux','—','—'],
+        Jolly:['Jovial','+Vit','-A.Spe'],Naive:['Naïf','+Vit','-D.Spe'],
         Modest:['Modeste','+A.Spe','-Atq'],Mild:['Doux','+A.Spe','-Def'],Quiet:['Discret','+A.Spe','-Vit'],
         Bashful:['Pudique','—','—'],Rash:['Foufou','+A.Spe','-D.Spe'],
         Calm:['Calme','+D.Spe','-Atq'],Gentle:['Gentil','+D.Spe','-Def'],Sassy:['Malpoli','+D.Spe','-Vit'],
