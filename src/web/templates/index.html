@@ -146,7 +146,7 @@
         <button onclick="toggleRealOverlay()" id="btn-overlay" class="btn btn-xs btn-outline w-full mb-2" style="border-color:#d500f9;color:#d500f9">Lancer Overlay OCR</button>
         <div class="flex items-center gap-2 text-xs"><div id="game-status-dot" class="w-2 h-2 rounded-full bg-red-500"></div><span id="game-status-text" class="text-gray-600">Hors ligne</span></div>
         <div class="flex items-center gap-2 text-xs mt-1"><div id="overlay-status-dot" class="w-2 h-2 rounded-full bg-gray-700"></div><span id="overlay-status-text" class="text-gray-700 text-[9px]">Overlay inactif</span></div>
-        <p class="text-[9px] text-gray-700 mt-2">v0.5.0</p>
+        <p class="text-[9px] text-gray-700 mt-2">v0.5.0 | <span id="sidebar-theme" class="text-gray-600"></span></p>
         <button onclick="toggleHelp()" class="text-[9px] text-gray-700 hover:text-gray-400 cursor-pointer mt-1" title="Raccourcis clavier">? Raccourcis</button>
     </div>
 </aside>
@@ -819,17 +819,8 @@
     </div>
     <!-- Theme selector -->
     <div class="glass-card p-6 mb-5">
-        <p class="text-xs font-bold tracking-widest text-gray-500 mb-4">THEME</p>
-        <div class="flex flex-wrap gap-2">
-            <button onclick="setTheme('night')" class="btn btn-xs btn-outline">Night</button>
-            <button onclick="setTheme('dark')" class="btn btn-xs btn-outline">Dark</button>
-            <button onclick="setTheme('synthwave')" class="btn btn-xs btn-outline btn-secondary">Synthwave</button>
-            <button onclick="setTheme('cyberpunk')" class="btn btn-xs btn-outline btn-warning">Cyberpunk</button>
-            <button onclick="setTheme('dracula')" class="btn btn-xs btn-outline btn-error">Dracula</button>
-            <button onclick="setTheme('forest')" class="btn btn-xs btn-outline btn-success">Forest</button>
-            <button onclick="setTheme('luxury')" class="btn btn-xs btn-outline">Luxury</button>
-            <button onclick="setTheme('black')" class="btn btn-xs btn-outline">Black</button>
-        </div>
+        <p class="text-xs font-bold tracking-widest text-gray-500 mb-3">THEME</p>
+        <div class="flex flex-wrap gap-3" id="theme-picker"></div>
     </div>
     <div class="glass-card p-6 mb-5">
         <p class="text-xs font-bold tracking-widest text-gray-500 mb-4">A PROPOS</p>
@@ -2165,7 +2156,38 @@ const savedFontSize=localStorage.getItem('fontSize');
 if(savedFontSize)document.body.style.fontSize=savedFontSize+'px';
 
 // Theme
-function setTheme(t){document.documentElement.setAttribute('data-theme',t);localStorage.setItem('theme',t);showToast('Theme: '+t);}
+const THEMES=[
+    {id:'night',name:'Night',bg:'#0d1117',accent:'#00e5ff'},
+    {id:'dark',name:'Dark',bg:'#1a1a2e',accent:'#e94560'},
+    {id:'synthwave',name:'Synthwave',bg:'#2b213a',accent:'#e779c1'},
+    {id:'cyberpunk',name:'Cyberpunk',bg:'#1a1a00',accent:'#f7d02c'},
+    {id:'dracula',name:'Dracula',bg:'#282a36',accent:'#ff5555'},
+    {id:'forest',name:'Forest',bg:'#1a2e1a',accent:'#69f0ae'},
+    {id:'luxury',name:'Luxury',bg:'#1a1a1a',accent:'#d4af37'},
+    {id:'black',name:'Black',bg:'#000000',accent:'#ffffff'},
+];
+function setTheme(t){
+    document.documentElement.setAttribute('data-theme',t);
+    localStorage.setItem('theme',t);
+    renderThemePicker();
+    const th=THEMES.find(x=>x.id===t);
+    const st=document.getElementById('sidebar-theme');
+    if(st)st.textContent=th?th.name:t;
+    showToast('Theme: '+(th?th.name:t));
+}
+function renderThemePicker(){
+    const el=document.getElementById('theme-picker');
+    if(!el)return;
+    const current=localStorage.getItem('theme')||'night';
+    el.innerHTML=THEMES.map(t=>`<div onclick="setTheme('${t.id}')" class="cursor-pointer text-center transition hover:scale-110" title="${t.name}">
+        <div class="w-10 h-10 rounded-full mx-auto mb-1 flex items-center justify-center ${t.id===current?'ring-2 ring-offset-2 ring-offset-dark-800':''}" style="background:${t.bg};border:2px solid ${t.accent};${t.id===current?'ring-color:'+t.accent:''}">
+            <div class="w-3 h-3 rounded-full" style="background:${t.accent}"></div>
+        </div>
+        <p class="text-[9px] ${t.id===current?'text-white font-bold':'text-gray-600'}">${t.name}</p>
+    </div>`).join('');
+}
+renderThemePicker();
+(function(){const st=document.getElementById('sidebar-theme');const ct=localStorage.getItem('theme')||'night';const th=THEMES.find(x=>x.id===ct);if(st&&th)st.textContent=th.name;})();
 // Restore saved theme
 const savedTheme=localStorage.getItem('theme');
 if(savedTheme)document.documentElement.setAttribute('data-theme',savedTheme);
