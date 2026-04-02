@@ -206,7 +206,7 @@
                     <div id="live-dot" class="w-2.5 h-2.5 rounded-full bg-gray-600"></div>
                     <span class="text-[10px] font-bold tracking-widest text-gray-500">OVERLAY LIVE</span>
                 </div>
-                <p class="text-sm"><span class="text-gray-400">Route:</span> <span id="live-route" class="text-white font-bold">---</span> <span id="live-region" class="text-gray-600 text-xs"></span></p>
+                <p class="text-sm"><span class="text-gray-400">Route:</span> <span id="live-route" class="text-white font-bold">---</span> <span id="live-region" class="text-gray-600 text-xs"></span> <span id="live-timer" class="text-[10px] mono" style="color:#ffd740"></span></p>
             </div>
             <div class="flex-1"></div>
             <div id="live-battle" class="hidden">
@@ -218,6 +218,10 @@
             </div>
         </div>
         <div id="live-spawns" class="hidden mt-2 pt-2 border-t border-gray-800 flex flex-wrap gap-1"></div>
+        <div id="live-history" class="hidden mt-2 pt-2 border-t border-gray-800">
+            <p class="text-[9px] font-bold tracking-widest text-gray-600 mb-1">HISTORIQUE</p>
+            <div id="live-history-list" class="flex flex-wrap gap-2"></div>
+        </div>
     </div>
 
     <!-- Stat cards -->
@@ -1033,6 +1037,8 @@ function go(p){
 
 // Live detection polling (overlay → web sync)
 let _lastLiveRoute='';
+let _routeStartTime=0;
+let _routeHistory=[];
 setInterval(async()=>{
     if(document.getElementById('page-dashboard').classList.contains('hidden'))return;
     try{
@@ -1045,8 +1051,30 @@ setInterval(async()=>{
             document.getElementById('live-age').textContent=d.age_seconds>=0?`${d.age_seconds.toFixed(0)}s`:'';
             // Update dashboard route card too
             if(d.route)document.getElementById('loc-route').textContent=d.route;
+            // Update route timer
+            if(_routeStartTime>0){
+                const secs=Math.floor((Date.now()-_routeStartTime)/1000);
+                const m=Math.floor(secs/60),s=secs%60;
+                document.getElementById('live-timer').textContent=`${m}:${String(s).padStart(2,'0')}`;
+            }
             // Auto-load spawns when route changes
             if(d.route&&d.route!==_lastLiveRoute){
+                // Save previous route to history
+                if(_lastLiveRoute&&_routeStartTime>0){
+                    const dur=Math.floor((Date.now()-_routeStartTime)/1000);
+                    _routeHistory.unshift({name:_lastLiveRoute,duration:dur});
+                    if(_routeHistory.length>5)_routeHistory.pop();
+                    const hl=document.getElementById('live-history');
+                    const hll=document.getElementById('live-history-list');
+                    if(hl&&hll&&_routeHistory.length){
+                        hl.classList.remove('hidden');
+                        hll.innerHTML=_routeHistory.map(h=>{
+                            const m=Math.floor(h.duration/60),s=h.duration%60;
+                            return`<span class="text-[10px] px-2 py-0.5 rounded" style="background:rgba(0,229,255,0.06)">${h.name} <span class="mono" style="color:#ffd740">${m}:${String(s).padStart(2,'0')}</span></span>`;
+                        }).join('');
+                    }
+                }
+                _routeStartTime=Date.now();
                 _lastLiveRoute=d.route;
                 try{
                     const spawns=await fetch(`/api/spawns/${encodeURIComponent(d.route)}`).then(r=>r.json());
