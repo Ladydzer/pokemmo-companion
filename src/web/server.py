@@ -844,9 +844,9 @@ async def get_ev_spots(stat: str, region: str = "", method: str = ""):
     if not stat_col:
         return {"error": "Stat invalide. Utilise: hp, attack, defense, sp_attack, sp_defense, speed"}
     with _db() as conn:
-        query = f"""SELECT p.id as pokemon_id, p.name, p.type1, p.type2,
+        query = f"""SELECT p.id as pokemon_id, p.name, p.name_fr, p.type1, p.type2,
                    p.ev_hp, p.ev_attack, p.ev_defense, p.ev_sp_attack, p.ev_sp_defense, p.ev_speed,
-                   r.name as route_name, r.region, s.method, s.rate, s.level_min, s.level_max
+                   r.name as route_name, r.name_fr as route_name_fr, r.region, s.method, s.rate, s.level_min, s.level_max
                    FROM spawns s
                    JOIN pokemon p ON s.pokemon_id = p.id
                    JOIN routes r ON s.route_id = r.id

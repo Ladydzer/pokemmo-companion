@@ -551,9 +551,11 @@
                 <span class="text-xs text-gray-500">/ 510</span>
             </div>
             <div class="flex gap-2">
-                <button onclick="presetEV('sweeper_phy')" class="btn btn-xs btn-outline">252 Atk/Spe</button>
-                <button onclick="presetEV('sweeper_spe')" class="btn btn-xs btn-outline">252 SpA/Spe</button>
-                <button onclick="presetEV('tank')" class="btn btn-xs btn-outline">252 HP/Def</button>
+                <button onclick="presetEV('sweeper_phy')" class="btn btn-xs btn-outline" title="Sweeper physique classique">252 Atk/Spe</button>
+                <button onclick="presetEV('sweeper_spe')" class="btn btn-xs btn-outline" title="Sweeper special classique">252 SpA/Spe</button>
+                <button onclick="presetEV('tank')" class="btn btn-xs btn-outline" title="Wall physique">252 HP/Def</button>
+                <button onclick="presetEV('sp_wall')" class="btn btn-xs btn-outline" title="Wall special">252 HP/D.Spe</button>
+                <button onclick="presetEV('bulky_atk')" class="btn btn-xs btn-outline" title="Attaquant bulky">252 HP/Atk</button>
                 <button onclick="presetEV('reset')" class="btn btn-xs btn-error btn-outline">Reinitialiser</button>
             </div>
         </div>
@@ -2232,6 +2234,8 @@ function presetEV(preset){
         'sweeper_phy':{attack:252,speed:252,hp:6},
         'sweeper_spe':{sp_attack:252,speed:252,hp:6},
         'tank':{hp:252,defense:252,sp_defense:6},
+        'sp_wall':{hp:252,sp_defense:252,defense:6},
+        'bulky_atk':{hp:252,attack:252,speed:6},
         'reset':{}
     };
     const p=presets[preset]||{};
@@ -2265,11 +2269,11 @@ async function loadEVSpots(stat){
             const regionClr={Kanto:'#40c4ff',Johto:'#ffd740',Hoenn:'#69f0ae',Sinnoh:'#d500f9',Unova:'#ff6e40'}[s.region]||'#888';
             return `<div class="flex items-center gap-3 p-2 rounded hover:bg-dark-600/30 ${isHorde?'border-l-2':'border-l border-transparent'}" style="${isHorde?'border-color:#d500f9':''}">
                 <img src="${spr(s.name)}" data-id="${s.pokemon_id}" class="w-8 h-8 sprite-hover" loading="lazy">
-                <span class="font-bold text-white text-sm w-24">${s.name}</span>
+                <span class="font-bold text-white text-sm w-24">${s.name_fr||s.name}</span>
                 ${pill(s.type1)}
                 <span class="mono font-bold text-sm" style="color:${statClr}">+${evVal}</span>
-                <span class="text-[10px] ${isHorde?'font-bold':'text-gray-500'}" style="${isHorde?'color:#d500f9':''}">${methodIcon} ${s.method}</span>
-                <span class="text-xs text-gray-400 flex-1">${s.route_name}</span>
+                <span class="text-[10px] ${isHorde?'font-bold':'text-gray-500'}" style="${isHorde?'color:#d500f9':''}">${methodIcon} ${isHorde?'Horde (x5)':s.method==='surfing'?'Surf':s.method==='walking'?'Herbe':s.method}</span>
+                <span class="text-xs text-gray-400 flex-1">${s.route_name_fr||s.route_name}</span>
                 <span class="text-[10px] px-1.5 py-0.5 rounded" style="background:${regionClr}15;color:${regionClr}">${s.region}</span>
                 <span class="text-[10px] text-gray-600">Lv.${s.level_min}-${s.level_max}</span>
             </div>`;
