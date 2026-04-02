@@ -790,6 +790,14 @@
         </div>
         <!-- Region list -->
         <div id="ocr-region-list" class="space-y-2 mb-4"></div>
+        <!-- Presets -->
+        <div class="flex items-center gap-2 mb-3 p-2 rounded" style="background:rgba(0,229,255,0.05);border:1px solid rgba(0,229,255,0.1)">
+            <span class="text-[10px] font-bold text-gray-500">PRESETS :</span>
+            <button onclick="ocrApplyPreset('1920x1080')" class="btn btn-xs btn-outline" style="border-color:#76ff03;color:#76ff03">1920x1080</button>
+            <button onclick="ocrApplyPreset('1920x1040')" class="btn btn-xs btn-outline" style="border-color:#76ff03;color:#76ff03">1920x1040</button>
+            <button onclick="ocrApplyPreset('1280x720')" class="btn btn-xs btn-outline" style="border-color:#ffd740;color:#ffd740">1280x720</button>
+            <button onclick="ocrDetectResolution()" class="btn btn-xs" style="background:#d500f9;color:#fff">Auto-detect</button>
+        </div>
         <!-- Add region -->
         <div class="flex gap-2 mb-4 flex-wrap">
             <button onclick="ocrAddRegion()" class="btn btn-xs btn-outline btn-info">+ Ajouter une zone</button>
@@ -2412,6 +2420,34 @@ function ocrRenderRegions(){
     </div>`).join('');
 }
 
+async function ocrDetectResolution(){
+    try{
+        const d=await fetch('/api/ocr/detect-resolution').then(r=>r.json());
+        if(d.detected){
+            showToast(`PokeMMO detecte: ${d.resolution}. Preset suggere: ${d.suggested_preset}`);
+            ocrApplyPreset(d.suggested_preset);
+        }
+    }catch(e){}
+}
+function ocrApplyPreset(res){
+    // Pre-calibrated zone positions from ladyd_'s screenshots (2026-04-02)
+    // Percentages relative to game window
+    const presets={
+        '1920x1080':{route:{x:0.5,y:0,w:15,h:3},opponent:{x:5,y:5,w:20,h:4}},
+        '1920x1040':{route:{x:0.5,y:0,w:15,h:3},opponent:{x:5,y:5,w:20,h:4}},
+        '1280x720':{route:{x:0.5,y:0,w:16,h:3.5},opponent:{x:5,y:5.5,w:22,h:4.5}},
+    };
+    const p=presets[res];
+    if(!p){showToast('Preset inconnu: '+res);return;}
+    ocrRegions=[
+        {id:'route_name',label:'Nom de Route',x:p.route.x,y:p.route.y,w:p.route.w,h:p.route.h,color:'#00e5ff'},
+        {id:'opponent_name',label:'Nom Adversaire',x:p.opponent.x,y:p.opponent.y,w:p.opponent.w,h:p.opponent.h,color:'#ff4081'},
+    ];
+    ocrDrawRegions();ocrRenderRegions();
+    // Auto-save
+    ocrSaveRegions();
+    showToast('Preset '+res+' applique et sauvegarde !');
+}
 function ocrAddRegion(){
     const colors=['#00e5ff','#ff4081','#ffd740','#69f0ae','#ff6e40','#d500f9','#40c4ff'];
     ocrRegions.push({id:'zone_'+Date.now(),label:'Nouvelle zone',x:10,y:10,w:15,h:4,color:colors[ocrRegions.length%colors.length]});

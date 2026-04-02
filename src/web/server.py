@@ -496,6 +496,27 @@ async def get_latest_detection():
     return state
 
 
+@app.get("/api/ocr/detect-resolution")
+async def detect_resolution():
+    """Detect game window resolution for preset suggestion."""
+    try:
+        from ..capture.screen_capture import find_window, get_window_size
+        hwnd = find_window("PokeMMO")
+        if not hwnd:
+            return {"detected": False, "error": "PokeMMO non trouve"}
+        size = get_window_size(hwnd)
+        if not size:
+            return {"detected": False, "error": "Taille fenetre inconnue"}
+        w, h = size
+        preset = f"{w}x{h}"
+        # Map to closest known preset
+        known = ["1920x1080", "1920x1040", "1280x720"]
+        suggested = preset if preset in known else known[0]
+        return {"detected": True, "width": w, "height": h, "resolution": preset, "suggested_preset": suggested}
+    except Exception as e:
+        return {"detected": False, "error": str(e)[:80]}
+
+
 @app.post("/api/iv-calc")
 async def iv_calculator(body: dict):
     """Reverse-calculate Pokemon IVs from visible stats.
