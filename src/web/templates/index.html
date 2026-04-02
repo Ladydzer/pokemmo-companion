@@ -1047,6 +1047,33 @@
     </div>
 </div>
 
+<!-- Welcome Modal (first launch) -->
+<div id="welcome-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center" style="background:rgba(0,0,0,0.8)">
+    <div class="glass-card p-8 max-w-lg" style="border:1px solid rgba(0,229,255,0.3)">
+        <div class="text-center mb-6">
+            <p class="text-4xl mb-2">🎮</p>
+            <h2 class="text-2xl font-black text-white">PokeMMO Companion v0.5.0</h2>
+            <p class="text-sm text-gray-400 mt-1">Mise a jour majeure — 30 cycles d'ameliorations</p>
+        </div>
+        <div class="space-y-2 mb-6 text-sm">
+            <div class="flex items-center gap-2"><span style="color:#00e5ff">✓</span><span class="text-gray-300">Calculateur IV avec estimation breeding</span></div>
+            <div class="flex items-center gap-2"><span style="color:#00e5ff">✓</span><span class="text-gray-300">Overlay OCR avec detection live</span></div>
+            <div class="flex items-center gap-2"><span style="color:#00e5ff">✓</span><span class="text-gray-300">Dashboard temps reel (route + combat)</span></div>
+            <div class="flex items-center gap-2"><span style="color:#00e5ff">✓</span><span class="text-gray-300">Shiny Lab avec estimations temps</span></div>
+            <div class="flex items-center gap-2"><span style="color:#00e5ff">✓</span><span class="text-gray-300">Collection avec progression par region</span></div>
+            <div class="flex items-center gap-2"><span style="color:#00e5ff">✓</span><span class="text-gray-300">9 pages, 649 Pokemon, noms FR</span></div>
+        </div>
+        <div class="p-3 rounded-lg mb-6" style="background:rgba(255,215,64,0.08);border:1px solid rgba(255,215,64,0.2)">
+            <p class="text-xs font-bold mb-1" style="color:#ffd740">POUR L'OVERLAY OCR</p>
+            <p class="text-[11px] text-gray-400">Installer Tesseract OCR + langue francaise. Allez dans Options > Diagnostic pour verifier.</p>
+        </div>
+        <div class="flex gap-3">
+            <button onclick="dismissWelcome();go('settings')" class="btn btn-sm flex-1" style="background:#ffd740;color:#000;font-weight:700">Diagnostic OCR</button>
+            <button onclick="dismissWelcome()" class="btn btn-sm btn-outline flex-1" style="border-color:#00e5ff;color:#00e5ff">Commencer</button>
+        </div>
+    </div>
+</div>
+
 <script src="/static/app.js"></script>
 </body>
 </html>

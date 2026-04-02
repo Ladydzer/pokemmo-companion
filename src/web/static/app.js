@@ -2091,5 +2091,14 @@ setInterval(async()=>{
     }
 },10000);
 
+// Welcome modal (first launch)
+function dismissWelcome(){
+    document.getElementById('welcome-modal').classList.add('hidden');
+    localStorage.setItem('welcome_v050','dismissed');
+}
+if(!localStorage.getItem('welcome_v050')){
+    document.getElementById('welcome-modal')?.classList.remove('hidden');
+}
+
 // Only load visible page (dashboard) at startup — others load on navigation
 loadAbilityFR();loadDash();loadChart();checkGame();dashLoadRoute();
