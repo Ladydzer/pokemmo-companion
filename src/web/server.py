@@ -453,11 +453,28 @@ async def ocr_capture():
         return {"error": "Capture echouee"}
 
     h, w = frame.shape[:2]
-    # Try OCR on route region
-    roi_x = int(0.01 * w)
-    roi_y = int(0.01 * h)
-    roi_w = int(0.18 * w)
-    roi_h = int(0.04 * h)
+
+    # Load saved OCR regions (from Studio OCR) or use defaults
+    import json as _json
+    regions_path = PROJECT_ROOT / "data" / "ocr_regions.json"
+    roi_x_r, roi_y_r, roi_w_r, roi_h_r = 0.01, 0.00, 0.20, 0.04
+    if regions_path.exists():
+        try:
+            saved = _json.loads(regions_path.read_text(encoding="utf-8"))
+            for r in saved.get("regions", []):
+                if r.get("id") == "route_name":
+                    roi_x_r = r["x"] / 100
+                    roi_y_r = r["y"] / 100
+                    roi_w_r = r["w"] / 100
+                    roi_h_r = r["h"] / 100
+                    break
+        except Exception:
+            pass
+
+    roi_x = int(roi_x_r * w)
+    roi_y = int(roi_y_r * h)
+    roi_w = int(roi_w_r * w)
+    roi_h = int(roi_h_r * h)
     route_region = frame[roi_y:roi_y+roi_h, roi_x:roi_x+roi_w]
 
     text = ""
@@ -466,10 +483,10 @@ async def ocr_capture():
 
     # Encode a small preview as base64
     preview = cv2.resize(frame, (640, 360))
-    # Draw ROI rectangle
+    # Draw ROI rectangle using actual saved region
     cv2.rectangle(preview,
-                  (int(0.01*640), int(0.01*360)),
-                  (int(0.19*640), int(0.05*360)),
+                  (int(roi_x_r * 640), int(roi_y_r * 360)),
+                  (int((roi_x_r + roi_w_r) * 640), int((roi_y_r + roi_h_r) * 360)),
                   (0, 255, 0), 2)
     _, buf = cv2.imencode('.jpg', preview, [cv2.IMWRITE_JPEG_QUALITY, 70])
     img_b64 = base64.b64encode(buf).decode()
