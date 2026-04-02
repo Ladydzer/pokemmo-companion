@@ -1692,15 +1692,37 @@ setInterval(()=>{
     if(el)el.textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 },1000);
 
-// Global search
+// Global search — Pokemon, types, routes
 async function globalSearch(q){
     const el=document.getElementById('search-results');
     if(q.length<2){el.classList.add('hidden');return;}
+    let html='';
+    const close=`document.getElementById('search-results').classList.add('hidden');document.getElementById('global-search').value='';`;
     try{
-        const res=await fetch(`/api/pokemon/search/${q}`).then(r=>r.json());
-        if(!Array.isArray(res)||!res.length){el.classList.add('hidden');return;}
-        el.classList.remove('hidden');
-        el.innerHTML=res.slice(0,8).map(p=>`<div class="flex items-center gap-2 p-1.5 rounded cursor-pointer hover:bg-dark-600" onclick="go('pokedex');setTimeout(()=>showP(${p.id}),300);document.getElementById('search-results').classList.add('hidden');document.getElementById('global-search').value='';"><img src="${spr(p.name)}" class="w-6 h-6"><span class="text-white font-medium">${p.name_fr||p.name}</span><span class="text-gray-600 text-[10px]">#${p.id}</span></div>`).join('');
+        const ql=q.toLowerCase();
+        // Search by type (FR or EN)
+        const typeMatch=Object.entries(TFR).find(([en,fr])=>fr.toLowerCase().startsWith(ql)||en.toLowerCase().startsWith(ql));
+        if(typeMatch){
+            const[typeEN,typeFR]=typeMatch;
+            html+=`<p class="text-[9px] font-bold tracking-widest text-gray-600 px-1 pt-1">TYPE</p>`;
+            html+=`<div class="flex items-center gap-2 p-1.5 rounded cursor-pointer hover:bg-dark-600" onclick="go('pokedex');setTimeout(()=>fDex('${typeEN}'),300);${close}">${pill(typeEN)} <span class="text-white text-xs">Tous les ${typeFR}</span></div>`;
+        }
+        // Search Pokemon
+        const res=await fetch(`/api/pokemon/search/${encodeURIComponent(q)}`).then(r=>r.json());
+        if(Array.isArray(res)&&res.length){
+            html+=`<p class="text-[9px] font-bold tracking-widest text-gray-600 px-1 pt-1">POKEMON</p>`;
+            html+=res.slice(0,6).map(p=>`<div class="flex items-center gap-2 p-1.5 rounded cursor-pointer hover:bg-dark-600" onclick="go('pokedex');setTimeout(()=>showP(${p.id}),300);${close}"><img src="${spr(p.name)}" class="w-6 h-6"><span class="text-white font-medium">${p.name_fr||p.name}</span><span class="text-gray-600 text-[10px]">#${p.id}</span></div>`).join('');
+        }
+        // Search routes
+        try{
+            const routes=await fetch(`/api/routes?search=${encodeURIComponent(q)}`).then(r=>r.json());
+            if(Array.isArray(routes)&&routes.length){
+                html+=`<p class="text-[9px] font-bold tracking-widest text-gray-600 px-1 pt-2">ROUTES</p>`;
+                html+=routes.slice(0,4).map(r=>`<div class="flex items-center gap-2 p-1.5 rounded cursor-pointer hover:bg-dark-600" onclick="go('guide');${close}"><span>📍</span><span class="text-white text-xs">${r.display_name||r.name}</span><span class="text-gray-600 text-[10px]">${r.region}</span></div>`).join('');
+            }
+        }catch(e){}
+        if(html){el.classList.remove('hidden');el.innerHTML=html;}
+        else{el.classList.add('hidden');}
     }catch(e){el.classList.add('hidden');}
 }
 

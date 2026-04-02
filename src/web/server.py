@@ -278,9 +278,15 @@ async def recommend_moves(pokemon_id: int):
 
 
 @app.get("/api/routes")
-async def get_routes(region: str = ""):
+async def get_routes(region: str = "", search: str = ""):
     with _db() as conn:
-        if region:
+        if search:
+            q = f"%{search}%"
+            rows = conn.execute(
+                "SELECT * FROM routes WHERE LOWER(name) LIKE LOWER(?) OR LOWER(name_fr) LIKE LOWER(?) ORDER BY name LIMIT 10",
+                (q, q)
+            ).fetchall()
+        elif region:
             rows = conn.execute("SELECT * FROM routes WHERE region = ? ORDER BY name", (region,)).fetchall()
         else:
             rows = conn.execute("SELECT * FROM routes ORDER BY region, name").fetchall()
