@@ -1761,12 +1761,52 @@ async function calcIVs(){
             </div>`;
         });
         html+='</div>';
-        // Summary
+        // Summary + Breeding Helper
         const exact=r.results.filter(s=>s.exact);
         const perfect=r.results.filter(s=>s.max_iv===31);
+        const good=r.results.filter(s=>s.max_iv!==null&&s.max_iv>=26);
         if(exact.length===6)html+=`<p class="mt-4 text-center text-sm font-bold text-green-400">IVs exacts determines !</p>`;
         else html+=`<p class="mt-4 text-center text-xs text-gray-500">${exact.length}/6 stats exactes. Testez a un niveau different pour affiner.</p>`;
-        if(perfect.length>=5)html+=`<p class="text-center text-sm font-bold" style="color:#ffd740">Pokemon quasi-parfait ! (${perfect.length}x31)</p>`;
+
+        // Quality tier
+        const perfectCount=perfect.length;
+        let tier,tierColor,tierIcon;
+        if(perfectCount===6){tier='Parfait';tierColor='#76ff03';tierIcon='💎';}
+        else if(perfectCount>=5){tier='Competitif';tierColor='#ffd740';tierIcon='⭐';}
+        else if(perfectCount>=3){tier='Correct';tierColor='#00e5ff';tierIcon='👍';}
+        else if(good.length>=4){tier='Potentiel';tierColor='#90a4ae';tierIcon='📈';}
+        else{tier='A ameliorer';tierColor='#ff5252';tierIcon='🔧';}
+
+        html+=`<div class="mt-4 p-4 rounded-lg" style="background:${tierColor}10;border:1px solid ${tierColor}30">
+            <div class="flex items-center gap-3 mb-2">
+                <span class="text-2xl">${tierIcon}</span>
+                <div>
+                    <p class="font-bold text-lg" style="color:${tierColor}">${tier}</p>
+                    <p class="text-xs text-gray-400">${perfectCount}x31 IV${perfectCount>1?'s':''} ${good.length>perfectCount?`+ ${good.length-perfectCount}x26+`:''}</p>
+                </div>
+            </div>`;
+
+        // Breeding suggestion
+        if(perfectCount<5){
+            const statNames=['HP','Atq','Def','A.Spe','D.Spe','Vit'];
+            const missing=r.results.filter(s=>s.max_iv===null||s.max_iv<31).map(s=>s.name);
+            const target=5-perfectCount;
+            // Breeding cost: 2^n parents for n perfect IVs
+            const currentParents=Math.pow(2,perfectCount);
+            const targetParents=Math.pow(2,5);
+            html+=`<div class="mt-2 text-sm">
+                <p class="text-gray-300"><span class="font-bold" style="color:#ffd740">Objectif competitif :</span> 5x31 IVs</p>
+                <p class="text-xs text-gray-500 mt-1">Stats a ameliorer : ${missing.join(', ')}</p>
+                <p class="text-xs text-gray-500">Cout estime : ~<span class="font-bold text-white">${targetParents}</span> parents pour 5x31 (actuellement ${perfectCount}x31 = ~${currentParents} parents)</p>
+            </div>`;
+        }else if(perfectCount===5){
+            // Find the dump stat
+            const dump=r.results.find(s=>s.max_iv!==null&&s.max_iv<31);
+            if(dump)html+=`<p class="mt-2 text-sm text-gray-300">Stat dump : <span class="font-bold text-white">${dump.name}</span> (${dump.max_iv||'?'}) — ideal pour le competitif si inutile au role</p>`;
+        }else if(perfectCount===6){
+            html+=`<p class="mt-2 text-sm" style="color:#76ff03">Pokemon parfait 6x31 ! Extreme rarete. Gardez-le precieusement.</p>`;
+        }
+        html+=`</div>`;
         document.getElementById('iv-results-content').innerHTML=html;
     }catch(e){showToast('Erreur calcul: '+e.message);}
 }
