@@ -660,6 +660,7 @@
                 <input type="text" id="iv-pokemon" placeholder="Nom du Pokemon..." class="input input-bordered input-sm w-full" oninput="ivSearchPokemon(this.value)">
                 <div id="iv-pokemon-results" class="hidden mt-1 glass-card p-2 max-h-32 overflow-y-auto text-sm"></div>
                 <input type="hidden" id="iv-pokemon-id" value="">
+                <div id="iv-base-stats" class="hidden mt-1 flex flex-wrap gap-1"></div>
             </div>
             <div>
                 <label class="text-xs text-gray-400 mb-1 block">Niveau</label>
@@ -1116,6 +1117,7 @@ async function showP(id){
                     <div class="flex gap-2 mt-2">
                         <button onclick="event.stopPropagation();toggleFav(${p.id})" class="btn btn-xs ${isFav(p.id)?'btn-warning':'btn-ghost'}">${isFav(p.id)?'★ Favori':'☆ Favoris'}</button>
                         <button onclick="event.stopPropagation();addCompare(${p.id},'${p.name}',[${p.hp},${p.attack},${p.defense},${p.sp_attack},${p.sp_defense},${p.speed}])" class="btn btn-xs btn-info btn-outline">Comparer</button>
+                        <button onclick="event.stopPropagation();goIVCalc(${p.id},'${(p.name_fr||p.name).replace(/'/g,"\\'")}')" class="btn btn-xs btn-outline" style="border-color:#76ff03;color:#76ff03">Calculer IVs</button>
                     </div>
                 </div>
                 <div class="flex-1">
@@ -1698,6 +1700,16 @@ function ivSelectPokemon(id,name){
     document.getElementById('iv-pokemon').value=name;
     document.getElementById('iv-pokemon-id').value=id;
     document.getElementById('iv-pokemon-results').classList.add('hidden');
+    // Fetch and show base stats as reference
+    fetch(`/api/pokemon/${id}`).then(r=>r.json()).then(p=>{
+        const ref=document.getElementById('iv-base-stats');
+        if(!ref)return;
+        const stats=[p.hp,p.attack,p.defense,p.sp_attack,p.sp_defense,p.speed];
+        const labels=['PV','Atq','Def','A.Spe','D.Spe','Vit'];
+        const colors=['#78C850','#F08030','#F8D030','#6890F0','#78C850','#F85888'];
+        ref.innerHTML=stats.map((v,i)=>`<span class="text-[10px] px-1.5 py-0.5 rounded" style="background:${colors[i]}20;color:${colors[i]}">${labels[i]}:${v}</span>`).join(' ');
+        ref.classList.remove('hidden');
+    }).catch(()=>{});
 }
 async function calcIVs(){
     const id=_ivPokemonId||document.getElementById('iv-pokemon-id').value;
@@ -1726,9 +1738,17 @@ async function calcIVs(){
         if(r.error){showToast(r.error);return;}
         const el=document.getElementById('iv-results');el.classList.remove('hidden');
         const colors=['#78C850','#F08030','#F8D030','#6890F0','#78C850','#F85888'];
-        let html='<div class="space-y-3">';
+        const impossible=r.results.filter(s=>s.possible_ivs.length===0);
+        let html='';
+        if(impossible.length){
+            html+=`<div class="p-3 rounded mb-3" style="background:rgba(255,82,82,0.1);border:1px solid rgba(255,82,82,0.3)">
+                <p class="text-sm font-bold text-red-400">${impossible.length} stat(s) impossible(s) — verifiez les valeurs entrees</p>
+                <p class="text-[10px] text-gray-500 mt-1">Stats incorrectes : ${impossible.map(s=>s.name).join(', ')}. Verifiez le niveau, la nature, et les EVs.</p>
+            </div>`;
+        }
+        html+='<div class="space-y-3">';
         r.results.forEach((s,i)=>{
-            const ivText=s.possible_ivs.length===0?'<span class="text-red-400">Impossible</span>'
+            const ivText=s.possible_ivs.length===0?'<span class="text-red-400 font-bold">Impossible</span>'
                 :s.exact?`<span class="font-black" style="color:${s.min_iv>=26?'#76ff03':s.min_iv>=16?'#ffd740':'#ff5252'}">${s.min_iv}</span>`
                 :`<span style="color:${colors[i]}">${s.min_iv} - ${s.max_iv}</span>`;
             const bar=s.max_iv!==null?`<div class="stat-track mt-1"><div class="stat-fill" style="width:${(s.max_iv||0)/31*100}%;background:${colors[i]}"></div></div>`:'';
@@ -2420,6 +2440,10 @@ function ocrRenderRegions(){
     </div>`).join('');
 }
 
+function goIVCalc(id,name){
+    ivSelectPokemon(id,name);
+    go('ivcalc');
+}
 async function ocrDetectResolution(){
     try{
         const d=await fetch('/api/ocr/detect-resolution').then(r=>r.json());
