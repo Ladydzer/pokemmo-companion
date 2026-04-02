@@ -985,6 +985,19 @@
     <form method="dialog" class="modal-backdrop"><button>close</button></form>
 </dialog>
 
+<!-- Footer -->
+<div class="mt-12 pb-6 border-t border-gray-800 pt-4 flex items-center justify-between text-[10px] text-gray-700">
+    <div class="flex gap-4">
+        <span id="footer-pokemon">649 Pokemon</span>
+        <span id="footer-routes">- routes</span>
+        <span id="footer-uptime">Uptime: 0:00</span>
+    </div>
+    <div class="flex gap-3">
+        <span>PokeMMO Companion v0.5.0</span>
+        <a href="https://github.com/Ladydzer/pokemmo-companion" target="_blank" class="hover:text-gray-400" title="GitHub">GitHub</a>
+    </div>
+</div>
+
 </main>
 
 <!-- OVERLAY MODE (outside main so it stays visible when main is hidden) -->
@@ -2243,6 +2256,23 @@ renderThemePicker();
 // Restore saved theme
 const savedTheme=localStorage.getItem('theme');
 if(savedTheme)document.documentElement.setAttribute('data-theme',savedTheme);
+
+// Footer stats
+const _appStart=Date.now();
+(async function(){
+    try{const s=await fetch('/api/stats').then(r=>r.json());
+        const fp=document.getElementById('footer-pokemon');
+        const fr=document.getElementById('footer-routes');
+        if(fp)fp.textContent=(s.total_pokemon||649)+' Pokemon';
+        if(fr)fr.textContent=(s.total_routes||0)+' routes';
+    }catch(e){}
+})();
+setInterval(()=>{
+    const secs=Math.floor((Date.now()-_appStart)/1000);
+    const h=Math.floor(secs/3600),m=Math.floor((secs%3600)/60),s=secs%60;
+    const el=document.getElementById('footer-uptime');
+    if(el)el.textContent=`Uptime: ${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+},1000);
 
 // Keyboard shortcuts
 document.addEventListener('keydown',e=>{
