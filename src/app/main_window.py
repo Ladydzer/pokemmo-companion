@@ -16,7 +16,6 @@ from .pages.team_builder import TeamBuilderPage
 from .pages.shiny_lab import ShinyLabPage
 from .pages.settings import SettingsPage
 from .pages.collection import CollectionPage
-from .pages.notes import NotesPage
 from ..capture.screen_capture import find_window, get_window_title
 
 
@@ -95,7 +94,6 @@ class MainWindow(QMainWindow):
             ("👥", "Equipe"),
             ("✨", "Shiny"),
             ("📋", "Collection"),
-            ("📝", "Notes"),
             ("⚙", "Options"),
         ]
 
@@ -160,8 +158,6 @@ class MainWindow(QMainWindow):
         self.collection = CollectionPage(self.db)
         self.pages.addWidget(self.collection)
 
-        self.notes = NotesPage(self.db)
-        self.pages.addWidget(self.notes)
 
         self.settings = SettingsPage()
         self.pages.addWidget(self.settings)
@@ -192,7 +188,7 @@ class MainWindow(QMainWindow):
         # Keyboard shortcuts
         from PyQt6.QtGui import QShortcut, QKeySequence
         page_names = ["Dashboard", "Pokedex", "Battle", "Team",
-                      "Shiny Lab", "Collection", "Notes", "Settings"]
+                      "Shiny Lab", "Collection", "Settings"]
         for i, name in enumerate(page_names):
             QShortcut(QKeySequence(f"Ctrl+{i+1}"), self).activated.connect(
                 lambda n=name: self._navigate(n)
@@ -222,8 +218,7 @@ class MainWindow(QMainWindow):
             "Equipe": 3, "Team": 3,
             "Shiny": 4, "Shiny Lab": 4,
             "Collection": 5,
-            "Notes": 6,
-            "Options": 7, "Settings": 7,
+            "Options": 6, "Settings": 6,
         }
         idx = page_map.get(page_name, 0)
         self.pages.setCurrentIndex(idx)

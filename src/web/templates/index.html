@@ -721,7 +721,7 @@
         <div id="combat-ocr-preview" class="text-gray-600 text-sm italic">Charge un screenshot de combat et teste l'OCR pour voir la detection en action.</div>
     </div>
     <!-- Legacy OCR status -->
-    <div class="glass-card p-6">
+    <div class="glass-card p-6 mb-5">
         <p class="text-xs font-bold tracking-widest text-gray-500 mb-4">STATUT SYSTEME OCR</p>
         <div id="ocr-status" class="space-y-2 text-sm">
             <p class="text-gray-500">Chargement...</p>
@@ -735,6 +735,33 @@
             <img id="ocr-preview-img" class="w-full rounded-lg border border-gray-700" alt="Preview">
             <p class="mt-2 text-sm"><span class="text-gray-400">Texte lu :</span> <span id="ocr-text-result" class="font-bold text-white"></span></p>
             <p class="text-xs text-gray-500" id="ocr-window-size"></p>
+        </div>
+    </div>
+    <!-- OCR Cache Stats -->
+    <div class="glass-card p-6">
+        <div class="flex items-center justify-between mb-4">
+            <p class="text-xs font-bold tracking-widest text-gray-500">CACHE OCR (PERFORMANCE)</p>
+            <button onclick="loadCacheStats()" class="btn btn-xs btn-outline" style="border-color:#00e5ff;color:#00e5ff">Rafraichir</button>
+        </div>
+        <div id="cache-stats" class="grid grid-cols-2 gap-4">
+            <div>
+                <p class="text-[10px] font-bold tracking-widest mb-2" style="color:#76ff03">ROUTES</p>
+                <div class="space-y-1 text-sm">
+                    <p><span class="text-gray-400">Hits:</span> <span id="cache-route-hits" class="text-white font-bold">-</span></p>
+                    <p><span class="text-gray-400">Misses:</span> <span id="cache-route-misses" class="text-white font-bold">-</span></p>
+                    <p><span class="text-gray-400">Ratio:</span> <span id="cache-route-ratio" class="font-bold" style="color:#76ff03">-</span></p>
+                    <p><span class="text-gray-400">Taille:</span> <span id="cache-route-size" class="text-white">-</span></p>
+                </div>
+            </div>
+            <div>
+                <p class="text-[10px] font-bold tracking-widest mb-2" style="color:#ff4081">POKEMON</p>
+                <div class="space-y-1 text-sm">
+                    <p><span class="text-gray-400">Hits:</span> <span id="cache-pokemon-hits" class="text-white font-bold">-</span></p>
+                    <p><span class="text-gray-400">Misses:</span> <span id="cache-pokemon-misses" class="text-white font-bold">-</span></p>
+                    <p><span class="text-gray-400">Ratio:</span> <span id="cache-pokemon-ratio" class="font-bold" style="color:#ff4081">-</span></p>
+                    <p><span class="text-gray-400">Taille:</span> <span id="cache-pokemon-size" class="text-white">-</span></p>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -1170,48 +1197,6 @@ async function aTm(){
 }
 
 // Collection
-// Notes
-let selRoute=null;
-async function loadRoutes(){
-    try{const region=document.getElementById('notes-region').value;
-    const url=region?`/api/routes?region=${region}`:'/api/routes';
-    const routes=await fetch(url).then(r=>r.json());
-    const el=document.getElementById('routes-list');
-    el.innerHTML=routes.slice(0,50).map(r=>{const dn=r.display_name||r.name;return `<div class="px-3 py-2 rounded-lg cursor-pointer text-sm hover:bg-dark-600 transition" onclick="selectRoute(${r.id},'${dn.replace(/'/g,"\\'")} (${r.region})')">${dn} ${dn!==r.name?`<span class="text-[10px] text-gray-700">${r.name}</span>`:''} <span class="text-xs text-gray-600">${r.region}</span></div>`;}).join('');
-    }catch(e){console.error(e);}
-}
-async function selectRoute(id,name){
-    selRoute=id;
-    document.getElementById('note-title').textContent=name;
-    document.getElementById('note-text').disabled=false;
-    document.getElementById('save-note-btn').disabled=false;
-    document.getElementById('note-text').value=localStorage.getItem('note_'+id)||'';
-    // Load POI/items for this route
-    const poi=document.getElementById('route-poi');
-    try{
-        const items=await fetch(`/api/routes/${id}/items`).then(r=>r.json());
-        if(Array.isArray(items)&&items.length){
-            poi.classList.remove('hidden');
-            const icons={key_item:'🔑',hm:'💿',tm:'💾',gift_pokemon:'🎁',service:'🔧',event:'📅'};
-            poi.innerHTML=`<p class="text-xs font-bold tracking-widest mb-2" style="color:#ffd740">POINTS D'INTERET</p>`+
-                items.map(it=>`<div class="flex items-center gap-3 p-2 glass-card mb-1">
-                    <span class="text-lg">${icons[it.item_type]||'📦'}</span>
-                    <div class="flex-1">
-                        <p class="text-sm font-bold text-white">${it.item_name}</p>
-                        <p class="text-xs text-gray-400">${it.description||''}</p>
-                    </div>
-                    ${it.npc_name?`<span class="text-xs text-gray-500">${it.npc_name}</span>`:''}
-                    ${it.condition?`<span class="text-[10px] px-2 py-0.5 rounded" style="background:rgba(0,229,255,0.1);color:#00e5ff">${it.condition}</span>`:''}
-                </div>`).join('');
-        }else{poi.classList.add('hidden');}
-    }catch(e){poi.classList.add('hidden');}
-}
-function saveNote(){
-    if(!selRoute)return;
-    const note=document.getElementById('note-text').value;
-    localStorage.setItem('note_'+selRoute, note);
-    showToast('Note sauvegardee !');
-}
 function showToast(msg){
     const t=document.createElement('div');
     t.textContent=msg;
@@ -1508,6 +1493,23 @@ async function loadOptStats(){
     if(el('opt-spawns'))el('opt-spawns').textContent=s.spawns;
     if(el('opt-sprites'))el('opt-sprites').textContent=s.sprites;
     }catch(e){}
+}
+
+// OCR cache stats
+async function loadCacheStats(){
+    try{
+        const data=await fetch('/api/ocr/cache-stats').then(r=>r.json());
+        if(data.error){document.getElementById('cache-stats').innerHTML=`<p class="text-red-400 text-sm">${data.error}</p>`;return;}
+        const rc=data.route_cache,pc=data.pokemon_cache;
+        document.getElementById('cache-route-hits').textContent=rc.hits;
+        document.getElementById('cache-route-misses').textContent=rc.misses;
+        document.getElementById('cache-route-ratio').textContent=(rc.ratio*100).toFixed(1)+'%';
+        document.getElementById('cache-route-size').textContent=rc.size+'/'+rc.maxsize;
+        document.getElementById('cache-pokemon-hits').textContent=pc.hits;
+        document.getElementById('cache-pokemon-misses').textContent=pc.misses;
+        document.getElementById('cache-pokemon-ratio').textContent=(pc.ratio*100).toFixed(1)+'%';
+        document.getElementById('cache-pokemon-size').textContent=pc.size+'/'+pc.maxsize;
+    }catch(e){console.error(e);}
 }
 
 // OCR status check

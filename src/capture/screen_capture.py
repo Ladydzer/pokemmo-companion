@@ -182,16 +182,132 @@ def capture_window_by_hwnd(hwnd: int) -> np.ndarray | None:
         return None
 
 
-class ScreenCapture:
-    """Captures the PokeMMO game window using PrintWindow (preferred) or BetterCam."""
+# === Capture backends ===
 
-    def __init__(self, window_title: str = "PokeMMO"):
+class CaptureBackend:
+    """Protocol for capture backends. Subclass to add new capture methods."""
+
+    name: str = "base"
+
+    def initialize(self, hwnd: int, window_rect: tuple) -> bool:
+        """Initialize the backend. Returns True if ready."""
+        raise NotImplementedError
+
+    def capture(self, hwnd: int, window_rect: tuple) -> np.ndarray | None:
+        """Capture a frame. Returns BGR numpy array or None."""
+        raise NotImplementedError
+
+    def cleanup(self) -> None:
+        """Release resources."""
+        pass
+
+
+class PrintWindowBackend(CaptureBackend):
+    """Captures via Win32 PrintWindow API. Works even if window is covered."""
+
+    name = "printwindow"
+
+    def initialize(self, hwnd: int, window_rect: tuple) -> bool:
+        frame = capture_window_by_hwnd(hwnd)
+        if frame is not None:
+            log.info(f"Capture engine: PrintWindow (HWND, {frame.shape[1]}x{frame.shape[0]})")
+            return True
+        return False
+
+    def capture(self, hwnd: int, window_rect: tuple) -> np.ndarray | None:
+        frame = capture_window_by_hwnd(hwnd)
+        if frame is not None:
+            # Crop window borders (8px on maximized windows)
+            h, w = frame.shape[:2]
+            border = 8
+            if h > border * 2 and w > border * 2:
+                frame = frame[border:h-border, border:w-border]
+        return frame
+
+
+class PILBackend(CaptureBackend):
+    """Captures via PIL ImageGrab. Basic fallback, always available."""
+
+    name = "pil"
+
+    def initialize(self, hwnd: int, window_rect: tuple) -> bool:
+        try:
+            from PIL import ImageGrab
+            log.info("Capture engine: PIL (basic)")
+            return True
+        except ImportError:
+            return False
+
+    def capture(self, hwnd: int, window_rect: tuple) -> np.ndarray | None:
+        try:
+            from PIL import ImageGrab
+            screenshot = ImageGrab.grab(bbox=window_rect)
+            return np.array(screenshot)[:, :, ::-1]  # RGB -> BGR
+        except Exception:
+            return None
+
+
+class BetterCamBackend(CaptureBackend):
+    """Captures via BetterCam (GPU-accelerated screen capture)."""
+
+    name = "bettercam"
+
+    def __init__(self):
+        self._cam = None
+
+    def initialize(self, hwnd: int, window_rect: tuple) -> bool:
+        try:
+            import bettercam
+            self._cam = bettercam.create(output_color="BGR")
+            log.info("Capture engine: BetterCam")
+            return True
+        except (ImportError, Exception) as e:
+            log.info(f"BetterCam unavailable: {e}")
+            return False
+
+    def capture(self, hwnd: int, window_rect: tuple) -> np.ndarray | None:
+        if not self._cam:
+            return None
+        frame = self._cam.grab(region=window_rect)
+        if frame is None:
+            frame = self._cam.grab()
+            if frame is not None and window_rect:
+                left, top, right, bottom = window_rect
+                frame = frame[top:bottom, left:right]
+        return frame
+
+    def cleanup(self) -> None:
+        if self._cam:
+            if hasattr(self._cam, 'release'):
+                self._cam.release()
+            elif hasattr(self._cam, 'close'):
+                self._cam.close()
+            self._cam = None
+
+
+# Backend registry — order = priority for auto-selection
+BACKENDS = {
+    "printwindow": PrintWindowBackend,
+    "pil": PILBackend,
+    "bettercam": BetterCamBackend,
+}
+
+
+class ScreenCapture:
+    """Captures the PokeMMO game window using configurable backends.
+
+    Default priority: PrintWindow > BetterCam > PIL.
+    Override via config: capture.backend = "printwindow" | "bettercam" | "pil"
+    """
+
+    def __init__(self, window_title: str = "PokeMMO", backend_name: str = "auto"):
         self.window_title = window_title
-        self.camera = None
+        self.backend: CaptureBackend | None = None
+        self.backend_name = backend_name
         self.hwnd: int | None = None
         self.window_rect: tuple[int, int, int, int] | None = None
         self._last_frame: np.ndarray | None = None
-        self._use_printwindow = False
+        self._pil_fallback = PILBackend()  # always-available fallback
 
     def initialize(self) -> bool:
         """Initialize the capture engine. Returns True if game window found."""
@@ -224,35 +340,24 @@ class ScreenCapture:
         self.window_rect = (left, top, right, bottom)
         log.info(f"Game window found: {w}x{h} at {self.window_rect} (screen: {screen_w}x{screen_h})")
 
-        # Try PrintWindow first (captures by HWND, works even if covered)
-        test_frame = capture_window_by_hwnd(self.hwnd)
-        if test_frame is not None:
-            self._use_printwindow = True
-            self.camera = "printwindow"
-            log.info(f"Capture engine: PrintWindow (HWND, {test_frame.shape[1]}x{test_frame.shape[0]})")
-            return True
+        # Select backend
+        if self.backend_name != "auto" and self.backend_name in BACKENDS:
+            # Explicit backend requested
+            backend = BACKENDS[self.backend_name]()
+            if backend.initialize(self.hwnd, self.window_rect):
+                self.backend = backend
+                return True
+            log.warning(f"Requested backend '{self.backend_name}' failed, trying auto...")
 
-        log.info("PrintWindow unavailable, trying BetterCam...")
+        # Auto-select: try each backend in priority order
+        for name, cls in BACKENDS.items():
+            backend = cls()
+            if backend.initialize(self.hwnd, self.window_rect):
+                self.backend = backend
+                return True
 
-        # Fallback: BetterCam > MSS > PIL
-        try:
-            import bettercam
-            self.camera = bettercam.create(output_color="BGR")
-            log.info("Capture engine: BetterCam")
-            return True
-        except ImportError:
-            log.info("BetterCam not installed, trying PIL...")
-        except Exception as e:
-            log.warning(f"BetterCam failed: {e}, trying PIL...")
-
-        try:
-            from PIL import ImageGrab
-            self.camera = "pil"
-            log.info("Capture engine: PIL (basic)")
-            return True
-        except ImportError:
-            log.error("No capture engine available! Install: pip install pywin32 or pip install Pillow")
-            return False
+        log.error("No capture backend available! Install: pip install pywin32 or pip install Pillow")
+        return False
 
     def refresh_window(self) -> bool:
         """Refresh the game window position (call if window moved/resized)."""
@@ -268,92 +373,37 @@ class ScreenCapture:
             if not self.refresh_window():
                 return self._last_frame
 
-        try:
-            if self.camera == "printwindow":
-                # PrintWindow: captures by HWND, works even if window is covered
-                frame = capture_window_by_hwnd(self.hwnd)
-                if frame is not None:
-                    # Crop window borders (8px on maximized windows)
-                    h, w = frame.shape[:2]
-                    border = 8
-                    if h > border * 2 and w > border * 2:
-                        frame = frame[border:h-border, border:w-border]
-            elif self.camera == "pil":
-                # PIL fallback
-                from PIL import ImageGrab
-                screenshot = ImageGrab.grab(bbox=self.window_rect)
-                frame = np.array(screenshot)[:, :, ::-1]  # RGB -> BGR
-            elif hasattr(self.camera, 'grab'):
-                # BetterCam — try with region first, fallback to full screen + crop
-                frame = self.camera.grab(region=self.window_rect)
-                if frame is None:
-                    frame = self.camera.grab()
-                    if frame is not None and self.window_rect:
-                        left, top, right, bottom = self.window_rect
-                        frame = frame[top:bottom, left:right]
-                # If BetterCam still fails, use PIL
-                if frame is None:
-                    try:
-                        from PIL import ImageGrab
-                        screenshot = ImageGrab.grab(bbox=self.window_rect)
-                        frame = np.array(screenshot)[:, :, ::-1]  # RGB -> BGR
-                        if not hasattr(self, '_pil_warned'):
-                            self._pil_warned = True
-                            log.warning("BetterCam echoue — bascule sur PIL (plus lent mais fonctionne)")
-                    except ImportError:
-                        pass
-            else:
-                # MSS fallback
-                left, top, right, bottom = self.window_rect
-                monitor = {"left": left, "top": top, "width": right - left, "height": bottom - top}
-                screenshot = self.camera.grab(monitor)
-                frame = np.array(screenshot)[:, :, :3]  # Remove alpha channel
-
-            if frame is not None:
-                self._last_frame = frame
-            return frame
-        except Exception as e:
-            log.warning(f"Capture failed: {e}")
-            # Last resort: PIL
+        frame = None
+        if self.backend:
             try:
-                from PIL import ImageGrab
-                screenshot = ImageGrab.grab(bbox=self.window_rect)
-                frame = np.array(screenshot)[:, :, ::-1]
-                self._last_frame = frame
-                if not hasattr(self, '_pil_warned'):
+                frame = self.backend.capture(self.hwnd, self.window_rect)
+            except Exception as e:
+                log.warning(f"Capture failed ({self.backend.name}): {e}")
+
+        # PIL fallback if primary backend fails
+        if frame is None:
+            try:
+                frame = self._pil_fallback.capture(self.hwnd, self.window_rect)
+                if frame is not None and not hasattr(self, '_pil_warned'):
                     self._pil_warned = True
-                    log.warning("Capture exception — bascule sur PIL")
-                return frame
+                    log.warning(f"Backend {self.backend.name if self.backend else '?'} failed — PIL fallback")
             except Exception:
                 pass
-            return self._last_frame
+
+        if frame is not None:
+            self._last_frame = frame
+        return frame if frame is not None else self._last_frame
 
     def capture_region(self, x: int, y: int, w: int, h: int) -> np.ndarray | None:
-        """Capture a specific region relative to the game window.
-
-        Args:
-            x, y: Top-left corner relative to game window
-            w, h: Width and height of region
-        """
-        if not self.window_rect:
-            if not self.refresh_window():
-                return None
-
-        wl, wt, wr, wb = self.window_rect
-        # Convert to absolute screen coordinates
-        abs_region = (wl + x, wt + y, wl + x + w, wt + y + h)
-
-        try:
-            if hasattr(self.camera, 'grab'):
-                return self.camera.grab(region=abs_region)
-            else:
-                monitor = {"left": abs_region[0], "top": abs_region[1],
-                          "width": w, "height": h}
-                screenshot = self.camera.grab(monitor)
-                return np.array(screenshot)[:, :, :3]
-        except Exception as e:
-            log.debug(f"Region capture failed: {e}")
+        """Capture a specific region relative to the game window."""
+        full = self.capture_full()
+        if full is None:
             return None
+        # Crop from full frame (simpler, works with all backends)
+        fh, fw = full.shape[:2]
+        x = min(x, fw)
+        y = min(y, fh)
+        return full[y:y+h, x:x+w]
 
     def get_game_size(self) -> tuple[int, int] | None:
         """Get the current game window size."""
@@ -369,18 +419,16 @@ class ScreenCapture:
 
     def cleanup(self) -> None:
         """Clean up capture resources."""
-        if self.camera:
-            if hasattr(self.camera, 'release'):
-                self.camera.release()
-            elif hasattr(self.camera, 'close'):
-                self.camera.close()
-            self.camera = None
+        if self.backend:
+            self.backend.cleanup()
+            self.backend = None
 
 
 if __name__ == "__main__":
     cap = ScreenCapture()
     if cap.initialize():
         print(f"Game found! Window: {cap.window_rect}")
+        print(f"Backend: {cap.backend.name}")
         print(f"Game size: {cap.get_game_size()}")
 
         frame = cap.capture_full()

@@ -105,7 +105,7 @@ def test_navigation():
     for page_name, expected_idx in [("Dashboard", 0), ("Pokedex", 1),
                                       ("Battle", 2), ("Team", 3),
                                       ("Shiny Lab", 4), ("Collection", 5),
-                                      ("Notes", 6), ("Settings", 7)]:
+                                      ("Settings", 6)]:
         window._navigate(page_name)
         assert window.pages.currentIndex() == expected_idx
 
